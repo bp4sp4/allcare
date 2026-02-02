@@ -1,0 +1,244 @@
+.container {
+  padding: 2rem;
+  max-width: 600px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+.card {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* 구독 완료 화면 */
+.successTitle {
+  margin-bottom: 1.5rem;
+  color: #111827;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.successBox {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background-color: #f0fdf4;
+  border-radius: 12px;
+  border: 2px solid #86efac;
+}
+
+.successMessage {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #15803d;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.successDetails {
+  font-size: 0.875rem;
+  color: #166534;
+  line-height: 1.8;
+}
+
+.infoBox {
+  padding: 1rem;
+  background-color: #eff6ff;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border: 1px solid #bfdbfe;
+}
+
+.infoItem {
+  font-size: 0.875rem;
+  color: #1e40af;
+  margin-bottom: 0.5rem;
+}
+
+.infoItem:last-child {
+  margin-bottom: 0;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.buttonSecondary {
+  flex: 1;
+  padding: 0.875rem;
+  background-color: #f3f4f6;
+  color: #374151;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.buttonPrimary {
+  flex: 1;
+  padding: 0.875rem;
+  background-color: #0070f3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  font-weight: 500;
+  text-align: center;
+  text-decoration: none;
+  display: block;
+}
+
+/* 결제 폼 */
+.title {
+  margin-bottom: 1rem;
+  color: #111827;
+  font-size: 1.5rem;
+}
+
+.priceBox {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #f0f9ff;
+  border-radius: 8px;
+  border: 1px solid #bae6fd;
+}
+
+.priceLabel {
+  font-size: 0.875rem;
+  color: #0369a1;
+  margin-bottom: 0.5rem;
+}
+
+.priceAmount {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0c4a6e;
+}
+
+.priceDescription {
+  font-size: 0.75rem;
+  color: #0369a1;
+  margin-top: 0.25rem;
+}
+
+.formGroup {
+  margin-bottom: 1rem;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.required {
+  color: red;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.25rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #0070f3;
+}
+
+.advancedToggle {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  background-color: transparent;
+  color: #6b7280;
+  border: none;
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.advancedSection {
+  margin-bottom: 1rem;
+  padding-left: 0.5rem;
+}
+
+.inputSmall {
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 0.25rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}
+
+.submitButton {
+  width: 100%;
+  padding: 1.125rem;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.125rem;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+.submitButton:not(:disabled) {
+  background-color: #0070f3;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 112, 243, 0.3);
+}
+
+.submitButton:disabled {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+}
+
+.submitButton:not(:disabled):hover {
+  background-color: #0060d9;
+  transform: translateY(-2px);
+}
+
+.loadingText {
+  margin-top: 1rem;
+  color: #9ca3af;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.errorText {
+  margin-top: 0.75rem;
+  color: #ef4444;
+  text-align: center;
+  font-size: 0.875rem;
+}
+
+.infoFooter {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #f9fafb;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.infoFooterItem {
+  margin-bottom: 0.5rem;
+}
+
+.infoFooterItem:last-child {
+  margin-bottom: 0;
+}

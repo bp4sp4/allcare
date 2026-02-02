@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Script from 'next/script';
+import styles from './payment.module.css';
 
 // PayApp SDK 타입 정의
 declare global {
@@ -170,7 +171,6 @@ export default function PaymentPage() {
               <div style={{ fontSize: '0.875rem', color: '#166534', lineHeight: '1.8' }}>
                 ✓ 첫 결제는 등록 즉시 진행됩니다<br/>
                 ✓ 이후 매월 자동으로 결제됩니다<br/>
-                ✓ 결제 3일 전 알림을 보내드립니다<br/>
                 ✓ 언제든지 해지 가능합니다
               </div>
             </div>
@@ -429,7 +429,7 @@ export default function PaymentPage() {
         <div style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '8px', fontSize: '0.75rem', color: '#6b7280', lineHeight: '1.5' }}>
           <div style={{ marginBottom: '0.5rem' }}>✓ 첫 결제 후 매월 자동 결제됩니다</div>
           <div style={{ marginBottom: '0.5rem' }}>✓ 언제든지 해지 가능합니다</div>
-          <div>✓ 결제 3일 전 알림을 보내드립니다</div>
+          
         </div>
         </>
         )}

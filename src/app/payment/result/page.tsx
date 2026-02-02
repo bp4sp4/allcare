@@ -86,7 +86,6 @@ function PaymentResultContent() {
             <p style={{ marginBottom: '0.5rem', color: '#166534', lineHeight: '1.6' }}>
               • 첫 결제는 등록 즉시 진행됩니다<br/>
               • 이후 매월 자동으로 결제됩니다<br/>
-              • 결제 3일 전 알림을 보내드립니다<br/>
               • 언제든지 해지 가능합니다
             </p>
           </div>
