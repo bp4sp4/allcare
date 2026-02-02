@@ -37,39 +37,70 @@ export default function PaymentPage() {
       return;
     }
 
-    // PayApp 정기결제 요청
-    window.PayApp.setDefault('userid', process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '');
-    
+    // 필수 필드 검증
+    if (!paymentData.buyername || !paymentData.recvphone) {
+      alert('이름과 연락처를 입력해주세요.');
+      return;
+    }
+
+    if (!paymentData.recvphone.match(/^01[0-9]{8,9}$/)) {
+      alert('올바른 휴대폰 번호를 입력해주세요. (예: 01012345678)');
+      return;
+    }
+
     // 현재 도메인 가져오기 (배포 환경 대응)
     const baseUrl = window.location.origin;
     const shopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어';
-    
-    // 정기결제 정보 설정
-    window.PayApp.setParam('shopname', shopName);
-    window.PayApp.setParam('goodname', paymentData.goodname);
-    window.PayApp.setParam('goodprice', paymentData.goodprice);
-    window.PayApp.setParam('recvphone', paymentData.recvphone);
-    window.PayApp.setParam('buyername', paymentData.buyername);
-    window.PayApp.setParam('buyeremail', paymentData.buyeremail);
-    window.PayApp.setParam('smsuse', 'n'); // SMS 전송 안함
-    window.PayApp.setParam('rebillCycleType', paymentData.rebillCycleType);
-    window.PayApp.setParam('rebillCycleMonth', paymentData.rebillCycleMonth);
-    window.PayApp.setParam('rebillExpire', paymentData.rebillExpire);
-    window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
-    window.PayApp.setParam('returnurl', `${baseUrl}/payment/result`);
-    window.PayApp.setParam('var1', paymentData.var1 || `ORDER-${Date.now()}`);
-    
-    console.log('Payment request:', {
-      shopname: shopName,
-      goodname: paymentData.goodname,
-      goodprice: paymentData.goodprice,
-      baseUrl,
-      feedbackurl: `${baseUrl}/api/payments/webhook`,
-      returnurl: `${baseUrl}/payment/result`
-    });
-    
-    // 정기결제 호출
-    window.PayApp.rebill();
+    const userId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
+
+    if (!userId) {
+      alert('결제 시스템 설정 오류입니다. 관리자에게 문의하세요.');
+      console.error('PAYAPP_USER_ID is not set');
+      return;
+    }
+
+    try {
+      // PayApp 초기화
+      window.PayApp.setDefault('userid', userId);
+      window.PayApp.setDefault('shopname', shopName);
+      
+      // 정기결제 정보 설정
+      window.PayApp.setParam('goodname', paymentData.goodname);
+      window.PayApp.setParam('goodprice', paymentData.goodprice);
+      window.PayApp.setParam('recvphone', paymentData.recvphone);
+      window.PayApp.setParam('buyername', paymentData.buyername);
+      if (paymentData.buyeremail) {
+        window.PayApp.setParam('buyeremail', paymentData.buyeremail);
+      }
+      window.PayApp.setParam('smsuse', 'n'); // SMS 전송 안함
+      window.PayApp.setParam('rebillCycleType', paymentData.rebillCycleType);
+      window.PayApp.setParam('rebillCycleMonth', paymentData.rebillCycleMonth);
+      window.PayApp.setParam('rebillExpire', paymentData.rebillExpire);
+      window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
+      window.PayApp.setParam('returnurl', `${baseUrl}/payment/result`);
+      window.PayApp.setParam('var1', paymentData.var1 || `ORDER-${Date.now()}`);
+      
+      console.log('Payment request:', {
+        userid: userId,
+        shopname: shopName,
+        goodname: paymentData.goodname,
+        goodprice: paymentData.goodprice,
+        buyername: paymentData.buyername,
+        recvphone: paymentData.recvphone,
+        rebillCycleType: paymentData.rebillCycleType,
+        rebillCycleMonth: paymentData.rebillCycleMonth,
+        rebillExpire: paymentData.rebillExpire,
+        baseUrl,
+        feedbackurl: `${baseUrl}/api/payments/webhook`,
+        returnurl: `${baseUrl}/payment/result`
+      });
+      
+      // 정기결제 호출
+      window.PayApp.rebill();
+    } catch (error) {
+      console.error('Payment error:', error);
+      alert('결제 요청 중 오류가 발생했습니다. 다시 시도해주세요.');
+    }
   };
 
   return (
