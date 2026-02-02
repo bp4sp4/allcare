@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import styles from '../auth.module.css';
 
 export default function SignupPage() {
@@ -20,23 +19,6 @@ export default function SignupPage() {
   const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  const handleSocialLogin = async (provider: 'kakao' | 'google') => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: provider,
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      });
-
-      if (error) {
-        setError(`${provider === 'kakao' ? '카카오' : '구글'} 로그인에 실패했습니다.`);
-      }
-    } catch (err) {
-      setError('소셜 로그인 중 오류가 발생했습니다.');
-    }
-  };
 
   const handleSendVerification = async () => {
     if (!formData.phone) {
@@ -158,65 +140,6 @@ export default function SignupPage() {
             {error}
           </div>
         )}
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
-          <button
-            type="button"
-            onClick={() => handleSocialLogin('kakao')}
-            style={{
-              width: '100%',
-              padding: '0.875rem',
-              backgroundColor: '#FEE500',
-              color: '#000000',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '0.95rem',
-              fontWeight: '500',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            <span style={{ fontSize: '1.2rem' }}>💬</span>
-            카카오로 시작하기
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleSocialLogin('google')}
-            style={{
-              width: '100%',
-              padding: '0.875rem',
-              backgroundColor: 'white',
-              color: '#000000',
-              border: '1px solid #dadce0',
-              borderRadius: '8px',
-              fontSize: '0.95rem',
-              fontWeight: '500',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem'
-            }}
-          >
-            <span style={{ fontSize: '1.2rem' }}>G</span>
-            구글로 시작하기
-          </button>
-        </div>
-
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          margin: '1.5rem 0',
-          gap: '0.5rem'
-        }}>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }} />
-          <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>또는 이메일로 가입</span>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }} />
-        </div>
 
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>

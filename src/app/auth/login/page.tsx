@@ -15,8 +15,15 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSocialLogin = async (provider: 'kakao' | 'google') => {
+  const handleSocialLogin = async (provider: 'kakao' | 'naver') => {
     try {
+      if (provider === 'naver') {
+        // 네이버는 커스텀 OAuth 플로우 사용
+        window.location.href = '/api/auth/naver';
+        return;
+      }
+
+      // 카카오는 Supabase OAuth 사용
       const { error } = await supabase.auth.signInWithOAuth({
         provider: provider,
         options: {
@@ -25,7 +32,7 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setError(`${provider === 'kakao' ? '카카오' : '구글'} 로그인에 실패했습니다.`);
+        setError(`${provider === 'kakao' ? '카카오' : '네이버'} 로그인에 실패했습니다.`);
       }
     } catch (err) {
       setError('소셜 로그인 중 오류가 발생했습니다.');
@@ -106,13 +113,13 @@ export default function LoginPage() {
 
           <button
             type="button"
-            onClick={() => handleSocialLogin('google')}
+            onClick={() => handleSocialLogin('naver')}
             style={{
               width: '100%',
               padding: '0.875rem',
-              backgroundColor: 'white',
-              color: '#000000',
-              border: '1px solid #dadce0',
+              backgroundColor: '#03C75A',
+              color: '#ffffff',
+              border: 'none',
               borderRadius: '8px',
               fontSize: '0.95rem',
               fontWeight: '500',
@@ -123,8 +130,8 @@ export default function LoginPage() {
               gap: '0.5rem'
             }}
           >
-            <span style={{ fontSize: '1.2rem' }}>G</span>
-            구글 로그인
+            <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>N</span>
+            네이버 로그인
           </button>
         </div>
 
