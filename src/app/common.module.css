@@ -1,0 +1,124 @@
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #f9fafb;
+  padding: 1rem;
+}
+
+.mobileWrapper {
+  width: 100%;
+  max-width: 768px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #111827;
+  text-align: center;
+}
+
+.subtitle {
+  font-size: 1.125rem;
+  color: #6b7280;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.buttonGroup {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+.button {
+  padding: 1rem 1.5rem;
+  color: white;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 1rem;
+  text-align: center;
+  flex: 1;
+  min-width: 140px;
+}
+
+.buttonPrimary {
+  composes: button;
+  background-color: #0070f3;
+}
+
+.buttonSuccess {
+  composes: button;
+  background-color: #10b981;
+}
+
+.buttonPurple {
+  composes: button;
+  background-color: #8b5cf6;
+}
+
+.buttonSecondary {
+  composes: button;
+  background-color: #6b7280;
+}
+
+.card {
+  margin-top: 1rem;
+  padding: 1.5rem;
+  background-color: white;
+  border-radius: 12px;
+  width: 100%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.cardTitle {
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  color: #111827;
+  font-weight: bold;
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.listItem {
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.icon {
+  margin-right: 0.5rem;
+  flex-shrink: 0;
+}
+
+.codeGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.codeBox {
+  padding: 0.75rem;
+  background-color: #f3f4f6;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  overflow: auto;
+}
+
+.code {
+  color: #059669;
+  font-family: 'Courier New', monospace;
+}
