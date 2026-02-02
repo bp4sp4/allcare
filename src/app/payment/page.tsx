@@ -230,15 +230,6 @@ export default function PaymentPage() {
                 홈으로
               </a>
             </div>
-                  fontWeight: '500',
-                  textAlign: 'center',
-                  textDecoration: 'none',
-                  display: 'block'
-                }}
-              >
-                홈으로
-              </a>
-            </div>
           </>
         ) : (
           // 기존 결제 폼
