@@ -79,17 +79,3 @@ export default function Home() {
     </div>
   );
 }
-          <div style={{ padding: '0.5rem', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
-            <code style={{ fontSize: '0.875rem', color: '#059669' }}>POST /api/auth/login</code>
-          </div>
-          <div style={{ padding: '0.5rem', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
-            <code style={{ fontSize: '0.875rem', color: '#0070f3' }}>POST /api/payments</code>
-          </div>
-          <div style={{ padding: '0.5rem', backgroundColor: '#f3f4f6', borderRadius: '4px' }}>
-            <code style={{ fontSize: '0.875rem', color: '#0070f3' }}>POST /api/payments/webhook</code>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
