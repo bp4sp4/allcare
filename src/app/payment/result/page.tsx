@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 function PaymentResultContent() {
   const searchParams = useSearchParams();
   const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // URL 파라미터에서 결제 결과 정보 추출
@@ -15,24 +16,98 @@ function PaymentResultContent() {
     });
     
     console.log('Payment result params:', params);
-    setResult(params);
-
-    // 결제 결과를 서버로 전송하여 저장
-    if (params.RETURNCODE === '0000' || params.TRADEID) {
-      fetch('/api/payments/result', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params)
-      }).then(res => res.json())
-        .then(data => console.log('Result saved:', data))
-        .catch(err => console.error('Failed to save result:', err));
+    
+    // PayApp rebill은 returnurl에 파라미터를 전달하지 않음
+    // 단순히 페이지로만 이동
+    const hasParams = Object.keys(params).length > 0;
+    
+    if (!hasParams) {
+      // 파라미터가 없으면 정기결제 등록 완료로 간주
+      setResult({
+        isRebill: true,
+        success: true,
+        message: '정기구독이 등록되었습니다.'
+      });
+      setLoading(false);
+    } else {
+      setResult(params);
+      setLoading(false);
+      
+      // 결제 결과를 서버로 전송하여 저장
+      if (params.RETURNCODE === '0000' || params.TRADEID) {
+        fetch('/api/payments/result', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(params)
+        }).then(res => res.json())
+          .then(data => console.log('Result saved:', data))
+          .catch(err => console.error('Failed to save result:', err));
+      }
     }
   }, [searchParams]);
 
-  if (!result) {
+  if (loading || !result) {
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
         <p>결제 결과를 확인하는 중...</p>
+      </div>
+    );
+  }
+
+  // 정기결제(rebill) 성공
+  if (result.isRebill) {
+    return (
+      <div style={{ 
+        padding: '2rem', 
+        maxWidth: '600px', 
+        margin: '0 auto',
+        minHeight: '100vh',
+        backgroundColor: '#f9fafb'
+      }}>
+        <div style={{
+          backgroundColor: 'white',
+          padding: '2rem',
+          borderRadius: '12px',
+          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+        }}>
+          <h1 style={{ marginBottom: '2rem', textAlign: 'center', color: '#111827' }}>
+            ✅ 정기구독 등록 완료
+          </h1>
+
+          <div style={{ 
+            padding: '1.5rem', 
+            border: '1px solid #ddd', 
+            borderRadius: '8px',
+            backgroundColor: '#f0fdf4'
+          }}>
+            <p style={{ marginBottom: '1rem', fontSize: '1.125rem', fontWeight: 'bold', color: '#15803d' }}>
+              {result.message}
+            </p>
+            <p style={{ marginBottom: '0.5rem', color: '#166534', lineHeight: '1.6' }}>
+              • 첫 결제는 등록 즉시 진행됩니다<br/>
+              • 이후 매월 자동으로 결제됩니다<br/>
+              • 결제 3일 전 알림을 보내드립니다<br/>
+              • 언제든지 해지 가능합니다
+            </p>
+          </div>
+
+          <div style={{ marginTop: '2rem', textAlign: 'center' }}>
+            <a 
+              href="/"
+              style={{
+                display: 'inline-block',
+                padding: '0.75rem 1.5rem',
+                backgroundColor: '#0070f3',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '8px',
+                fontWeight: 'bold'
+              }}
+            >
+              홈으로 돌아가기
+            </a>
+          </div>
+        </div>
       </div>
     );
   }
