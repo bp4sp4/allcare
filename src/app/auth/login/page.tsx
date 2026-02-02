@@ -67,7 +67,7 @@ export default function LoginPage() {
         boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
       }}>
         <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center' }}>
-          💳 AllCare
+          AllCare
         </h1>
         <p style={{ color: '#6b7280', textAlign: 'center', marginBottom: '2rem' }}>
           로그인하여 서비스를 이용하세요

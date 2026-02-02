@@ -41,6 +41,9 @@ export default function PaymentPage() {
     window.PayApp.setDefault('userid', process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '');
     window.PayApp.setDefault('shopname', process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || 'AllCare Shop');
     
+    // 현재 도메인 가져오기 (배포 환경 대응)
+    const baseUrl = window.location.origin;
+    
     // 정기결제 정보 설정
     window.PayApp.setParam('goodname', paymentData.goodname);
     window.PayApp.setParam('goodprice', paymentData.goodprice);
@@ -51,9 +54,17 @@ export default function PaymentPage() {
     window.PayApp.setParam('rebillCycleType', paymentData.rebillCycleType);
     window.PayApp.setParam('rebillCycleMonth', paymentData.rebillCycleMonth);
     window.PayApp.setParam('rebillExpire', paymentData.rebillExpire);
-    window.PayApp.setParam('feedbackurl', `${window.location.origin}/api/payments/webhook`);
-    window.PayApp.setParam('returnurl', `${window.location.origin}/payment/result`);
-    window.PayApp.setParam('var1', paymentData.var1 || new Date().toISOString());
+    window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
+    window.PayApp.setParam('returnurl', `${baseUrl}/payment/result`);
+    window.PayApp.setParam('var1', paymentData.var1 || `ORDER-${Date.now()}`);
+    
+    console.log('Payment request:', {
+      goodname: paymentData.goodname,
+      goodprice: paymentData.goodprice,
+      baseUrl,
+      feedbackurl: `${baseUrl}/api/payments/webhook`,
+      returnurl: `${baseUrl}/payment/result`
+    });
     
     // 정기결제 호출
     window.PayApp.rebill();

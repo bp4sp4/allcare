@@ -13,15 +13,19 @@ function PaymentResultContent() {
     searchParams.forEach((value, key) => {
       params[key] = value;
     });
+    
+    console.log('Payment result params:', params);
     setResult(params);
 
     // 결제 결과를 서버로 전송하여 저장
-    if (params.RETURNCODE === '0000') {
+    if (params.RETURNCODE === '0000' || params.TRADEID) {
       fetch('/api/payments/result', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(params)
-      });
+      }).then(res => res.json())
+        .then(data => console.log('Result saved:', data))
+        .catch(err => console.error('Failed to save result:', err));
     }
   }, [searchParams]);
 
@@ -62,29 +66,39 @@ function PaymentResultContent() {
         {isSuccess ? (
           <>
             <p style={{ marginBottom: '0.5rem' }}>
-              <strong>거래번호:</strong> {result.TRADEID || '-'}
+              <strong>거래번호:</strong> {result.TRADEID || result.tradeid || '-'}
             </p>
             <p style={{ marginBottom: '0.5rem' }}>
-              <strong>주문번호:</strong> {result.var1 || '-'}
+              <strong>주문번호:</strong> {result.var1 || result.orderId || '-'}
             </p>
             <p style={{ marginBottom: '0.5rem' }}>
-              <strong>상품명:</strong> {result.GOODNAME || '-'}
+              <strong>상품명:</strong> {result.GOODNAME || result.goodname || '-'}
             </p>
             <p style={{ marginBottom: '0.5rem' }}>
-              <strong>결제금액:</strong> {result.PRICE ? `${Number(result.PRICE).toLocaleString()}원` : '-'}
+              <strong>결제금액:</strong> {(result.PRICE || result.price) ? `${Number(result.PRICE || result.price).toLocaleString()}원` : '-'}
             </p>
             <p style={{ marginBottom: '0.5rem' }}>
-              <strong>승인시간:</strong> {result.OKTIME || '-'}
+              <strong>승인시간:</strong> {result.OKTIME || result.oktime || '-'}
             </p>
           </>
         ) : (
           <>
-            <p style={{ marginBottom: '0.5rem' }}>
-              <strong>에러코드:</strong> {result.RETURNCODE || '-'}
+            <p style={{ marginBottom: '1rem', color: '#dc2626', fontWeight: 'bold' }}>
+              결제가 실패했습니다
             </p>
-            <p style={{ marginBottom: '0.5rem' }}>
-              <strong>에러메시지:</strong> {result.RETURNMSG || '-'}
+            <p style={{ marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+              <strong>에러코드:</strong> {result.RETURNCODE || result.returncode || '-'}
             </p>
+            <p style={{ marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+              <strong>에러메시지:</strong> {result.RETURNMSG || result.returnmsg || '-'}
+            </p>
+            <div style={{ marginTop: '1rem', padding: '1rem', backgroundColor: '#fff7ed', borderRadius: '6px', fontSize: '0.875rem' }}>
+              <p style={{ marginBottom: '0.5rem' }}><strong>⚠️ 돈이 빠져나간 경우:</strong></p>
+              <p style={{ lineHeight: '1.6', color: '#9a3412' }}>
+                결제 승인은 완료되었으나 시스템 오류가 발생했을 수 있습니다. 
+                거래 내역이 확인되지 않는 경우, 고객센터로 문의해주세요.
+              </p>
+            </div>
           </>
         )}
       </div>
