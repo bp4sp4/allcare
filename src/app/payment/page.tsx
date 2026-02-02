@@ -19,6 +19,7 @@ declare global {
 export default function PaymentPage() {
   const [isPayAppLoaded, setIsPayAppLoaded] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [paymentData, setPaymentData] = useState({
     goodname: '구독 서비스',
     goodprice: '20000',
@@ -30,6 +31,16 @@ export default function PaymentPage() {
     rebillExpire: '2027-12-31',
     var1: '',
   });
+
+  useEffect(() => {
+    // URL에서 success 파라미터 확인
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('success') === 'true') {
+      setPaymentSuccess(true);
+      // URL 정리 (브라우저 히스토리에 clean URL 유지)
+      window.history.replaceState({}, '', '/payment');
+    }
+  }, []);
 
   const handlePayment = () => {
     if (!isPayAppLoaded || !window.PayApp) {
@@ -77,7 +88,7 @@ export default function PaymentPage() {
       window.PayApp.setParam('rebillCycleMonth', paymentData.rebillCycleMonth);
       window.PayApp.setParam('rebillExpire', paymentData.rebillExpire);
       window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
-      window.PayApp.setParam('returnurl', `${baseUrl}/payment/result`);
+      window.PayApp.setParam('returnurl', `${baseUrl}/payment?success=true`);
       window.PayApp.setParam('var1', paymentData.var1 || `ORDER-${Date.now()}`);
       
       console.log('Payment request:', {
@@ -139,8 +150,87 @@ export default function PaymentPage() {
           borderRadius: '12px',
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
         }}>
-        <h1 style={{ marginBottom: '1rem', color: '#111827', fontSize: '1.5rem' }}>정기구독 결제</h1>
-        
+        {paymentSuccess ? (
+          // 구독 완료 화면
+          <>
+            <h1 style={{ marginBottom: '1.5rem', color: '#111827', fontSize: '1.5rem', textAlign: 'center' }}>
+              ✅ 구독 완료
+            </h1>
+            
+            <div style={{ 
+              marginBottom: '1.5rem', 
+              padding: '1.5rem', 
+              backgroundColor: '#f0fdf4',
+              borderRadius: '12px',
+              border: '2px solid #86efac'
+            }}>
+              <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#15803d', marginBottom: '1rem', textAlign: 'center' }}>
+                정기구독이 등록되었습니다!
+              </div>
+              <div style={{ fontSize: '0.875rem', color: '#166534', lineHeight: '1.8' }}>
+                ✓ 첫 결제는 등록 즉시 진행됩니다<br/>
+                ✓ 이후 매월 자동으로 결제됩니다<br/>
+                ✓ 결제 3일 전 알림을 보내드립니다<br/>
+                ✓ 언제든지 해지 가능합니다
+              </div>
+            </div>
+
+            <div style={{ 
+              padding: '1rem', 
+              backgroundColor: '#eff6ff',
+              borderRadius: '8px',
+              marginBottom: '1.5rem',
+              border: '1px solid #bfdbfe'
+            }}>
+              <div style={{ fontSize: '0.875rem', color: '#1e40af', marginBottom: '0.5rem' }}>
+                <strong>월 구독료:</strong> {Number(paymentData.goodprice).toLocaleString()}원
+              </div>
+              <div style={{ fontSize: '0.875rem', color: '#1e40af' }}>
+                <strong>다음 결제일:</strong> 매월 {paymentData.rebillCycleMonth}일
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
+              <button
+                onClick={() => setPaymentSuccess(false)}
+                style={{
+                  flex: 1,
+                  padding: '0.875rem',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '0.95rem',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
+              >
+                다시 구독하기
+              </button>
+              <a
+                href="/"
+                style={{
+                  flex: 1,
+                  padding: '0.875rem',
+                  backgroundColor: '#0070f3',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '0.95rem',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  textAlign: 'center',
+                  textDecoration: 'none',
+                  display: 'block'
+                }}
+              >
+                홈으로
+              </a>
+            </div>
+          </>
+        ) : (
+          // 기존 결제 폼
+          <>
         <div style={{ 
           marginBottom: '1.5rem', 
           padding: '1rem', 
@@ -262,7 +352,9 @@ export default function PaymentPage() {
                   style={{ 
                     width: '100%', 
                     padding: '0.75rem', 
-                    marginTop: '0.25rem',
+          >
+        )}
+        </          marginTop: '0.25rem',
                     border: '2px solid #e5e7eb',
                     borderRadius: '8px',
                     fontSize: '0.875rem'
