@@ -22,7 +22,7 @@ export default function PaymentPage() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [paymentData, setPaymentData] = useState({
-    goodname: '구독 서비스',
+    goodname: '올케어구독상품',
     goodprice: '20000',
     buyername: '',
     recvphone: '',
