@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import styles from '../auth.module.css';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -129,75 +130,130 @@ export default function SignupPage() {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      backgroundColor: '#f9fafb',
-      padding: '2rem'
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '500px',
-        backgroundColor: 'white',
-        padding: '2rem',
-        borderRadius: '12px',
-        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
-      }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.5rem', textAlign: 'center' }}>
-          회원가입
-        </h1>
-        <p style={{ color: '#6b7280', textAlign: 'center', marginBottom: '2rem' }}>
-          AllCare에 오신 것을 환영합니다
-        </p>
+    <div className={styles.container}>
+      <div className={styles.card}>
+        <h1 className={styles.title}>회원가입</h1>
+        <p className={styles.subtitle}>한평생올케어에 오신 것을 환영합니다</p>
 
         {error && (
-          <div style={{
-            padding: '1rem',
-            backgroundColor: '#fee2e2',
-            border: '1px solid #fca5a5',
-            borderRadius: '8px',
-            marginBottom: '1rem',
-            color: '#dc2626'
-          }}>
+          <div className={styles.errorBox}>
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-              이메일 *
-            </label>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>이메일 *</label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               required
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '1rem'
-              }}
+              className={styles.input}
             />
           </div>
 
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-              비밀번호 *
-            </label>
+          <div className={styles.formGroup}>
+            <label className={styles.label}>비밀번호 *</label>
             <input
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               required
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: '1px solid #d1d5db',
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>비밀번호 확인 *</label>
+            <input
+              type="password"
+              value={formData.passwordConfirm}
+              onChange={(e) => setFormData({ ...formData, passwordConfirm: e.target.value })}
+              required
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>이름 *</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              required
+              className={styles.input}
+            />
+          </div>
+
+          <div className={styles.formGroup}>
+            <label className={styles.label}>
+              전화번호 *
+              {isVerified && <span className={styles.successBadge}>✓ 인증완료</span>}
+            </label>
+            <div className={styles.verificationGroup}>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                placeholder="01012345678"
+                required
+                disabled={isVerified}
+                className={`${styles.input} ${styles.verificationInput}`}
+                style={{ backgroundColor: isVerified ? '#f3f4f6' : 'white' }}
+              />
+              <button
+                type="button"
+                onClick={handleSendVerification}
+                disabled={loading || isVerified}
+                className={styles.verificationButton}
+              >
+                {isVerified ? '✓ 완료' : '인증번호'}
+              </button>
+            </div>
+          </div>
+
+          {isVerificationSent && !isVerified && (
+            <div className={styles.formGroup}>
+              <label className={styles.label}>인증번호</label>
+              <div className={styles.verificationGroup}>
+                <input
+                  type="text"
+                  value={formData.verificationCode}
+                  onChange={(e) => setFormData({ ...formData, verificationCode: e.target.value })}
+                  placeholder="6자리 숫자"
+                  maxLength={6}
+                  className={`${styles.input} ${styles.verificationInput}`}
+                />
+                <button
+                  type="button"
+                  onClick={handleVerifyCode}
+                  disabled={loading}
+                  className={styles.verificationButton}
+                >
+                  확인
+                </button>
+              </div>
+            </div>
+          )}
+
+          <button type="submit" disabled={loading || !isVerified} className={styles.submitButton}>
+            {loading ? '처리 중...' : '회원가입'}
+          </button>
+        </form>
+
+        <div className={styles.footer}>
+          <p>
+            이미 계정이 있으신가요?{' '}
+            <Link href="/auth/login" className={styles.footerLink}>
+              로그인
+            </Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
                 borderRadius: '8px',
                 fontSize: '1rem'
               }}
