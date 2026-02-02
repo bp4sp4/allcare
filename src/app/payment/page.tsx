@@ -154,18 +154,22 @@ export default function PaymentPage() {
         {paymentSuccess ? (
           // 구독 완료 화면
           <>
-            <h1 style={{ marginBottom: '1.5rem', color: '#111827', fontSize: '1.5rem', textAlign: 'center' }}>
-              ✅ 구독 완료
+            <h1 style={{ marginBottom: '1.5rem', color: '#111827', fontSize: '2rem', textAlign: 'center', fontWeight: 'bold' }}>
+              구독되었습니다
             </h1>
             
             <div style={{ 
-              marginBottom: '1.5rem', 
-              padding: '1.5rem', 
+              marginBottom: '2rem', 
+              padding: '2rem', 
               backgroundColor: '#f0fdf4',
               borderRadius: '12px',
-              border: '2px solid #86efac'
+              border: '2px solid #86efac',
+              textAlign: 'center'
             }}>
-              <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#15803d', marginBottom: '1rem', textAlign: 'center' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
+                ✓
+              </div>
+              <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#15803d', marginBottom: '1rem' }}>
                 정기구독이 등록되었습니다!
               </div>
               <div style={{ fontSize: '0.875rem', color: '#166534', lineHeight: '1.8' }}>
@@ -176,48 +180,56 @@ export default function PaymentPage() {
             </div>
 
             <div style={{ 
-              padding: '1rem', 
+              padding: '1.5rem', 
               backgroundColor: '#eff6ff',
               borderRadius: '8px',
-              marginBottom: '1.5rem',
+              marginBottom: '2rem',
               border: '1px solid #bfdbfe'
             }}>
-              <div style={{ fontSize: '0.875rem', color: '#1e40af', marginBottom: '0.5rem' }}>
+              <div style={{ fontSize: '0.95rem', color: '#1e40af', marginBottom: '0.75rem' }}>
                 <strong>월 구독료:</strong> {Number(paymentData.goodprice).toLocaleString()}원
               </div>
-              <div style={{ fontSize: '0.875rem', color: '#1e40af' }}>
+              <div style={{ fontSize: '0.95rem', color: '#1e40af' }}>
                 <strong>다음 결제일:</strong> 매월 {paymentData.rebillCycleMonth}일
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button
-                onClick={() => setPaymentSuccess(false)}
-                style={{
-                  flex: 1,
-                  padding: '0.875rem',
-                  backgroundColor: '#f3f4f6',
-                  color: '#374151',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '0.95rem',
-                  cursor: 'pointer',
-                  fontWeight: '500'
-                }}
-              >
-                다시 구독하기
-              </button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <a
-                href="/"
+                href="/payment/history"
                 style={{
-                  flex: 1,
-                  padding: '0.875rem',
+                  padding: '1rem',
                   backgroundColor: '#0070f3',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
-                  fontSize: '0.95rem',
+                  fontSize: '1rem',
                   cursor: 'pointer',
+                  fontWeight: 'bold',
+                  textDecoration: 'none',
+                  textAlign: 'center'
+                }}
+              >
+                결제내역 보기
+              </a>
+              <a
+                href="/"
+                style={{
+                  padding: '1rem',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  textDecoration: 'none',
+                  textAlign: 'center'
+                }}
+              >
+                홈으로
+              </a>
+            </div>
                   fontWeight: '500',
                   textAlign: 'center',
                   textDecoration: 'none',
