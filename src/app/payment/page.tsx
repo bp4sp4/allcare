@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Script from 'next/script';
 
 // PayApp SDK 타입 정의
@@ -352,9 +352,7 @@ export default function PaymentPage() {
                   style={{ 
                     width: '100%', 
                     padding: '0.75rem', 
-          >
-        )}
-        </          marginTop: '0.25rem',
+                    marginTop: '0.25rem',
                     border: '2px solid #e5e7eb',
                     borderRadius: '8px',
                     fontSize: '0.875rem'
@@ -433,6 +431,8 @@ export default function PaymentPage() {
           <div style={{ marginBottom: '0.5rem' }}>✓ 언제든지 해지 가능합니다</div>
           <div>✓ 결제 3일 전 알림을 보내드립니다</div>
         </div>
+        </>
+        )}
         </div>
       </div>
     </>
