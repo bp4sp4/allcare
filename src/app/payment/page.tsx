@@ -39,12 +39,13 @@ export default function PaymentPage() {
 
     // PayApp 정기결제 요청
     window.PayApp.setDefault('userid', process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '');
-    window.PayApp.setDefault('shopname', process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || 'AllCare Shop');
     
     // 현재 도메인 가져오기 (배포 환경 대응)
     const baseUrl = window.location.origin;
+    const shopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어';
     
     // 정기결제 정보 설정
+    window.PayApp.setParam('shopname', shopName);
     window.PayApp.setParam('goodname', paymentData.goodname);
     window.PayApp.setParam('goodprice', paymentData.goodprice);
     window.PayApp.setParam('recvphone', paymentData.recvphone);
@@ -59,6 +60,7 @@ export default function PaymentPage() {
     window.PayApp.setParam('var1', paymentData.var1 || `ORDER-${Date.now()}`);
     
     console.log('Payment request:', {
+      shopname: shopName,
       goodname: paymentData.goodname,
       goodprice: paymentData.goodprice,
       baseUrl,
