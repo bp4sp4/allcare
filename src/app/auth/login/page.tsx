@@ -1,36 +1,28 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import styles from '../auth.module.css';
+import Header from '@/components/Header';
+import styles from "../auth.module.css"
 
 export default function LoginPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleSocialLogin = async (provider: 'kakao' | 'naver') => {
     try {
       if (provider === 'naver') {
-        // 네이버는 커스텀 OAuth 플로우 사용
         window.location.href = '/api/auth/naver';
         return;
       }
-
-      // 카카오는 Supabase OAuth 사용
       const { error } = await supabase.auth.signInWithOAuth({
         provider: provider,
         options: {
           redirectTo: `${window.location.origin}/auth/callback`
         }
       });
-
       if (error) {
         setError(`${provider === 'kakao' ? '카카오' : '네이버'} 로그인에 실패했습니다.`);
       }
@@ -39,159 +31,43 @@ export default function LoginPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
 
-    if (!formData.email || !formData.password) {
-      setError('이메일과 비밀번호를 입력해주세요.');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        // 토큰을 로컬 스토리지에 저장
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-        }
-        router.push('/');
-      } else {
-        setError(data.error || '로그인에 실패했습니다.');
-      }
-    } catch (err) {
-      setError('로그인 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.card}>
-        <h1 className={styles.title}>한평생올케어</h1>
-        <p className={styles.subtitle}>로그인하여 서비스를 이용하세요</p>
-
+    <div className={styles.card}>
+      <Header />
+      <div className={styles.container}>
+        <div className={styles.logo}><img src="/logo.png" alt="한평생올케어 로고" /></div>
+        <div className={styles.divider}>
+          <span>로그인/회원가입</span>
+        </div>
         {error && (
-          <div className={styles.errorBox}>
-            {error}
-          </div>
+          <div className={styles.errorBox}>{error}</div>
         )}
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+        <div className={styles.socialButtons}>
           <button
             type="button"
             onClick={() => handleSocialLogin('kakao')}
-            style={{
-              width: '100%',
-              padding: '0.875rem',
-              backgroundColor: '#FEE500',
-              color: '#000000',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '0.95rem',
-              fontWeight: '500',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem'
-            }}
+            className={styles.kakaoButton}
           >
-            <span style={{ fontSize: '1.2rem' }}>💬</span>
-            카카오 로그인
+            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="#3C1E1E" viewBox="0 0 21 21"><path fill="current" d="M10.5 3.217c4.514 0 8 2.708 8 6.004 0 3.758-4.045 6.184-8 5.892-1.321-.093-1.707-.17-2.101-.23-1.425.814-2.728 2.344-3.232 2.334-.325-.19.811-2.896.533-3.114-.347-.244-3.157-1.329-3.2-4.958 0-3.199 3.486-5.928 8-5.928Z"></path></svg>
+            카카오로 시작하기
           </button>
-
           <button
             type="button"
             onClick={() => handleSocialLogin('naver')}
-            style={{
-              width: '100%',
-              padding: '0.875rem',
-              backgroundColor: '#03C75A',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '0.95rem',
-              fontWeight: '500',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem'
-            }}
+            className={styles.naverButton}
           >
-            <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>N</span>
-            네이버 로그인
+            <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="none" viewBox="0 0 21 21"><path fill="#fff" d="M4 16.717h4.377V9.98l4.203 6.737H17v-13h-4.377v6.737l-4.16-6.737H4v13Z"></path></svg>
+            네이버로 시작하기
           </button>
-        </div>
-
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          margin: '1.5rem 0',
-          gap: '0.5rem'
-        }}>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }} />
-          <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>또는</span>
-          <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }} />
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className={styles.formGroup}>
-            <label className={styles.label}>이메일</label>
-            <input
-              type="email"
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="example@email.com"
-              required
-              className={styles.input}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label className={styles.label}>비밀번호</label>
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              placeholder="••••••••"
-              required
-              className={styles.input}
-            />
-          </div>
-
-          <div className={styles.linkRow}>
-            <Link href="/auth/find-email" className={styles.link}>
-              이메일 찾기
-            </Link>
-            <Link href="/auth/reset-password" className={styles.link}>
-              비밀번호 찾기
-            </Link>
-          </div>
-
-          <button type="submit" disabled={loading} className={styles.submitButton}>
-            {loading ? '로그인 중...' : '로그인'}
-          </button>
-        </form>
-
-        <div className={styles.footer}>
-          <p>
-            계정이 없으신가요?{' '}
-            <Link href="/auth/signup" className={styles.footerLink}>
-              회원가입
-            </Link>
-          </p>
+          <Link
+            href="/auth/email-login"
+            className={styles.emailButton}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="17" height="16" viewBox="0 0 20 16" fill="none"><path d="M2 16C1.45 16 0.979333 15.8043 0.588 15.413C0.196667 15.0217 0.000666667 14.5507 0 14V2C0 1.45 0.196 0.979333 0.588 0.588C0.98 0.196666 1.45067 0.000666667 2 0H18C18.55 0 19.021 0.196 19.413 0.588C19.805 0.98 20.0007 1.45067 20 2V14C20 14.55 19.8043 15.021 19.413 15.413C19.0217 15.805 18.5507 16.0007 18 16H2ZM10 9L2 4V14H18V4L10 9ZM10 7L18 2H2L10 7ZM2 4V2V14V4Z" fill="white"/></svg>
+            이메일로 시작하기
+          </Link>
         </div>
       </div>
     </div>

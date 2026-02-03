@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import Header from '@/components/Header';
 import styles from './common.module.css';
 
 export default function Home() {
@@ -50,8 +51,10 @@ export default function Home() {
   };
 
   return (
-    <div className={styles.container}>
+    
       <div className={styles.mobileWrapper}>
+        <Header />
+        
         <h1 className={styles.title}>한평생올케어</h1>
         <p className={styles.subtitle}>
           정기구독 결제 시스템
@@ -95,6 +98,6 @@ export default function Home() {
 
       
       </div>
-    </div>
+    
   );
 }

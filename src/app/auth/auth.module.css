@@ -1,33 +1,54 @@
-.container {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f9fafb;
-  padding: 1rem;
-}
 
 .card {
   width: 100%;
   max-width: 768px;
-  background-color: white;
-  padding: 2rem;
   border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin : 0 auto
 }
 
-.title {
-  font-size: 2rem;
-  font-weight: bold;
-  margin-bottom: 0.5rem;
-  text-align: center;
-  color: #111827;
+.container{
+    margin : 180px auto;
+    width: 360px;
+
+}
+
+.logo {
+    width: 160px;
+    height: 22px;
+    margin: 0 auto;
+}
+
+.logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 }
 
 .subtitle {
   color: #6b7280;
   text-align: center;
   margin-bottom: 2rem;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 1rem 0;
+  gap: 0.5rem;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: #e5e7eb;
+}
+
+.divider span {
+  color: #6b7280;
+  font-size: 0.875rem;
+  white-space: nowrap;
 }
 
 .errorBox {
@@ -41,6 +62,7 @@
 
 .formGroup {
   margin-bottom: 1.5rem;
+  margin-top: 1.5rem;
 }
 
 .label {
@@ -48,6 +70,7 @@
   margin-bottom: 0.5rem;
   font-weight: 500;
   color: #374151;
+  font-size: 13px;
 }
 
 .input {
@@ -57,12 +80,30 @@
   border-radius: 8px;
   font-size: 1rem;
   box-sizing: border-box;
+  transition: border-color 0.2s;
+
 }
 
 .input:focus {
   outline: none;
   border-color: #0070f3;
-  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
+  border-radius: 8px;
+}
+
+.inputError {
+  border-color: #dc2626 !important;
+}
+
+.inputError:focus {
+  border-color: #dc2626 !important;
+  border-radius: 8px;
+}
+
+.errorMessage {
+  color: #dc2626;
+  font-size: 12px;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
 }
 
 .linkRow {
@@ -130,7 +171,7 @@
 
 .verificationButton {
   padding: 0.75rem 1rem;
-  background-color: #10b981;
+  background-color: #0051FF;
   color: white;
   border: none;
   border-radius: 8px;
@@ -145,16 +186,191 @@
 }
 
 .verificationButton:hover:not(:disabled) {
-  background-color: #059669;
+  background-color: #0041CC;
+}
+
+.sendVerificationButton {
+  padding: 0.75rem 1rem;
+  background-color: #e5e7eb;
+  color: #6b7280;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: 120px;
+}
+
+.sendVerificationButton:not(:disabled) {
+  background-color: #0051FF;
+  color: white;
+}
+
+.sendVerificationButton:disabled {
+  background-color: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.sendVerificationButton:hover:not(:disabled) {
+  background-color: #0041CC;
+}
+
+.timerText {
+  color: #0051FF;
+  font-weight: 600;
+  margin-left: 8px;
+  font-size: 14px;
 }
 
 .successBadge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: #dbeafe;
+  color: #0051FF;
   border-radius: 12px;
   font-size: 0.875rem;
   font-weight: 500;
   margin-left: 0.5rem;
 }
+
+.socialButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.kakaoButton,
+.naverButton,
+.emailButton {
+  width: 100%;
+height: 52px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  
+  
+  transition: opacity 0.2s;
+  line-height: 19px;
+}
+
+.kakaoButton {
+  background-color: #FEE500;
+  color: #000000;
+}
+
+.kakaoButton:hover {
+  opacity: 0.9;
+}
+
+.naverButton {
+  background-color: #03C75A;
+  color: #ffffff;
+}
+
+.naverButton:hover {
+  opacity: 0.9;
+}
+
+.emailButton {
+  background-color: #0051FF;
+  color: #fff;
+  border: 1px solid #e5e7eb;
+}
+
+/* Email Login Form Styles */
+.emailLoginWrap {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.logoWrap {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.formActions {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.1rem;
+  text-align: right;
+  margin-bottom: 1rem;
+}
+
+.divider{
+  margin: 0;
+  padding: 0;
+  font-size: small;
+  color: #6b7280;
+}
+
+.resetLink {
+  color: #6b7280;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.resetLink:hover {
+  color: #111827;
+  text-decoration: underline;
+}
+
+.loginButton {
+  width: 100%;
+  height: 52px;
+  background-color: #e5e7eb;
+  color: #9ca3af;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: not-allowed;
+  transition: background-color 0.2s;
+  margin-bottom: 1.5rem;
+}
+
+.loginButton:not(:disabled) {
+  background-color: #0051FF;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.loginButton:not(:disabled):hover {
+  background-color: #0041CC;
+}
+
+.signupWrap {
+  text-align: center;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.signupWrap span {
+  margin-right: 0.25rem;
+}
+
+.signupLink {
+  color: #0051FF;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.signupLink:hover {
+  text-decoration: underline;
+}
+
+.required {
+  color: #dc2626;
+  margin-left: 2px;
+}
+

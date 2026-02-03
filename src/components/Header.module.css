@@ -1,0 +1,98 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 768px;
+  padding: 12px 10px;
+  background: var(--white, #FFF);
+  backdrop-filter: blur(5px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid #f2f2f2;
+  margin: 0 auto;
+}
+
+.logo {
+  width: 117px;
+  height: 17px;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.hamburger {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity 0.2s;
+}
+
+.hamburger:hover {
+  opacity: 0.7;
+}
+
+.hamburger:active {
+  opacity: 0.5;
+}
+
+.hamburger svg {
+  width: 36px;
+  height: 36px;
+}
+
+.menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  width: 100%;
+  max-width: 768px;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  margin-top: 0;
+}
+
+.menuOpen {
+  max-height: 300px;
+  opacity: 1;
+}
+
+.menuItem {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.menuItem:last-child {
+  border-bottom: none;
+}
+
+.menuItem:hover {
+  background-color: #f8f8f8;
+}
+
+.menuItem a {
+  display: block;
+  color: #3D3D3D;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  width: 100%;
+}
