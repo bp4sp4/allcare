@@ -39,31 +39,35 @@ export default function Header() {
       </button>
 
       <nav className={`${styles.menu} ${isMenuOpen ? styles.menuOpen : ''}`}>
-        <div className={styles.menuItem}>
-          {isLoggedIn ? (
-            <Link href="/auth/login" onClick={() => {
-              localStorage.removeItem('token');
-              setIsLoggedIn(false);
-              setIsMenuOpen(false);
-            }}>
-              로그아웃
-            </Link>
-          ) : (
+        {!isLoggedIn ? (
+          <div className={styles.menuItem}>
             <Link href="/auth/login" onClick={() => setIsMenuOpen(false)}>
               로그인/회원가입
             </Link>
-          )}
-        </div>
+          </div>
+        ) : (
+          <>
+            <div className={styles.menuItem}>
+              <Link href="/mypage" onClick={() => setIsMenuOpen(false)}>
+                내정보 관리
+              </Link>
+            </div>
+            
+            <div className={styles.menuItem}>
+              <Link href="/auth/login" onClick={() => {
+                localStorage.removeItem('token');
+                setIsLoggedIn(false);
+                setIsMenuOpen(false);
+              }}>
+                로그아웃
+              </Link>
+            </div>
+          </>
+        )}
         
         <div className={styles.menuItem}>
           <Link href="/matching" onClick={() => setIsMenuOpen(false)}>
             올케어 실습매칭 시스템
-          </Link>
-        </div>
-        
-        <div className={styles.menuItem}>
-          <Link href="/mypage" onClick={() => setIsMenuOpen(false)}>
-            구독관리(내정보관리)
           </Link>
         </div>
       </nav>

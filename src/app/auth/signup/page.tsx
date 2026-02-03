@@ -3,400 +3,97 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 import styles from '../auth.module.css';
 
 export default function SignupPage() {
   const router = useRouter();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    passwordConfirm: '',
-    name: '',
-    phone: '',
-    verificationCode: ''
-  });
-  const [isVerificationSent, setIsVerificationSent] = useState(false);
-  const [isVerified, setIsVerified] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [emailError, setEmailError] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordConfirmError, setPasswordConfirmError] = useState('');
-  const [nameError, setNameError] = useState('');
-  const [phoneError, setPhoneError] = useState('');
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [touched, setTouched] = useState({
-    email: false,
-    password: false,
-    passwordConfirm: false,
-    name: false,
-    phone: false
-  });
 
-  const validateEmail = (email: string) => {
-    if (!email) return '';
-    if (!email.includes('@')) {
-      return '올바른 이메일 주소를 입력해 주세요.';
-    }
-    return '';
-  };
-
-  const validatePassword = (password: string) => {
-    if (!password) return '';
-    if (password.length < 8) {
-      return '8자 이상 입력해 주세요.';
-    }
-    return '';
-  };
-
-  const validatePasswordConfirm = (passwordConfirm: string) => {
-    if (!passwordConfirm) return '';
-    if (passwordConfirm !== formData.password) {
-      return '비밀번호가 일치하지 않습니다.';
-    }
-    return '';
-  };
-
-  const validateName = (name: string) => {
-    if (!name) return '';
-    if (name.length < 2) {
-      return '이름을 2자 이상 입력해 주세요.';
-    }
-    return '';
-  };
-
-  const validatePhone = (phone: string) => {
-    if (!phone) return '';
-    if (!/^01[0-9]{8,9}$/.test(phone)) {
-      return '올바른 전화번호를 입력해 주세요.';
-    }
-    return '';
-  };
-
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const email = e.target.value;
-    setFormData({ ...formData, email });
-    setEmailError(validateEmail(email));
-    if (!touched.email) {
-      setTouched({ ...touched, email: true });
-    }
-  };
-
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const password = e.target.value;
-    setFormData({ ...formData, password });
-    setPasswordError(validatePassword(password));
-    if (formData.passwordConfirm) {
-      setPasswordConfirmError(password !== formData.passwordConfirm ? '비밀번호가 일치하지 않습니다.' : '');
-    }
-    if (!touched.password) {
-      setTouched({ ...touched, password: true });
-    }
-  };
-
-  const handlePasswordConfirmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const passwordConfirm = e.target.value;
-    setFormData({ ...formData, passwordConfirm });
-    setPasswordConfirmError(validatePasswordConfirm(passwordConfirm));
-    if (!touched.passwordConfirm) {
-      setTouched({ ...touched, passwordConfirm: true });
-    }
-  };
-
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const name = e.target.value;
-    setFormData({ ...formData, name });
-    setNameError(validateName(name));
-    if (!touched.name) {
-      setTouched({ ...touched, name: true });
-    }
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const phone = e.target.value.replace(/[^0-9]/g, '');
-    setFormData({ ...formData, phone });
-    setPhoneError(validatePhone(phone));
-    if (!touched.phone) {
-      setTouched({ ...touched, phone: true });
-    }
-  };
-
-  const isFormValid = 
-    formData.email && 
-    formData.password && 
-    formData.passwordConfirm && 
-    formData.name && 
-    formData.phone &&
-    !emailError && 
-    !passwordError && 
-    !passwordConfirmError && 
-    !nameError && 
-    !phoneError &&
-    isVerified;
-
-  const handleSendVerification = async () => {
-    if (!formData.phone) {
-      setError('전화번호를 입력해주세요.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
+  const handleSocialLogin = async (provider: 'kakao' | 'naver') => {
     try {
-      const response = await fetch('/api/auth/verification/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: formData.phone })
+      if (provider === 'naver') {
+        window.location.href = '/api/auth/naver';
+        return;
+      }
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: provider,
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setIsVerificationSent(true);
-        setTimeLeft(300); // 5분 = 300초
-        
-        // 타이머 시작
-        const timer = setInterval(() => {
-          setTimeLeft((prev) => {
-            if (prev <= 1) {
-              clearInterval(timer);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-        
-        alert('인증번호가 발송되었습니다.');
-      } else {
-        setError(data.error || '인증번호 발송에 실패했습니다.');
+      if (error) {
+        setError(`${provider === 'kakao' ? '카카오' : '네이버'} 회원가입에 실패했습니다.`);
       }
     } catch (err) {
-      setError('인증번호 발송 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyCode = async () => {
-    if (!formData.verificationCode) {
-      setError('인증번호를 입력해주세요.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch('/api/auth/verification/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          phone: formData.phone,
-          code: formData.verificationCode 
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setIsVerified(true);
-        alert('전화번호 인증이 완료되었습니다.');
-      } else {
-        setError(data.error || '인증번호가 일치하지 않습니다.');
-      }
-    } catch (err) {
-      setError('인증 확인 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    // 유효성 검사
-    if (!formData.email || !formData.password || !formData.name || !formData.phone) {
-      setError('모든 필수 항목을 입력해주세요.');
-      return;
-    }
-
-    if (formData.password !== formData.passwordConfirm) {
-      setError('비밀번호가 일치하지 않습니다.');
-      return;
-    }
-
-    if (!isVerified) {
-      setError('전화번호 인증을 완료해주세요.');
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert('회원가입이 완료되었습니다!');
-        router.push('/auth/login');
-      } else {
-        setError(data.error || '회원가입에 실패했습니다.');
-      }
-    } catch (err) {
-      setError('회원가입 중 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
+      setError('소셜 회원가입 중 오류가 발생했습니다.');
     }
   };
 
   return (
     <div className={styles.card}>
-      <div className={styles.container} style={{ marginTop: '90px' }}>
-        <div className={styles.logoWrap}>
-          <img src="/logo.png" alt="한평생올케어 로고" className={styles.logo} />
-        </div>
+      <div className={styles.container}>
+        <div className={styles.logo}><img src="/logo.png" alt="한평생올케어 로고" /></div>
         <div className={styles.divider}>
           <span>회원가입</span>
         </div>
-
-        <form className={styles.loginForm} onSubmit={handleSubmit}>
-          <div className={styles.formGroup}>
-            <label htmlFor="email" className={styles.label}>이메일<span className={styles.required}>*</span></label>
-            <input
-              id="email"
-              type="text"
-              placeholder="abc@gccompany.co.kr"
-              value={formData.email}
-              onChange={handleEmailChange}
-              className={`${styles.input} ${emailError && touched.email ? styles.inputError : ''}`}
-            />
-            {emailError && touched.email && (
-              <div className={styles.errorMessage}>{emailError}</div>
-            )}
+        {error && (
+          <div className={styles.errorBox}>{error}</div>
+        )}
+        
+        <div style={{ marginBottom: '24px' }}>
+          <p style={{ 
+            fontSize: '14px', 
+            color: '#6b7280', 
+            marginBottom: '12px',
+            fontWeight: '600'
+          }}>
+            SNS 회원가입
+          </p>
+          <div className={styles.socialButtons}>
+            <button
+              type="button"
+              onClick={() => handleSocialLogin('kakao')}
+              className={styles.kakaoButton}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="#3C1E1E" viewBox="0 0 21 21"><path fill="current" d="M10.5 3.217c4.514 0 8 2.708 8 6.004 0 3.758-4.045 6.184-8 5.892-1.321-.093-1.707-.17-2.101-.23-1.425.814-2.728 2.344-3.232 2.334-.325-.19.811-2.896.533-3.114-.347-.244-3.157-1.329-3.2-4.958 0-3.199 3.486-5.928 8-5.928Z"></path></svg>
+              카카오로 시작하기
+            </button>
+            <button
+              type="button"
+              onClick={() => handleSocialLogin('naver')}
+              className={styles.naverButton}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="none" viewBox="0 0 21 21"><path fill="#fff" d="M4 16.717h4.377V9.98l4.203 6.737H17v-13h-4.377v6.737l-4.16-6.737H4v13Z"></path></svg>
+              네이버로 시작하기
+            </button>
           </div>
+        </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="password" className={styles.label}>비밀번호<span className={styles.required}>*</span></label>
-            <input
-              id="password"
-              type="password"
-              placeholder="8자 이상 입력하세요"
-              value={formData.password}
-              onChange={handlePasswordChange}
-              className={`${styles.input} ${passwordError && touched.password ? styles.inputError : ''}`}
-            />
-            {passwordError && touched.password && (
-              <div className={styles.errorMessage}>{passwordError}</div>
-            )}
+        <div style={{ marginBottom: '12px' }}>
+          <p style={{ 
+            fontSize: '14px', 
+            color: '#6b7280', 
+            marginBottom: '12px',
+            fontWeight: '600'
+          }}>
+            이메일 회원가입
+          </p>
+          <div className={styles.socialButtons}>
+            <Link
+              href="/auth/signup/email"
+              className={styles.emailButton}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="17" height="16" viewBox="0 0 20 16" fill="none"><path d="M2 16C1.45 16 0.979333 15.8043 0.588 15.413C0.196667 15.0217 0.000666667 14.5507 0 14V2C0 1.45 0.196 0.979333 0.588 0.588C0.98 0.196666 1.45067 0.000666667 2 0H18C18.55 0 19.021 0.196 19.413 0.588C19.805 0.98 20.0007 1.45067 20 2V14C20 14.55 19.8043 15.021 19.413 15.413C19.0217 15.805 18.5507 16.0007 18 16H2ZM10 9L2 4V14H18V4L10 9ZM10 7L18 2H2L10 7ZM2 4V2V14V4Z" fill="white"/></svg>
+              이메일로 시작하기
+            </Link>
           </div>
+        </div>
 
-          <div className={styles.formGroup}>
-            <label htmlFor="passwordConfirm" className={styles.label}>비밀번호 확인<span className={styles.required}>*</span></label>
-            <input
-              id="passwordConfirm"
-              type="password"
-              placeholder="비밀번호를 다시 입력하세요"
-              value={formData.passwordConfirm}
-              onChange={handlePasswordConfirmChange}
-              className={`${styles.input} ${passwordConfirmError && touched.passwordConfirm ? styles.inputError : ''}`}
-            />
-            {passwordConfirmError && touched.passwordConfirm && (
-              <div className={styles.errorMessage}>{passwordConfirmError}</div>
-            )}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="name" className={styles.label}>이름<span className={styles.required}>*</span></label>
-            <input
-              id="name"
-              type="text"
-              placeholder="이름을 입력하세요"
-              value={formData.name}
-              onChange={handleNameChange}
-              className={`${styles.input} ${nameError && touched.name ? styles.inputError : ''}`}
-            />
-            {nameError && touched.name && (
-              <div className={styles.errorMessage}>{nameError}</div>
-            )}
-          </div>
-
-          <div className={styles.formGroup}>
-            <label htmlFor="phone" className={styles.label}>
-              휴대폰 번호<span className={styles.required}>*</span>
-              {isVerified && <span className={styles.successBadge}>✓ 인증완료</span>}
-            </label>
-            <div className={styles.verificationGroup}>
-              <input
-                id="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handlePhoneChange}
-                placeholder="01012345678"
-                disabled={isVerified}
-                className={`${styles.input} ${styles.verificationInput} ${phoneError && touched.phone ? styles.inputError : ''}`}
-                style={{ backgroundColor: isVerified ? '#f3f4f6' : 'white' }}
-              />
-              <button
-                type="button"
-                onClick={handleSendVerification}
-                disabled={loading || isVerified || !!phoneError || (isVerificationSent && timeLeft > 0)}
-                className={styles.sendVerificationButton}
-              >
-                {isVerified ? '✓ 완료' : (isVerificationSent && timeLeft > 0) ? '재전송' : '인증번호 전송'}
-              </button>
-            </div>
-            {phoneError && touched.phone && !isVerified && (
-              <div className={styles.errorMessage}>{phoneError}</div>
-            )}
-          </div>
-
-          {isVerificationSent && !isVerified && (
-            <div className={styles.formGroup}>
-              <label htmlFor="verificationCode" className={styles.label}>
-                인증번호
-                {timeLeft > 0 && (
-                  <span className={styles.timerText}> {Math.floor(timeLeft / 60)}:{String(timeLeft % 60).padStart(2, '0')}</span>
-                )}
-              </label>
-              <div className={styles.verificationGroup}>
-                <input
-                  id="verificationCode"
-                  type="text"
-                  value={formData.verificationCode}
-                  onChange={(e) => setFormData({ ...formData, verificationCode: e.target.value })}
-                  placeholder="6자리 숫자"
-                  maxLength={6}
-                  className={`${styles.input} ${styles.verificationInput}`}
-                />
-                <button
-                  type="button"
-                  onClick={handleVerifyCode}
-                  disabled={loading}
-                  className={styles.verificationButton}
-                >
-                  확인
-                </button>
-              </div>
-            </div>
-          )}
-
-          <button type="submit" disabled={!isFormValid || loading} className={styles.loginButton}>
-            {loading ? '처리 중...' : '회원가입'}
-          </button>
-        </form>
-
-        <div className={styles.signupWrap}>
+        <div className={styles.signupWrap} style={{ marginTop: '24px' }}>
           <span>이미 계정이 있으신가요?</span>
           <Link href="/auth/login" className={styles.signupLink}>로그인</Link>
         </div>
-        {error && <div className={styles.errorBox}>{error}</div>}
       </div>
     </div>
   );

@@ -196,10 +196,10 @@ export default function PaymentPage() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <a
-                href="/payment/history"
+                href="/mypage"
                 style={{
                   padding: '1rem',
-                  backgroundColor: '#0070f3',
+                  backgroundColor: '#0051FF',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
@@ -210,7 +210,7 @@ export default function PaymentPage() {
                   textAlign: 'center'
                 }}
               >
-                결제내역 보기
+                내정보 관리로 이동
               </a>
               <a
                 href="/"
