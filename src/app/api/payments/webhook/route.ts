@@ -21,27 +21,26 @@ export async function POST(request: NextRequest) {
     
     console.log('PayApp webhook received:', body);
 
-    // 페이앱 응답 파라미터
+    // 페이앱 응답 파라미터 (실제 PayApp이 보내는 형식)
     const {
-      RETURNCODE,  // 결과코드 (0000: 성공)
-      RETURNMSG,   // 결과메시지
-      TRADEID,     // 거래번호
-      PRICE,       // 결제금액
-      GOODNAME,    // 상품명
-      RECVPHONE,   // 받는사람 전화번호
-      var1,        // 주문 데이터 (JSON)
-      OKTIME,      // 승인시간
-      BILLKEY      // 정기결제 키
+      pay_state,    // 결제 상태 (4: 결제완료)
+      mul_no,       // 거래번호
+      price,        // 결제금액
+      goodname,     // 상품명
+      recvphone,    // 받는사람 전화번호
+      var1,         // 주문 데이터 (JSON)
+      pay_date,     // 승인시간
+      rebill_no     // 정기결제 키
     } = body;
 
-    // 결제 성공 시
-    if (RETURNCODE === '0000') {
+    // 결제 성공 시 (pay_state === '4'는 결제완료)
+    if (pay_state === '4') {
       console.log('Payment success:', {
-        tradeId: TRADEID,
-        amount: PRICE,
-        goodName: GOODNAME,
-        approvedAt: OKTIME,
-        billKey: BILLKEY,
+        tradeId: mul_no,
+        amount: price,
+        goodName: goodname,
+        approvedAt: pay_date,
+        billKey: rebill_no,
         var1
       });
 
@@ -75,12 +74,12 @@ export async function POST(request: NextRequest) {
       console.log('최종 orderData:', orderData);
 
       // userId가 없으면 전화번호로 찾기
-      if (!userId && RECVPHONE) {
-        console.log('userId 없음, 전화번호로 찾기:', RECVPHONE);
+      if (!userId && recvphone) {
+        console.log('userId 없음, 전화번호로 찾기:', recvphone);
         const { data: userData, error: userFindError } = await supabaseAdmin
           .from('users')
           .select('id')
-          .eq('phone', RECVPHONE)
+          .eq('phone', recvphone)
           .maybeSingle();
 
         console.log('전화번호로 찾은 사용자:', userData);
@@ -103,12 +102,12 @@ export async function POST(request: NextRequest) {
           user_id: userId,
           plan: 'premium',
           status: 'active',
-          amount: parseInt(PRICE),
+          amount: parseInt(price),
           billing_cycle: 'monthly',
           start_date: new Date().toISOString(),
           next_billing_date: nextBillingDate.toISOString(),
-          payapp_bill_key: BILLKEY,
-          payapp_trade_id: TRADEID
+          payapp_bill_key: rebill_no,
+          payapp_trade_id: mul_no
         };
 
         console.log('구독 데이터:', subscriptionData);
@@ -153,7 +152,7 @@ export async function POST(request: NextRequest) {
           }
         }
       } else {
-        console.warn('User not found for payment. RECVPHONE:', RECVPHONE, 'var1:', var1);
+        console.warn('User not found for payment. recvphone:', recvphone, 'var1:', var1);
       }
 
       // 결제 내역 저장
@@ -162,21 +161,21 @@ export async function POST(request: NextRequest) {
         .insert({
           user_id: userId,
           order_id: orderData.orderId || `ORDER-${Date.now()}`,
-          trade_id: TRADEID,
-          amount: parseInt(PRICE),
-          good_name: GOODNAME,
-          customer_phone: RECVPHONE,
+          trade_id: mul_no,
+          amount: parseInt(price),
+          good_name: goodname,
+          customer_phone: recvphone,
           status: 'completed',
           payment_method: 'payapp',
-          approved_at: OKTIME ? new Date(OKTIME).toISOString() : new Date().toISOString()
+          approved_at: pay_date ? new Date(pay_date).toISOString() : new Date().toISOString()
         });
 
     } else {
       // 결제 실패
       console.log('Payment failed:', {
         orderId: var1,
-        errorCode: RETURNCODE,
-        errorMessage: RETURNMSG
+        errorCode: pay_state,
+        errorMessage: '결제 상태: ' + pay_state
       });
 
       // 실패 내역 저장
@@ -184,13 +183,14 @@ export async function POST(request: NextRequest) {
         .from('payments')
         .insert({
           order_id: var1 || `ORDER-${Date.now()}`,
-          amount: parseInt(PRICE) || 0,
-          good_name: GOODNAME || 'Unknown',
-          customer_phone: RECVPHONE,
+          trade_id: mul_no,
+          amount: parseInt(price) || 0,
+          good_name: goodname || 'Unknown',
+          customer_phone: recvphone,
           status: 'failed',
           payment_method: 'payapp',
-          error_code: RETURNCODE,
-          error_message: RETURNMSG
+          error_code: pay_state,
+          error_message: '결제 상태: ' + pay_state
         });
     }
 
