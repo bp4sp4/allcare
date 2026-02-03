@@ -9,7 +9,24 @@ function PaymentResultContent() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // URL 파라미터에서 결제 결과 정보 추출
+    // 팝업인지 확인
+    const isPopup = window.opener && window.opener !== window;
+    
+    if (isPopup) {
+      // 팝업인 경우: 부모 창을 /payment로 리다이렉트하고 팝업 닫기
+      console.log('결제 팝업 완료 - 부모 창 리다이렉트');
+      try {
+        window.opener.location.href = '/payment';
+        window.close();
+      } catch (e) {
+        console.error('부모 창 리다이렉트 실패:', e);
+        // 실패하면 현재 창에서 이동
+        window.location.href = '/payment';
+      }
+      return;
+    }
+
+    // 팝업이 아닌 경우 (직접 접근): 원래 로직 유지
     const params: any = {};
     searchParams.forEach((value, key) => {
       params[key] = value;
@@ -17,12 +34,9 @@ function PaymentResultContent() {
     
     console.log('Payment result params:', params);
     
-    // PayApp rebill은 returnurl에 파라미터를 전달하지 않음
-    // 단순히 페이지로만 이동
     const hasParams = Object.keys(params).length > 0;
     
     if (!hasParams) {
-      // 파라미터가 없으면 정기결제 등록 완료로 간주
       setResult({
         isRebill: true,
         success: true,
@@ -33,7 +47,6 @@ function PaymentResultContent() {
       setResult(params);
       setLoading(false);
       
-      // 결제 결과를 서버로 전송하여 저장
       if (params.RETURNCODE === '0000' || params.TRADEID) {
         fetch('/api/payments/result', {
           method: 'POST',
