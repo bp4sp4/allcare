@@ -578,29 +578,29 @@ export default function MyPage() {
             </div>
             <div className={styles.refundPolicyContent}>
               <div className={styles.policySection}>
-                <h4>환불 가능 조건</h4>
+                <h4>구독 및 결제 안내</h4>
                 <ul className={styles.policyList}>
-                  <li>결제 후 <strong>7일 이내</strong> 환불 요청 시</li>
-                  <li>서비스를 <strong>실질적으로 사용하지 않은 경우</strong></li>
-                  <li>결제 오류 등 정당한 사유가 있는 경우</li>
+                  <li>본 상품은 <strong>1년 정기 구독 상품</strong>으로, 최초 가입일 기준 1년마다 정기 결제가 발생합니다.</li>
+                  <li>결제와 동시에 '수강료 할인' 및 '매칭 시스템 접속 권한'이 부여됩니다.</li>
                 </ul>
               </div>
 
               <div className={styles.policySection}>
-                <h4>환불 불가 조건</h4>
+                <h4>청약철회 제한 - 필독</h4>
                 <ul className={styles.policyList}>
-                  <li>결제 후 7일이 경과한 경우</li>
-                  <li>서비스를 실질적으로 이용한 경우</li>
-                  <li>이미 환불 받은 이력이 있는 경우</li>
+                  <li>결제 후 아래 서비스 중 하나라도 이용한 경우, 디지털 컨텐츠 이용이 개시된 것으로 간주하여 <strong>환불 및 청약철회가 불가능</strong>합니다.</li>
+                  <li>학점은행제 수강신청 시 할인 혜택을 적용받은 경우</li>
+                  <li>실습 매칭 시스템에 접속하여 정보를 열람한 경우</li>
+                  <li>직업훈련 수강권(쿠폰 번호)을 확인하거나 발급받은 경우</li>
                 </ul>
               </div>
 
               <div className={styles.policySection}>
-                <h4>환불 처리 안내</h4>
+                <h4>제3조 (환불 및 중도 해지)</h4>
                 <ul className={styles.policyList}>
-                  <li>환불 요청 접수 후 <strong>3~5 영업일 이내</strong> 검토</li>
-                  <li>승인 시 결제 수단으로 <strong>자동 환불</strong> 처리</li>
-                  <li>카드 결제의 경우 카드사 정책에 따라 2~7일 소요</li>
+                  <li><strong>서비스 개시:</strong> 본 서비스는 결제 즉시 '수강료 할인 혜택' 및 '정보 열람 권한'이 부여되므로, 결제 완료 시 서비스 이용이 개시된 것으로 간주합니다.</li>
+                  <li><strong>중도 해지 시 공제:</strong> 환불 가능 대상일지라도 중도 해지 시에는 위약금과 수강료 할인 차액을 차감한 후 정산됩니다.</li>
+                  <li><strong>할인 회수:</strong> 1년 구독을 조건으로 제공된 혜택이므로, 중도 해지 시 이미 적용받은 수강료 할인 차액(정상가 - 할인가)을 공제한 후 잔여 금액을 환불합니다.</li>
                 </ul>
               </div>
 
