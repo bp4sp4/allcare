@@ -63,8 +63,12 @@ export async function GET(req: NextRequest) {
       nextBillingDate: subscription.next_billing_date 
         ? new Date(subscription.next_billing_date).toLocaleDateString('ko-KR')
         : null,
+      endDate: subscription.end_date 
+        ? new Date(subscription.end_date).toLocaleDateString('ko-KR')
+        : null,
       billingCycle: subscription.billing_cycle,
-      status: subscription.status
+      status: subscription.status,
+      cancelled_at: subscription.cancelled_at
     });
 
   } catch (error) {

@@ -17,6 +17,9 @@ interface SubscriptionInfo {
   plan?: string;
   startDate?: string;
   nextBillingDate?: string;
+  endDate?: string;
+  cancelled_at?: string;
+  status?: string;
 }
 
 export default function MyPage() {
