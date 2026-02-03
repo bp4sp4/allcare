@@ -19,7 +19,6 @@ declare global {
 
 export default function PaymentPage() {
   const [isPayAppLoaded, setIsPayAppLoaded] = useState(false);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [paymentData, setPaymentData] = useState({
     goodname: '올케어구독상품',
@@ -340,72 +339,27 @@ export default function PaymentPage() {
           </label>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setShowAdvanced(!showAdvanced)}
-          style={{
-            width: '100%',
-            padding: '0.5rem',
-            marginBottom: '1rem',
-            backgroundColor: 'transparent',
-            color: '#6b7280',
-            border: 'none',
-            fontSize: '0.875rem',
-            cursor: 'pointer',
-            textAlign: 'left',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem'
-          }}
-        >
-          <span>{showAdvanced ? '▼' : '▶'}</span>
-          추가 옵션 (선택사항)
-        </button>
-
-        {showAdvanced && (
-          <div style={{ marginBottom: '1rem', paddingLeft: '0.5rem' }}>
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-                이메일
-                <input
-                  type="email"
-                  value={paymentData.buyeremail}
-                  onChange={(e) => setPaymentData({ ...paymentData, buyeremail: e.target.value })}
-                  placeholder="example@email.com"
-                  style={{ 
-                    width: '100%', 
-                    padding: '0.75rem', 
-                    marginTop: '0.25rem',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '0.875rem'
-                  }}
-                />
-              </label>
-            </div>
-
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-                결제일 (매월)
-                <input
-                  type="number"
-                  min="1"
-                  max="28"
-                  value={paymentData.rebillCycleMonth}
-                  onChange={(e) => setPaymentData({ ...paymentData, rebillCycleMonth: e.target.value })}
-                  style={{ 
-                    width: '100%', 
-                    padding: '0.75rem', 
-                    marginTop: '0.25rem',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '0.875rem'
-                  }}
-                />
-              </label>
-            </div>
-          </div>
-        )}
+        <div style={{ marginBottom: '1rem' }}>
+          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
+            이메일
+            <input
+              type="email"
+              value={paymentData.buyeremail}
+              onChange={(e) => setPaymentData({ ...paymentData, buyeremail: e.target.value })}
+              placeholder="example@email.com"
+              style={{ 
+                width: '100%', 
+                padding: '0.75rem', 
+                marginTop: '0.25rem',
+                border: '2px solid #e5e7eb',
+                borderRadius: '8px',
+                fontSize: '1rem'
+              }}
+              onFocus={(e) => e.target.style.borderColor = '#0070f3'}
+              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+            />
+          </label>
+        </div>
 
         <button
           onClick={handlePayment}
