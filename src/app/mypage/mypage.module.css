@@ -115,6 +115,16 @@
   font-weight: 600;
 }
 
+.statusBadgeWarning {
+  display: inline-block;
+  padding: 6px 16px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .statusBadgeInactive {
   display: inline-block;
   padding: 6px 16px;
@@ -182,7 +192,8 @@
 }
 
 .cancelBtn,
-.refundBtn {
+.refundBtn,
+.renewBtn {
   flex: 1;
   padding: 12px 20px;
   background: white;
@@ -192,12 +203,23 @@
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+}
+
+.renewBtn {
+  background: #0051FF;
+  color: white;
+  border: none;
 }
 
 .cancelBtn:hover,
 .refundBtn:hover {
   background: #f9fafb;
+}
+
+.renewBtn:hover {
+  background: #0041CC;
+  transform: translateY(-1px);
 }
 
 /* 푸터 */

@@ -148,12 +148,32 @@ export default function MyPage() {
     }
   };
 
-  const handleSubscriptionAction = async (action: 'start' | 'cancel' | 'refund') => {
+  const handleSubscriptionAction = async (action: 'start' | 'cancel' | 'refund' | 'renew') => {
     try {
       const token = localStorage.getItem('token');
 
       if (action === 'start') {
         router.push('/payment');
+      } else if (action === 'renew') {
+        if (confirm('구독을 재갱신하시겠습니까? 다음 결제일부터 자동 결제가 재개됩니다.')) {
+          const response = await fetch('/api/subscription/renew', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            alert(data.error || '구독 재갱신에 실패했습니다.');
+            return;
+          }
+
+          alert('구독이 재갱신되었습니다!');
+          // 구독 정보 새로고침
+          fetchSubscriptionInfo();
+        }
       } else if (action === 'cancel') {
         if (confirm('구독을 취소하시겠습니까?')) {
           const response = await fetch('/api/subscription/cancel', {
@@ -284,7 +304,11 @@ export default function MyPage() {
             {subscription.isActive ? (
               <>
                 <div className={styles.subscriptionStatus}>
-                  <span className={styles.statusBadge}>구독 중</span>
+                  {subscription.cancelled_at ? (
+                    <span className={styles.statusBadgeWarning}>구독 중 (구독취소 상태)</span>
+                  ) : (
+                    <span className={styles.statusBadge}>구독 중</span>
+                  )}
                 </div>
                 <div className={styles.subscriptionDetails}>
                   <div className={styles.detailRow}>
@@ -295,24 +319,44 @@ export default function MyPage() {
                     <span className={styles.detailLabel}>시작일</span>
                     <span className={styles.detailValue}>{subscription.startDate || '2026.01.01'}</span>
                   </div>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>다음 결제일</span>
-                    <span className={styles.detailValue}>{subscription.nextBillingDate || '2026.02.01'}</span>
-                  </div>
+                  {subscription.cancelled_at ? (
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>이용 가능 종료일</span>
+                      <span className={styles.detailValue} style={{ color: '#ef4444', fontWeight: 'bold' }}>
+                        {subscription.endDate || subscription.nextBillingDate || '-'}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className={styles.detailRow}>
+                      <span className={styles.detailLabel}>다음 결제일</span>
+                      <span className={styles.detailValue}>{subscription.nextBillingDate || '2026.02.01'}</span>
+                    </div>
+                  )}
                 </div>
                 <div className={styles.subscriptionActions}>
-                  <button 
-                    className={styles.cancelBtn}
-                    onClick={() => handleSubscriptionAction('cancel')}
-                  >
-                    구독 취소
-                  </button>
-                  <button 
-                    className={styles.refundBtn}
-                    onClick={() => handleSubscriptionAction('refund')}
-                  >
-                    환불 요청
-                  </button>
+                  {subscription.cancelled_at ? (
+                    <button 
+                      className={styles.renewBtn}
+                      onClick={() => handleSubscriptionAction('renew')}
+                    >
+                      재갱신
+                    </button>
+                  ) : (
+                    <>
+                      <button 
+                        className={styles.cancelBtn}
+                        onClick={() => handleSubscriptionAction('cancel')}
+                      >
+                        구독 취소
+                      </button>
+                      <button 
+                        className={styles.refundBtn}
+                        onClick={() => handleSubscriptionAction('refund')}
+                      >
+                        환불 요청
+                      </button>
+                    </>
+                  )}
                 </div>
               </>
             ) : (
