@@ -3,7 +3,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
   padding: 20px;
 }
 
@@ -73,8 +73,8 @@
 
 .input:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #3182ce;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
 }
 
 .input::placeholder {
@@ -82,7 +82,7 @@
 }
 
 .submitBtn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
   color: white;
   padding: 14px 24px;
   border: none;
@@ -96,7 +96,7 @@
 
 .submitBtn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(49, 130, 206, 0.4);
 }
 
 .submitBtn:disabled {

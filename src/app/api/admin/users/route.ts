@@ -92,9 +92,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // 관리자 계정 목록 조회
+    const { data: adminUsers } = await supabaseAdmin
+      .from('admin_users')
+      .select('email');
+
+    const adminEmails = new Set(adminUsers?.map(admin => admin.email) || []);
+
+    // 관리자 계정을 제외한 회원 목록만 반환
+    const filteredUsers = users?.filter(user => !adminEmails.has(user.email)) || [];
+
     return NextResponse.json({
       success: true,
-      users: users || []
+      users: filteredUsers
     });
   } catch (error) {
     console.error('Admin users API error:', error);

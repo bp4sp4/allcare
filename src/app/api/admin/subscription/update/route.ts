@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import { createClient } from '@supabase/supabase-js';
+import { cancelRebill } from '@/lib/payapp';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -40,28 +41,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userId, action } = await request.json();
+    const { userId, status } = await request.json();
 
-    if (!userId || !action) {
+    if (!userId || !status) {
       return NextResponse.json(
         { error: '필수 정보가 누락되었습니다.' },
         { status: 400 }
       );
     }
 
-    if (action !== 'activate' && action !== 'cancel') {
+    if (status !== 'active' && status !== 'cancel_scheduled' && status !== 'cancelled') {
       return NextResponse.json(
-        { error: '유효하지 않은 액션입니다.' },
+        { error: '유효하지 않은 상태입니다.' },
         { status: 400 }
       );
     }
 
-    // 회원의 구독 정보 조회
+    // 회원의 구독 정보 조회 (status가 active 또는 cancelled 모두 조회)
     const { data: subscription, error: fetchError } = await supabaseAdmin
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
-      .eq('status', 'active')
+      .or('status.eq.active,status.eq.cancelled')
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
     if (fetchError || !subscription) {
@@ -71,54 +74,74 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 구독 상태 업데이트
-    if (action === 'cancel') {
-      // 구독 취소 (다음 결제일까지 사용 가능)
-      const { error: updateError } = await supabaseAdmin
-        .from('subscriptions')
-        .update({
-          cancelled_at: new Date().toISOString(),
-          end_date: subscription.next_billing_date,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', subscription.id);
+    let updateData: any = {
+      updated_at: new Date().toISOString()
+    };
 
-      if (updateError) {
-        console.error('Update error:', updateError);
-        return NextResponse.json(
-          { error: '구독 취소에 실패했습니다.' },
-          { status: 500 }
-        );
+    // 구독 상태별 처리
+    if (status === 'active') {
+      // 구독중 (정상)
+      updateData = {
+        ...updateData,
+        status: 'active',
+        cancelled_at: null,
+        end_date: null
+      };
+    } else if (status === 'cancel_scheduled') {
+      // 구독취소 상태 (다음 결제일까지 사용 가능)
+      // PayApp 정기결제 해지 호출
+      if (subscription.payapp_bill_key) {
+        const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
+        const linkKey = process.env.PAYAPP_LINK_KEY || '';
+
+        if (payappUserId && linkKey) {
+          const rebillCancelResult = await cancelRebill({
+            userId: payappUserId,
+            linkKey,
+            rebillNo: subscription.payapp_bill_key,
+          });
+
+          if (!rebillCancelResult.success) {
+            console.error('PayApp rebill cancel failed:', rebillCancelResult.error);
+            // 실패해도 계속 진행 (DB에서는 취소 처리)
+          }
+        }
       }
 
-      return NextResponse.json({
-        success: true,
-        message: '구독이 취소되었습니다.'
-      });
-    } else if (action === 'activate') {
-      // 구독 재활성화
-      const { error: updateError } = await supabaseAdmin
-        .from('subscriptions')
-        .update({
-          cancelled_at: null,
-          end_date: null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', subscription.id);
-
-      if (updateError) {
-        console.error('Update error:', updateError);
-        return NextResponse.json(
-          { error: '구독 활성화에 실패했습니다.' },
-          { status: 500 }
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        message: '구독이 활성화되었습니다.'
-      });
+      updateData = {
+        ...updateData,
+        status: 'active',
+        cancelled_at: new Date().toISOString(),
+        end_date: subscription.next_billing_date
+      };
+    } else if (status === 'cancelled') {
+      // 취소됨 (즉시 종료)
+      updateData = {
+        ...updateData,
+        status: 'cancelled',
+        cancelled_at: new Date().toISOString(),
+        end_date: new Date().toISOString()
+      };
     }
+
+    // 구독 상태 업데이트
+    const { error: updateError } = await supabaseAdmin
+      .from('subscriptions')
+      .update(updateData)
+      .eq('id', subscription.id);
+
+    if (updateError) {
+      console.error('Update error:', updateError);
+      return NextResponse.json(
+        { error: '구독 상태 변경에 실패했습니다.' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: '구독 상태가 변경되었습니다.'
+    });
   } catch (error) {
     console.error('Admin subscription update API error:', error);
     return NextResponse.json(

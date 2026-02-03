@@ -44,7 +44,7 @@ export default function AdminDashboardPage() {
   // 모달 상태
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
-  const [modalAction, setModalAction] = useState<'activate' | 'cancel' | null>(null);
+  const [newStatus, setNewStatus] = useState<'active' | 'cancel_scheduled' | 'cancelled'>('active');
 
   useEffect(() => {
     checkAuth();
@@ -126,20 +126,27 @@ export default function AdminDashboardPage() {
     setCurrentPage(1);
   };
 
-  const openModal = (user: UserData, action: 'activate' | 'cancel') => {
+  const openModal = (user: UserData) => {
     setSelectedUser(user);
-    setModalAction(action);
+    // 현재 상태 설정
+    if (user.cancelled_at) {
+      setNewStatus('cancel_scheduled');
+    } else if (user.subscription_status === 'active') {
+      setNewStatus('active');
+    } else {
+      setNewStatus('cancelled');
+    }
     setShowModal(true);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSelectedUser(null);
-    setModalAction(null);
+    setNewStatus('active');
   };
 
   const handleSubscriptionAction = async () => {
-    if (!selectedUser || !modalAction) return;
+    if (!selectedUser) return;
 
     try {
       const token = localStorage.getItem('admin_token');
@@ -151,7 +158,7 @@ export default function AdminDashboardPage() {
         },
         body: JSON.stringify({
           userId: selectedUser.user_id,
-          action: modalAction
+          status: newStatus
         })
       });
 
@@ -159,7 +166,8 @@ export default function AdminDashboardPage() {
         throw new Error('구독 상태 변경에 실패했습니다.');
       }
 
-      alert(`구독 상태가 ${modalAction === 'activate' ? '활성화' : '취소'}되었습니다.`);
+      const statusText = newStatus === 'active' ? '구독중' : newStatus === 'cancel_scheduled' ? '구독취소 상태' : '취소됨';
+      alert(`구독 상태가 "${statusText}"로 변경되었습니다.`);
       closeModal();
       fetchUsers();
       fetchStats();
@@ -338,15 +346,10 @@ export default function AdminDashboardPage() {
                     <td>
                       {user.subscription_status === 'active' && (
                         <button
-                          onClick={() =>
-                            openModal(
-                              user,
-                              user.cancelled_at ? 'activate' : 'cancel'
-                            )
-                          }
+                          onClick={() => openModal(user)}
                           className={styles.actionBtn}
                         >
-                          {user.cancelled_at ? '활성화' : '취소'}
+                          상태변경
                         </button>
                       )}
                     </td>
@@ -389,20 +392,34 @@ export default function AdminDashboardPage() {
         )}
       </main>
 
-      {/* 확인 모달 */}
+      {/* 구독 상태 변경 모달 */}
       {showModal && selectedUser && (
         <div className={styles.modal} onClick={closeModal}>
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <h3 className={styles.modalTitle}>
-              {modalAction === 'activate' ? '구독 활성화' : '구독 취소'}
-            </h3>
-            <p>
-              <strong>{selectedUser.email}</strong> 회원의 구독을{' '}
-              {modalAction === 'activate' ? '활성화' : '취소'}하시겠습니까?
+            <h3 className={styles.modalTitle}>구독 상태 변경</h3>
+            <p className={styles.userEmail}>
+              <strong>{selectedUser.email}</strong>
             </p>
+            <div className={styles.statusSelect}>
+              <label className={styles.statusLabel}>변경할 상태 선택:</label>
+              <select
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value as 'active' | 'cancel_scheduled' | 'cancelled')}
+                className={styles.statusDropdown}
+              >
+                <option value="active">구독중 (정상)</option>
+                <option value="cancel_scheduled">구독취소 상태 (다음 결제일까지 유지)</option>
+                <option value="cancelled">취소됨 (즉시 종료)</option>
+              </select>
+            </div>
+            <div className={styles.statusDescription}>
+              {newStatus === 'active' && '• 정상 구독 상태로 다음 결제일에 자동 결제됩니다.'}
+              {newStatus === 'cancel_scheduled' && '• 다음 결제일까지 서비스 이용 가능하며, 자동 결제되지 않습니다.'}
+              {newStatus === 'cancelled' && '• 즉시 구독이 종료되며 서비스 이용이 불가능합니다.'}
+            </div>
             <div className={styles.modalActions}>
               <button onClick={handleSubscriptionAction} className={styles.confirmBtn}>
-                확인
+                변경
               </button>
               <button onClick={closeModal} className={styles.cancelBtn}>
                 취소

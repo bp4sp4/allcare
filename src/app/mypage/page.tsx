@@ -22,10 +22,21 @@ interface SubscriptionInfo {
   status?: string;
 }
 
+interface PaymentHistory {
+  id: string;
+  date: string;
+  plan: string;
+  amount: number;
+  status: string;
+  billingCycle: string;
+  paymentMethod: string;
+}
+
 export default function MyPage() {
   const router = useRouter();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionInfo>({ isActive: false });
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -45,6 +56,7 @@ export default function MyPage() {
     // 사용자 정보 불러오기 (API 호출 시뮬레이션)
     fetchUserInfo();
     fetchSubscriptionInfo();
+    fetchPaymentHistory();
   }, [router]);
 
   const fetchUserInfo = async () => {
@@ -107,7 +119,32 @@ export default function MyPage() {
       setSubscription({ isActive: false });
     }
   };
+  const fetchPaymentHistory = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        return;
+      }
 
+      const response = await fetch('/api/payments/history', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Payment history error:', errorData);
+        return;
+      }
+
+      const data = await response.json();
+      setPaymentHistory(data.payments || []);
+    } catch (err: any) {
+      console.error('결제 내역 로드 실패:', err.message);
+    }
+  };
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -379,6 +416,52 @@ export default function MyPage() {
                   </button>
                 </div>
               </>
+            )}
+          </div>
+        </section>
+
+        {/* 결제 내역 섹션 */}
+        <section className={styles.section}>
+          <h2 className={styles.sectionTitle}>결제 내역</h2>
+          <div className={styles.paymentHistoryCard}>
+            {paymentHistory.length > 0 ? (
+              <div className={styles.paymentTable}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>결제일</th>
+                      <th>플랜</th>
+                      <th>금액</th>
+                      <th>결제방법</th>
+                      <th>상태</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paymentHistory.map((payment) => (
+                      <tr key={payment.id}>
+                        <td>{new Date(payment.date).toLocaleDateString('ko-KR')}</td>
+                        <td>{payment.plan}</td>
+                        <td>{payment.amount.toLocaleString()}원</td>
+                        <td>{payment.paymentMethod}</td>
+                        <td>
+                          <span className={
+                            payment.status === 'active' 
+                              ? styles.statusBadgeActive
+                              : payment.status === 'cancelled'
+                              ? styles.statusBadgeCancelled
+                              : styles.statusBadgeExpired
+                          }>
+                            {payment.status === 'active' ? '활성' : 
+                             payment.status === 'cancelled' ? '취소됨' : '만료'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className={styles.emptyMessage}>결제 내역이 없습니다.</p>
             )}
           </div>
         </section>

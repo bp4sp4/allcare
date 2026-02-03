@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { cancelPayment } from '@/lib/payapp';
+import { cancelRebill } from '@/lib/payapp';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
@@ -45,11 +45,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 구독 취소: PayApp 정기결제 키 삭제 (다음 결제 중지)
-    // 하지만 이번 달은 계속 사용 가능 (end_date를 next_billing_date로 설정)
-    
-    // PayApp 정기결제 삭제는 하지 않음 - 단순히 DB에서만 다음 결제 안되도록 표시
-    // (실제로는 PayApp 정기결제 키 삭제 API를 호출해야 하지만 여기서는 생략)
+    // PayApp 정기결제 해지 (다음 결제 주기에 자동 결제 안 됨)
+    if (subscription.payapp_bill_key) {
+      const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
+      const linkKey = process.env.PAYAPP_LINK_KEY || '';
+
+      if (!payappUserId || !linkKey) {
+        console.error('PayApp credentials not configured');
+        return NextResponse.json(
+          { error: 'PayApp 설정이 올바르지 않습니다.' },
+          { status: 500 }
+        );
+      }
+
+      const rebillCancelResult = await cancelRebill({
+        userId: payappUserId,
+        linkKey,
+        rebillNo: subscription.payapp_bill_key,
+      });
+
+      if (!rebillCancelResult.success) {
+        console.error('PayApp rebill cancel failed:', rebillCancelResult.error);
+        // 실패해도 계속 진행 (DB에서는 취소 처리)
+      }
+    }
 
     // 구독 상태 업데이트: 다음 결제일까지만 사용 가능하도록 설정
     const { error: updateError } = await supabaseAdmin
@@ -58,7 +77,6 @@ export async function POST(req: NextRequest) {
         status: 'active', // 여전히 활성 상태 유지
         cancelled_at: new Date().toISOString(),
         end_date: subscription.next_billing_date, // 다음 결제일까지 사용 가능
-        // auto_renew 같은 필드가 있다면 false로 설정
       })
       .eq('id', subscription.id);
 

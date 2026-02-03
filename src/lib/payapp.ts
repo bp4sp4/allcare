@@ -94,6 +94,58 @@ export async function cancelPayment(params: PayAppCancelParams) {
   }
 }
 
+interface PayAppRebillCancelParams {
+  userId: string;
+  linkKey: string;
+  rebillNo: string; // 정기결제요청 등록번호 (bill_key)
+}
+
+/**
+ * PayApp 정기결제 해지
+ * 정기결제 해지가 되면 다음 정기 결제 주기에 정기 결제가 발생되지 않음
+ */
+export async function cancelRebill(params: PayAppRebillCancelParams) {
+  const formData = new URLSearchParams();
+  formData.append('cmd', 'rebillCancel');
+  formData.append('userid', params.userId);
+  formData.append('linkkey', params.linkKey);
+  formData.append('rebill_no', params.rebillNo);
+
+  try {
+    const response = await fetch(PAYAPP_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: formData.toString(),
+    });
+
+    const text = await response.text();
+    const result = new URLSearchParams(text);
+
+    const state = result.get('state');
+    const errorMessage = result.get('errorMessage');
+
+    if (state === '1') {
+      return {
+        success: true,
+        message: '정기결제가 해지되었습니다.',
+      };
+    } else {
+      return {
+        success: false,
+        error: errorMessage || '정기결제 해지에 실패했습니다.',
+      };
+    }
+  } catch (error) {
+    console.error('PayApp rebill cancel error:', error);
+    return {
+      success: false,
+      error: 'PayApp API 호출 중 오류가 발생했습니다.',
+    };
+  }
+}
+
 /**
  * PayApp 결제 취소 요청
  * D+5일 이후 또는 정산 완료된 경우

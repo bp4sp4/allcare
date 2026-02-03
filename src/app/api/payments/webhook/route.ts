@@ -30,7 +30,11 @@ export async function POST(request: NextRequest) {
       recvphone,    // 받는사람 전화번호
       var1,         // 주문 데이터 (JSON)
       pay_date,     // 승인시간
-      rebill_no     // 정기결제 키
+      rebill_no,    // 정기결제 키
+      pay_type,     // 결제수단 (1=신용카드, 6=계좌이체, 15=카카오페이, 16=네이버페이, 25=토스페이)
+      card_name,    // 신용카드명
+      naverpay,     // 네이버결제 구분 ('card' 또는 'bank')
+      vbank         // 은행명 (가상계좌 결제 시)
     } = body;
 
     // 결제 성공 시 (pay_state === '4'는 결제완료)
@@ -41,8 +45,51 @@ export async function POST(request: NextRequest) {
         goodName: goodname,
         approvedAt: pay_date,
         billKey: rebill_no,
+        payType: pay_type,
+        cardName: card_name,
+        naverpay: naverpay,
+        vbank: vbank,
         var1
       });
+
+      // 결제수단 이름 변환
+      const getPaymentMethodName = (payType: string, cardName?: string, naverpay?: string, vbank?: string) => {
+        const type = parseInt(payType);
+        switch (type) {
+          case 1:
+            if (cardName) return `${cardName}`; // 예: "삼성카드"
+            return '신용카드';
+          case 2:
+            return '휴대전화';
+          case 4:
+            return '대면결제';
+          case 6:
+            return '계좌이체';
+          case 7:
+            if (vbank) return `가상계좌 (${vbank})`;
+            return '가상계좌';
+          case 15:
+            return '카카오페이';
+          case 16:
+            if (naverpay === 'card') return '네이버페이 (카드)';
+            if (naverpay === 'bank') return '네이버페이 (계좌)';
+            return '네이버페이';
+          case 17:
+            return '등록결제';
+          case 21:
+            return '스마일페이';
+          case 23:
+            return '애플페이';
+          case 24:
+            return '내통장결제';
+          case 25:
+            return '토스페이';
+          default:
+            return '자동결제';
+        }
+      };
+
+      const paymentMethodName = getPaymentMethodName(pay_type, card_name, naverpay, vbank);
 
       // var1에서 user_id 추출
       let userId = null;
@@ -107,7 +154,10 @@ export async function POST(request: NextRequest) {
           start_date: new Date().toISOString(),
           next_billing_date: nextBillingDate.toISOString(),
           payapp_bill_key: rebill_no,
-          payapp_trade_id: mul_no
+          payapp_trade_id: mul_no,
+          payment_type: pay_type ? parseInt(pay_type) : null,
+          card_name: card_name || null,
+          payment_method_name: paymentMethodName
         };
 
         console.log('구독 데이터:', subscriptionData);
