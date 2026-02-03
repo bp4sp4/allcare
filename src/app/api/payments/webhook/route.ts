@@ -49,14 +49,21 @@ export async function POST(request: NextRequest) {
       let userId = null;
       let orderData: any = {};
 
+      console.log('=== var1 파싱 시작 ===');
+      console.log('var1 원본:', var1);
+      console.log('var1 타입:', typeof var1);
+
       try {
         // var1이 JSON 형태인 경우 파싱
         if (var1) {
           try {
             orderData = JSON.parse(var1);
             userId = orderData.userId;
+            console.log('var1 파싱 성공:', orderData);
+            console.log('추출된 userId:', userId);
           } catch (e) {
             // JSON이 아닌 경우 orderId로만 사용
+            console.log('var1 JSON 파싱 실패, 문자열로 처리:', e);
             orderData = { orderId: var1 };
           }
         }
@@ -64,45 +71,61 @@ export async function POST(request: NextRequest) {
         console.error('var1 parse error:', err);
       }
 
+      console.log('최종 userId:', userId);
+      console.log('최종 orderData:', orderData);
+
       // userId가 없으면 전화번호로 찾기
       if (!userId && RECVPHONE) {
-        const { data: userData } = await supabaseAdmin
+        console.log('userId 없음, 전화번호로 찾기:', RECVPHONE);
+        const { data: userData, error: userFindError } = await supabaseAdmin
           .from('users')
           .select('id')
           .eq('phone', RECVPHONE)
           .maybeSingle();
 
+        console.log('전화번호로 찾은 사용자:', userData);
+        console.log('사용자 조회 에러:', userFindError);
+
         if (userData) {
           userId = userData.id;
+          console.log('전화번호로 찾은 userId:', userId);
         }
       }
 
       // userId가 있으면 구독 정보 저장
+      console.log('구독 저장 시작, userId:', userId);
       if (userId) {
         // 구독 정보 생성 또는 업데이트
         const nextBillingDate = new Date();
         nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
 
-        const { error: subscriptionError } = await supabaseAdmin
+        const subscriptionData = {
+          user_id: userId,
+          plan: 'premium',
+          status: 'active',
+          amount: parseInt(PRICE),
+          billing_cycle: 'monthly',
+          start_date: new Date().toISOString(),
+          next_billing_date: nextBillingDate.toISOString(),
+          payapp_bill_key: BILLKEY,
+          payapp_trade_id: TRADEID
+        };
+
+        console.log('구독 데이터:', subscriptionData);
+
+        const { data: subscriptionResult, error: subscriptionError } = await supabaseAdmin
           .from('subscriptions')
-          .upsert({
-            user_id: userId,
-            plan: 'premium',
-            status: 'active',
-            amount: parseInt(PRICE),
-            billing_cycle: 'monthly',
-            start_date: new Date().toISOString(),
-            next_billing_date: nextBillingDate.toISOString(),
-            payapp_bill_key: BILLKEY,
-            payapp_trade_id: TRADEID
-          }, {
+          .upsert(subscriptionData, {
             onConflict: 'user_id'
-          });
+          })
+          .select();
 
         if (subscriptionError) {
-          console.error('Subscription creation error:', subscriptionError);
+          console.error('❌ Subscription creation error:', subscriptionError);
+          console.error('에러 상세:', JSON.stringify(subscriptionError, null, 2));
         } else {
-          console.log('Subscription created/updated for user:', userId);
+          console.log('✅ Subscription created/updated for user:', userId);
+          console.log('저장된 구독 데이터:', subscriptionResult);
         }
 
         // users 테이블에 이름/전화번호 업데이트 (결제 폼에서 입력한 데이터)
