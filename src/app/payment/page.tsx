@@ -404,25 +404,6 @@ export default function PaymentPage() {
                 />
               </label>
             </div>
-
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
-                구독 만료일
-                <input
-                  type="date"
-                  value={paymentData.rebillExpire}
-                  onChange={(e) => setPaymentData({ ...paymentData, rebillExpire: e.target.value })}
-                  style={{ 
-                    width: '100%', 
-                    padding: '0.75rem', 
-                    marginTop: '0.25rem',
-                    border: '2px solid #e5e7eb',
-                    borderRadius: '8px',
-                    fontSize: '0.875rem'
-                  }}
-                />
-              </label>
-            </div>
           </div>
         )}
 
