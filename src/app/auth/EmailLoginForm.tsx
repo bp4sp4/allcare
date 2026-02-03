@@ -83,6 +83,8 @@ export default function EmailLoginForm({ onSuccess }: EmailLoginFormProps) {
       if (response.ok) {
         if (data.token) {
           localStorage.setItem('token', data.token);
+          // Header에 로그인 상태 변경 알림
+          window.dispatchEvent(new Event('authChange'));
         }
         if (onSuccess) onSuccess();
         router.push('/');

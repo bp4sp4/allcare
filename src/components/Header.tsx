@@ -13,9 +13,31 @@ export default function Header() {
   const pathname = usePathname();
 
   useEffect(() => {
+    // 초기 로그인 상태 확인
+    const checkAuth = () => {
+      const token = localStorage.getItem('token');
+      setIsLoggedIn(!!token);
+    };
+
+    checkAuth();
+
+    // storage 이벤트 리스너 (다른 탭에서의 변경 감지)
+    window.addEventListener('storage', checkAuth);
+
+    // 커스텀 이벤트 리스너 (같은 탭에서의 변경 감지)
+    window.addEventListener('authChange', checkAuth);
+
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+      window.removeEventListener('authChange', checkAuth);
+    };
+  }, []);
+
+  // pathname 변경 시에도 로그인 상태 재확인
+  useEffect(() => {
     const token = localStorage.getItem('token');
     setIsLoggedIn(!!token);
-  }, []);
+  }, [pathname]);
 
   // /admin 경로에서는 헤더 숨김
   if (pathname?.startsWith('/admin')) {
@@ -64,6 +86,8 @@ export default function Header() {
                 localStorage.removeItem('token');
                 setIsLoggedIn(false);
                 setIsMenuOpen(false);
+                // Header에 로그아웃 상태 변경 알림
+                window.dispatchEvent(new Event('authChange'));
               }}>
                 로그아웃
               </Link>

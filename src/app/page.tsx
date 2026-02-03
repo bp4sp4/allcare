@@ -18,6 +18,8 @@ export default function Home() {
     
     if (urlToken) {
       localStorage.setItem('token', urlToken);
+      // Header에 로그인 상태 변경 알림
+      window.dispatchEvent(new Event('authChange'));
       // URL 정리
       window.history.replaceState({}, '', '/');
     }
@@ -39,6 +41,9 @@ export default function Home() {
       
       // 로컬 스토리지 토큰 삭제
       localStorage.removeItem('token');
+      
+      // Header에 로그아웃 상태 변경 알림
+      window.dispatchEvent(new Event('authChange'));
       
       // 상태 업데이트
       setIsLoggedIn(false);
