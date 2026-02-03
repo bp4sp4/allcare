@@ -24,10 +24,14 @@ export default function LoginPage() {
       }
 
       // 카카오는 Supabase OAuth 사용
+      const redirectUrl = process.env.NODE_ENV === 'production'
+        ? 'https://allcare-korhrd.vercel.app/auth/callback'
+        : 'http://localhost:3000/auth/callback';
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: provider,
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`
+          redirectTo: redirectUrl
         }
       });
 
