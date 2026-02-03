@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import { cancelPayment, requestPaymentCancellation } from '@/lib/payapp';
 import jwt from 'jsonwebtoken';
 
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     const userId = decoded.userId;
 
     // 활성 구독 조회
-    const { data: subscription, error: subError } = await supabase
+    const { data: subscription, error: subError } = await supabaseAdmin
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 구독 상태를 'cancelled'로 업데이트
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
         status: 'cancelled',

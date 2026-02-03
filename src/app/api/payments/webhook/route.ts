@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 
 // 페이앱 웹훅 처리 (결제 결과 수신)
 export async function POST(request: NextRequest) {
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
 
       // userId가 없으면 전화번호로 찾기
       if (!userId && RECVPHONE) {
-        const { data: userData } = await supabase
+        const { data: userData } = await supabaseAdmin
           .from('users')
           .select('id')
           .eq('phone', RECVPHONE)
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
         const nextBillingDate = new Date();
         nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
 
-        const { error: subscriptionError } = await supabase
+        const { error: subscriptionError } = await supabaseAdmin
           .from('subscriptions')
           .upsert({
             user_id: userId,
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
             updateData.phone = orderData.phone;
           }
           
-          const { error: userUpdateError } = await supabase
+          const { error: userUpdateError } = await supabaseAdmin
             .from('users')
             .upsert(updateData, {
               onConflict: 'id'
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
       }
 
       // 결제 내역 저장
-      await supabase
+      await supabaseAdmin
         .from('payments')
         .insert({
           user_id: userId,
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
       });
 
       // 실패 내역 저장
-      await supabase
+      await supabaseAdmin
         .from('payments')
         .insert({
           order_id: var1 || `ORDER-${Date.now()}`,
