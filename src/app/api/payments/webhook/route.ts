@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       PRICE,       // 결제금액
       GOODNAME,    // 상품명
       RECVPHONE,   // 받는사람 전화번호
-      var1,        // 주문번호 또는 user_id (커스텀 변수)
+      var1,        // 주문 데이터 (JSON)
       OKTIME,      // 승인시간
       BILLKEY      // 정기결제 키
     } = body;
@@ -38,30 +38,46 @@ export async function POST(request: NextRequest) {
     if (RETURNCODE === '0000') {
       console.log('Payment success:', {
         tradeId: TRADEID,
-        orderId: var1,
         amount: PRICE,
         goodName: GOODNAME,
         approvedAt: OKTIME,
-        billKey: BILLKEY
+        billKey: BILLKEY,
+        var1
       });
 
-      // var1에서 user_id 추출 (예: "ORDER-userid" 형태로 전송했다면)
-      // 또는 phone 번호로 사용자 찾기
+      // var1에서 user_id 추출
       let userId = null;
+      let orderData: any = {};
 
-      // 전화번호로 사용자 찾기
-      if (RECVPHONE) {
+      try {
+        // var1이 JSON 형태인 경우 파싱
+        if (var1) {
+          try {
+            orderData = JSON.parse(var1);
+            userId = orderData.userId;
+          } catch (e) {
+            // JSON이 아닌 경우 orderId로만 사용
+            orderData = { orderId: var1 };
+          }
+        }
+      } catch (err) {
+        console.error('var1 parse error:', err);
+      }
+
+      // userId가 없으면 전화번호로 찾기
+      if (!userId && RECVPHONE) {
         const { data: userData } = await supabase
           .from('users')
           .select('id')
           .eq('phone', RECVPHONE)
-          .single();
+          .maybeSingle();
 
         if (userData) {
           userId = userData.id;
         }
       }
 
+      // userId가 있으면 구독 정보 저장
       if (userId) {
         // 구독 정보 생성 또는 업데이트
         const nextBillingDate = new Date();
@@ -88,6 +104,22 @@ export async function POST(request: NextRequest) {
         } else {
           console.log('Subscription created/updated for user:', userId);
         }
+
+        // users 테이블에 이름/전화번호 업데이트 (없으면 추가)
+        if (orderData.name && orderData.phone) {
+          await supabase
+            .from('users')
+            .upsert({
+              id: userId,
+              name: orderData.name,
+              phone: orderData.phone
+            }, {
+              onConflict: 'id',
+              ignoreDuplicates: false
+            });
+        }
+      } else {
+        console.warn('User not found for payment. RECVPHONE:', RECVPHONE, 'var1:', var1);
       }
 
       // 결제 내역 저장
@@ -95,7 +127,7 @@ export async function POST(request: NextRequest) {
         .from('payments')
         .insert({
           user_id: userId,
-          order_id: var1 || `ORDER-${Date.now()}`,
+          order_id: orderData.orderId || `ORDER-${Date.now()}`,
           trade_id: TRADEID,
           amount: parseInt(PRICE),
           good_name: GOODNAME,

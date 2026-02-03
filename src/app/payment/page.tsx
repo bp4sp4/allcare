@@ -60,12 +60,24 @@ export default function PaymentPage() {
       return;
     }
 
+    // localStorage에서 토큰 가져와서 user_id 추출
+    const token = localStorage.getItem('token');
+    let userId = '';
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        userId = payload.userId || '';
+      } catch (e) {
+        console.error('Token parse error:', e);
+      }
+    }
+
     // 현재 도메인 가져오기 (배포 환경 대응)
     const baseUrl = window.location.origin;
     const shopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어';
-    const userId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
+    const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
 
-    if (!userId) {
+    if (!payappUserId) {
       alert('결제 시스템 설정 오류입니다. 관리자에게 문의하세요.');
       console.error('PAYAPP_USER_ID is not set');
       return;
@@ -73,8 +85,16 @@ export default function PaymentPage() {
 
     try {
       // PayApp 초기화
-      window.PayApp.setDefault('userid', userId);
+      window.PayApp.setDefault('userid', payappUserId);
       window.PayApp.setDefault('shopname', shopName);
+      
+      // user_id를 var1에 포함
+      const orderData = {
+        orderId: `ORDER-${Date.now()}`,
+        userId: userId,
+        phone: paymentData.recvphone,
+        name: paymentData.buyername
+      };
       
       // 정기결제 정보 설정
       window.PayApp.setParam('goodname', paymentData.goodname);
@@ -90,10 +110,10 @@ export default function PaymentPage() {
       window.PayApp.setParam('rebillExpire', paymentData.rebillExpire);
       window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
       window.PayApp.setParam('returnurl', `${baseUrl}/payment?success=true`);
-      window.PayApp.setParam('var1', paymentData.var1 || `ORDER-${Date.now()}`);
+      window.PayApp.setParam('var1', JSON.stringify(orderData));
       
       console.log('Payment request:', {
-        userid: userId,
+        userid: payappUserId,
         shopname: shopName,
         goodname: paymentData.goodname,
         goodprice: paymentData.goodprice,
@@ -104,7 +124,8 @@ export default function PaymentPage() {
         rebillExpire: paymentData.rebillExpire,
         baseUrl,
         feedbackurl: `${baseUrl}/api/payments/webhook`,
-        returnurl: `${baseUrl}/payment/result`
+        returnurl: `${baseUrl}/payment?success=true`,
+        orderData
       });
       
       // 정기결제 호출
