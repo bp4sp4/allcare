@@ -1,4 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+// Admin client for server-side operations
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,43 +19,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: 전화번호 인증 확인
-    // const verification = await db.phoneVerifications.findFirst({
-    //   where: {
-    //     phone,
-    //     code: verificationCode,
-    //     verified: true,
-    //     expiresAt: { gt: new Date() }
-    //   }
-    // });
+    // 전화번호 인증 확인
+    const { data: verification, error: verifyError } = await supabaseAdmin
+      .from('phone_verifications')
+      .select('*')
+      .eq('phone', phone)
+      .eq('code', verificationCode)
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
 
-    // if (!verification) {
-    //   return NextResponse.json(
-    //     { error: '유효하지 않은 인증번호입니다.' },
-    //     { status: 400 }
-    //   );
-    // }
+    if (verifyError || !verification) {
+      return NextResponse.json(
+        { error: '유효하지 않은 인증번호입니다.' },
+        { status: 400 }
+      );
+    }
 
-    // TODO: 이름과 전화번호로 사용자 조회
-    // const user = await db.users.findFirst({
-    //   where: {
-    //     name,
-    //     phone
-    //   }
-    // });
+    // 인증번호 사용 완료 처리
+    await supabaseAdmin
+      .from('phone_verifications')
+      .update({ verified: true })
+      .eq('id', verification.id);
 
-    // if (!user) {
-    //   return NextResponse.json(
-    //     { error: '일치하는 사용자를 찾을 수 없습니다.' },
-    //     { status: 404 }
-    //   );
-    // }
+    // 이름과 전화번호로 사용자 조회
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('email')
+      .eq('name', name)
+      .eq('phone', phone)
+      .single();
 
-    console.log(`Find email: ${name}, ${phone}`);
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: '일치하는 사용자를 찾을 수 없습니다.' },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
-      email: 'user@example.com', // TODO: 실제 이메일 반환
+      email: user.email,
       message: '이메일을 찾았습니다.'
     });
 

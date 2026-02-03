@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import Header from '@/components/Header';
+
 import styles from "../auth.module.css"
 
 export default function LoginPage() {
@@ -35,7 +35,6 @@ export default function LoginPage() {
 
   return (
     <div className={styles.card}>
-      <Header />
       <div className={styles.container}>
         <div className={styles.logo}><img src="/logo.png" alt="한평생올케어 로고" /></div>
         <div className={styles.divider}>

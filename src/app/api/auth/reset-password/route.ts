@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
-// TODO: 이메일 발송 서비스 연동
-// import { sendEmail } from '@/lib/email';
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+// Admin client for server-side operations
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,44 +20,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: 사용자 존재 확인
-    // const user = await db.users.findUnique({
-    //   where: { email }
-    // });
+    // 사용자 존재 확인
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id, email')
+      .eq('email', email)
+      .single();
 
-    // if (!user) {
-    //   return NextResponse.json(
-    //     { error: '존재하지 않는 이메일입니다.' },
-    //     { status: 404 }
-    //   );
-    // }
+    if (userError || !user) {
+      return NextResponse.json(
+        { error: '존재하지 않는 이메일입니다.' },
+        { status: 404 }
+      );
+    }
 
-    // 재설정 토큰 생성
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1시간
+    // 8자리 임시 비밀번호 생성 (영문 대소문자 + 숫자)
+    const tempPassword = crypto.randomBytes(4).toString('hex').toUpperCase() + 
+                        Math.floor(Math.random() * 100).toString().padStart(2, '0');
 
-    // TODO: 토큰 저장
-    // await db.passwordResetTokens.create({
-    //   data: {
-    //     userId: user.id,
-    //     token,
-    //     expiresAt,
-    //     used: false
-    //   }
-    // });
+    // Supabase Auth 비밀번호 업데이트
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+      user.id,
+      { password: tempPassword }
+    );
 
-    // TODO: 이메일 발송
-    const resetUrl = `${process.env.NEXT_PUBLIC_API_URL}/auth/reset-password?token=${token}`;
-    // await sendEmail(email, '비밀번호 재설정', `비밀번호 재설정 링크: ${resetUrl}`);
+    if (updateError) {
+      console.error('비밀번호 업데이트 오류:', updateError);
+      return NextResponse.json(
+        { error: '임시 비밀번호 설정에 실패했습니다.' },
+        { status: 500 }
+      );
+    }
 
-    console.log(`Password reset for ${email}. Token: ${token}`);
-    console.log(`Reset URL: ${resetUrl}`);
+    // TODO: 실제로는 이메일이나 SMS로 임시 비밀번호 발송
+    console.log(`임시 비밀번호 for ${email}: ${tempPassword}`);
 
     return NextResponse.json({
       success: true,
-      message: '비밀번호 재설정 링크가 이메일로 발송되었습니다.',
-      // 개발 환경에서만 토큰 반환
-      ...(process.env.NODE_ENV === 'development' && { token })
+      message: '임시 비밀번호가 발급되었습니다.',
+      tempPassword: tempPassword // 개발용 - 실제로는 이메일/SMS로 발송
     });
 
   } catch (error) {

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import Header from '@/components/Header';
+
 import styles from './common.module.css';
 
 export default function Home() {
@@ -53,7 +53,7 @@ export default function Home() {
   return (
     
       <div className={styles.mobileWrapper}>
-        <Header />
+        
         
         <h1 className={styles.title}>한평생올케어</h1>
         <p className={styles.subtitle}>

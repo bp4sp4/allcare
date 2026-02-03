@@ -20,13 +20,47 @@ export default function AuthCallbackPage() {
         }
 
         if (session) {
+          const user = session.user;
+          
+          // 소셜 로그인 제공자 확인 (kakao, naver, google 등)
+          const provider = user.app_metadata.provider || 'email';
+          
+          // users 테이블에 프로필 확인 및 생성/업데이트
+          const { data: profile, error: profileError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+          if (profileError && profileError.code === 'PGRST116') {
+            // 프로필이 없으면 생성
+            const { error: insertError } = await supabase
+              .from('users')
+              .insert({
+                id: user.id,
+                email: user.email!,
+                name: user.user_metadata.name || user.user_metadata.full_name || user.email?.split('@')[0] || '사용자',
+                avatar_url: user.user_metadata.avatar_url || user.user_metadata.picture,
+                provider: provider,
+                phone: user.user_metadata.phone || null
+              });
+
+            if (insertError) {
+              console.error('프로필 생성 오류:', insertError);
+            }
+          } else if (!profileError && profile) {
+            // 이미 프로필이 있으면 로그인 성공
+            console.log('기존 사용자 로그인:', profile);
+          }
+
           // 세션 정보를 토큰으로 변환
           const token = Buffer.from(JSON.stringify({ 
-            userId: session.user.id, 
-            email: session.user.email 
+            userId: user.id, 
+            email: user.email,
+            provider: provider
           })).toString('base64');
 
-          // 메인 페이지로 리다이렉트하면서 토큰 전달
+          // 메인 페이지로 리다이렉트
           router.push(`/?token=${token}`);
         } else {
           // 세션이 없으면 로그인 페이지로

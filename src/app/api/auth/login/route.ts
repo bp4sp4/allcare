@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
+import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
 
-// TODO: 실제 데이터베이스 연결
-// import { db } from '@/lib/db';
-
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
+
+const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,61 +20,62 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: 데이터베이스에서 사용자 조회
-    // const user = await db.users.findUnique({
-    //   where: { email }
-    // });
-    
-    // if (!user) {
-    //   return NextResponse.json(
-    //     { error: '이메일 또는 비밀번호가 일치하지 않습니다.' },
-    //     { status: 401 }
-    //   );
-    // }
+    // Supabase Auth로 로그인
+    const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({
+      email,
+      password
+    });
 
-    // if (!user.isActive) {
-    //   return NextResponse.json(
-    //     { error: '비활성화된 계정입니다.' },
-    //     { status: 403 }
-    //   );
-    // }
+    if (authError) {
+      return NextResponse.json(
+        { error: '이메일 또는 비밀번호가 일치하지 않습니다.' },
+        { status: 401 }
+      );
+    }
 
-    // TODO: 비밀번호 확인
-    // const isValidPassword = await bcrypt.compare(password, user.passwordHash);
-    
-    // if (!isValidPassword) {
-    //   return NextResponse.json(
-    //     { error: '이메일 또는 비밀번호가 일치하지 않습니다.' },
-    //     { status: 401 }
-    //   );
-    // }
+    // users 테이블에서 프로필 정보 조회
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('id', authData.user.id)
+      .single();
 
-    // TODO: 마지막 로그인 시간 업데이트
-    // await db.users.update({
-    //   where: { id: user.id },
-    //   data: { lastLogin: new Date() }
-    // });
+    if (profileError) {
+      console.error('프로필 조회 오류:', profileError);
+      return NextResponse.json(
+        { error: '사용자 정보를 가져올 수 없습니다.' },
+        { status: 500 }
+      );
+    }
+
+    // 소셜 로그인으로 가입된 계정인지 확인
+    if (profile.provider !== 'email') {
+      return NextResponse.json(
+        { error: `이 계정은 ${profile.provider === 'kakao' ? '카카오' : profile.provider === 'naver' ? '네이버' : '소셜'}로 가입되었습니다. ${profile.provider === 'kakao' ? '카카오' : profile.provider === 'naver' ? '네이버' : '해당 소셜'}로 로그인해 주세요.` },
+        { status: 400 }
+      );
+    }
 
     // JWT 토큰 생성
     const token = jwt.sign(
       { 
-        userId: 'temp-user-id',
-        email: email 
+        userId: authData.user.id,
+        email: authData.user.email,
+        provider: profile.provider
       },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
-
-    console.log('User login:', email);
 
     return NextResponse.json({
       success: true,
       message: '로그인 성공',
       token,
       user: {
-        id: 'temp-user-id',
-        email: email,
-        name: '테스트 사용자'
+        id: authData.user.id,
+        email: profile.email,
+        name: profile.name,
+        provider: profile.provider
       }
     });
 

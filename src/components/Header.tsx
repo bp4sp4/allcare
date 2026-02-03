@@ -18,7 +18,7 @@ export default function Header() {
 
   return (
     <header className={styles.header}>
-      <div className={styles.logo}>
+      <Link href="/" className={styles.logo}>
         <Image 
           src="/logo.png" 
           alt="한평생올케어" 
@@ -26,7 +26,7 @@ export default function Header() {
           height={17}
           priority
         />
-      </div>
+      </Link>
       
       <button 
         className={styles.hamburger}

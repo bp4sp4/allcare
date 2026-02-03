@@ -141,7 +141,7 @@ export default function EmailLoginForm({ onSuccess }: EmailLoginFormProps) {
         </div>
         <div className={styles.formActions}>
             <Link href="/auth/find-email" className={styles.resetLink}>이메일 찾기</Link>
-            <div className={styles.divider}>/</div>
+            <div className={styles.eamildivider}>/</div>
             <Link href="/auth/reset-password" className={styles.resetLink}>비밀번호 재설정</Link>
         </div>
         <button type="submit" className={styles.loginButton} disabled={!isFormValid || loading}>로그인</button>
