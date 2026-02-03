@@ -29,13 +29,12 @@ export async function POST(req: NextRequest) {
 
     const userId = decoded.userId;
 
-    // 취소된 구독 조회
+    // 취소 예정된 구독 조회 (cancel_scheduled 상태)
     const { data: subscription, error: subError } = await supabaseAdmin
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
-      .eq('status', 'active')
-      .not('cancelled_at', 'is', null)
+      .eq('status', 'cancel_scheduled')
       .single();
 
     if (subError || !subscription) {
@@ -45,13 +44,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 구독 재갱신: cancelled_at과 end_date를 null로 설정
+    // 구독 재갱신: 상태를 active로 변경하고 cancelled_at, end_date를 null로 설정
     const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
+        status: 'active',
         cancelled_at: null,
         end_date: null,
-        // status는 이미 active이므로 그대로 유지
       })
       .eq('id', subscription.id);
 

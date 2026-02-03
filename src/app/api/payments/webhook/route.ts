@@ -140,7 +140,13 @@ export async function POST(request: NextRequest) {
 
       // userId가 있으면 구독 정보 저장
       console.log('구독 저장 시작, userId:', userId);
+      console.log('orderData:', orderData);
+      
       if (userId) {
+        // 결제 수단 변경 모드인지 확인
+        const isChangeMode = orderData.mode === 'change-payment';
+        console.log('결제 수단 변경 모드:', isChangeMode);
+
         // 구독 정보 생성 또는 업데이트
         const nextBillingDate = new Date();
         nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
@@ -162,27 +168,52 @@ export async function POST(request: NextRequest) {
 
         console.log('구독 데이터:', subscriptionData);
 
-        // 기존 활성 구독이 있는지 확인
+        // 기존 활성 구독이 있는지 확인 (active 또는 cancel_scheduled)
         const { data: existingSub } = await supabaseAdmin
           .from('subscriptions')
-          .select('id')
+          .select('id, status')
           .eq('user_id', userId)
-          .eq('status', 'active')
+          .in('status', ['active', 'cancel_scheduled'])
           .maybeSingle();
 
         if (existingSub) {
-          // 기존 구독 업데이트
-          const { data: subscriptionResult, error: subscriptionError } = await supabaseAdmin
-            .from('subscriptions')
-            .update(subscriptionData)
-            .eq('id', existingSub.id)
-            .select();
+          // 기존 구독이 있으면 업데이트
+          if (isChangeMode) {
+            // 결제 수단 변경: bill_key, trade_id, 결제 정보만 업데이트
+            console.log('결제 수단만 업데이트:', existingSub.id);
+            const { data: subscriptionResult, error: subscriptionError } = await supabaseAdmin
+              .from('subscriptions')
+              .update({
+                payapp_bill_key: rebill_no,
+                payapp_trade_id: mul_no,
+                payment_type: pay_type ? parseInt(pay_type) : null,
+                card_name: card_name || null,
+                payment_method_name: paymentMethodName
+              })
+              .eq('id', existingSub.id)
+              .select();
 
-          if (subscriptionError) {
-            console.error('❌ Subscription update error:', subscriptionError);
+            if (subscriptionError) {
+              console.error('❌ Payment method update error:', subscriptionError);
+            } else {
+              console.log('✅ Payment method updated for user:', userId);
+              console.log('업데이트된 구독 데이터:', subscriptionResult);
+            }
           } else {
-            console.log('✅ Subscription updated for user:', userId);
-            console.log('업데이트된 구독 데이터:', subscriptionResult);
+            // 일반 업데이트: 전체 구독 정보 업데이트
+            console.log('전체 구독 정보 업데이트:', existingSub.id);
+            const { data: subscriptionResult, error: subscriptionError } = await supabaseAdmin
+              .from('subscriptions')
+              .update(subscriptionData)
+              .eq('id', existingSub.id)
+              .select();
+
+            if (subscriptionError) {
+              console.error('❌ Subscription update error:', subscriptionError);
+            } else {
+              console.log('✅ Subscription updated for user:', userId);
+              console.log('업데이트된 구독 데이터:', subscriptionResult);
+            }
           }
         } else {
           // 새 구독 생성

@@ -20,6 +20,7 @@ declare global {
 export default function PaymentPage() {
   const [isPayAppLoaded, setIsPayAppLoaded] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [isChangeMode, setIsChangeMode] = useState(false);
   const [paymentData, setPaymentData] = useState({
     goodname: '올케어구독상품',
     goodprice: '20000',
@@ -30,9 +31,15 @@ export default function PaymentPage() {
   });
 
   useEffect(() => {
+    // 결제 수단 변경 모드인지 확인
+    const urlParams = new URLSearchParams(window.location.search);
+    const mode = urlParams.get('mode');
+    if (mode === 'change-payment') {
+      setIsChangeMode(true);
+    }
+    
     // 팝업인지 확인하고 결제 완료 시 팝업 닫기
     const isPopup = window.opener && window.opener !== window;
-    const urlParams = new URLSearchParams(window.location.search);
     
     if (urlParams.get('success') === 'true') {
       if (isPopup) {
@@ -115,7 +122,8 @@ export default function PaymentPage() {
         orderId: `ORDER-${Date.now()}`,
         userId: userId,
         phone: paymentData.recvphone,
-        name: paymentData.buyername
+        name: paymentData.buyername,
+        mode: isChangeMode ? 'change-payment' : 'new'
       };
       
       // 정기결제 정보 설정
@@ -198,7 +206,7 @@ export default function PaymentPage() {
           // 구독 완료 화면
           <>
             <h1 style={{ marginBottom: '1.5rem', color: '#111827', fontSize: '2rem', textAlign: 'center', fontWeight: 'bold' }}>
-              구독되었습니다
+              {isChangeMode ? '결제 수단이 변경되었습니다' : '구독되었습니다'}
             </h1>
             
             <div style={{ 
@@ -213,12 +221,22 @@ export default function PaymentPage() {
                 ✓
               </div>
               <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#15803d', marginBottom: '1rem' }}>
-                정기구독이 등록되었습니다!
+                {isChangeMode ? '결제 수단이 성공적으로 변경되었습니다!' : '정기구독이 등록되었습니다!'}
               </div>
               <div style={{ fontSize: '0.875rem', color: '#166534', lineHeight: '1.8' }}>
-                ✓ 첫 결제는 등록 즉시 진행됩니다<br/>
-                ✓ 이후 매월 자동으로 결제됩니다<br/>
-                ✓ 언제든지 해지 가능합니다
+                {isChangeMode ? (
+                  <>
+                    ✓ 새로운 결제 수단으로 등록되었습니다<br/>
+                    ✓ 다음 결제일부터 새 결제 수단으로 결제됩니다<br/>
+                    ✓ 기존 구독 정보는 유지됩니다
+                  </>
+                ) : (
+                  <>
+                    ✓ 첫 결제는 등록 즉시 진행됩니다<br/>
+                    ✓ 이후 매월 자동으로 결제됩니다<br/>
+                    ✓ 언제든지 해지 가능합니다
+                  </>
+                )}
               </div>
             </div>
 
@@ -277,6 +295,10 @@ export default function PaymentPage() {
         ) : (
           // 기존 결제 폼
           <>
+        <h1 style={{ marginBottom: '1.5rem', color: '#111827', fontSize: '2rem', fontWeight: 'bold' }}>
+          {isChangeMode ? '결제 수단 변경' : '정기구독 결제'}
+        </h1>
+        
         <div style={{ 
           marginBottom: '1.5rem', 
           padding: '1rem', 
@@ -291,7 +313,7 @@ export default function PaymentPage() {
             월 {Number(paymentData.goodprice).toLocaleString()}원
           </div>
           <div style={{ fontSize: '0.75rem', color: '#0369a1', marginTop: '0.25rem' }}>
-            매월 자동결제 • 언제든 해지 가능
+            {isChangeMode ? '새로운 결제 수단 등록' : '매월 자동결제 • 언제든 해지 가능'}
           </div>
         </div>
 

@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
-        status: 'active', // 여전히 활성 상태 유지
+        status: 'cancel_scheduled', // 구독취소 상태로 변경
         cancelled_at: new Date().toISOString(),
         end_date: subscription.next_billing_date, // 다음 결제일까지 사용 가능
       })

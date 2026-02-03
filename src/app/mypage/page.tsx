@@ -15,6 +15,7 @@ interface UserInfo {
 interface SubscriptionInfo {
   isActive: boolean;
   plan?: string;
+  amount?: number;
   startDate?: string;
   nextBillingDate?: string;
   endDate?: string;
@@ -40,6 +41,7 @@ export default function MyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -188,6 +190,35 @@ export default function MyPage() {
     }
   };
 
+  const handleRefundRequest = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/subscription/refund', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          reason: '사용자 요청'
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        alert(data.error || '환불 요청에 실패했습니다.');
+        return;
+      }
+
+      alert(data.message || '환불 요청이 접수되었습니다.');
+      setShowRefundModal(false);
+      fetchSubscriptionInfo();
+    } catch (err) {
+      alert('환불 요청 처리 중 오류가 발생했습니다.');
+    }
+  };
+
   const handleSubscriptionAction = async (action: 'start' | 'cancel' | 'refund' | 'renew') => {
     try {
       const token = localStorage.getItem('token');
@@ -235,29 +266,7 @@ export default function MyPage() {
           fetchSubscriptionInfo();
         }
       } else if (action === 'refund') {
-        if (confirm('환불을 요청하시겠습니까? (구독 후 7일 이내만 가능)')) {
-          const response = await fetch('/api/subscription/refund', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              reason: '사용자 요청'
-            })
-          });
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            alert(data.error || '환불 요청에 실패했습니다.');
-            return;
-          }
-
-          alert(data.message || '환불 요청이 접수되었습니다.');
-          // 구독 정보 새로고침
-          fetchSubscriptionInfo();
-        }
+        setShowRefundModal(true);
       }
     } catch (err) {
       alert('작업 처리 중 오류가 발생했습니다.');
@@ -367,9 +376,30 @@ export default function MyPage() {
                       </span>
                     </div>
                   ) : (
+                    <>
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>다음 결제일</span>
+                        <span className={styles.detailValue}>
+                          {subscription.nextBillingDate || '2026.02.01'}
+                        </span>
+                      </div>
+                      <div className={styles.detailRow}>
+                        <span className={styles.detailLabel}>결제 예정 금액</span>
+                        <span className={styles.detailValue} style={{ color: '#2563eb', fontWeight: '600' }}>
+                          {subscription.amount?.toLocaleString() || '20,000'}원
+                        </span>
+                      </div>
+                    </>
+                  )}
+                  {paymentHistory.length > 0 && paymentHistory[0].paymentMethod && (
                     <div className={styles.detailRow}>
-                      <span className={styles.detailLabel}>다음 결제일</span>
-                      <span className={styles.detailValue}>{subscription.nextBillingDate || '2026.02.01'}</span>
+                      <span className={styles.detailLabel}>등록된 결제 수단</span>
+                      <div className={styles.paymentMethodInfo}>
+                        <span className={styles.detailValue}>{paymentHistory[0].paymentMethod}</span>
+                        <button className={styles.changePaymentBtn} onClick={() => router.push('/payment?mode=change-payment')}>
+                          변경
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -447,11 +477,14 @@ export default function MyPage() {
                           <span className={
                             payment.status === 'active' 
                               ? styles.statusBadgeActive
+                              : payment.status === 'cancel_scheduled'
+                              ? styles.statusBadgeWarning
                               : payment.status === 'cancelled'
                               ? styles.statusBadgeCancelled
                               : styles.statusBadgeExpired
                           }>
-                            {payment.status === 'active' ? '활성' : 
+                            {payment.status === 'active' ? '구독중' : 
+                             payment.status === 'cancel_scheduled' ? '구독취소 상태' :
                              payment.status === 'cancelled' ? '취소됨' : '만료'}
                           </span>
                         </td>
@@ -537,6 +570,71 @@ export default function MyPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 환불 정책 안내 모달 */}
+      {showRefundModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowRefundModal(false)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>환불 정책 안내</h3>
+              <button 
+                className={styles.modalClose}
+                onClick={() => setShowRefundModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className={styles.refundPolicyContent}>
+              <div className={styles.policySection}>
+                <h4>환불 가능 조건</h4>
+                <ul className={styles.policyList}>
+                  <li>결제 후 <strong>7일 이내</strong> 환불 요청 시</li>
+                  <li>서비스를 <strong>실질적으로 사용하지 않은 경우</strong></li>
+                  <li>결제 오류 등 정당한 사유가 있는 경우</li>
+                </ul>
+              </div>
+
+              <div className={styles.policySection}>
+                <h4>환불 불가 조건</h4>
+                <ul className={styles.policyList}>
+                  <li>결제 후 7일이 경과한 경우</li>
+                  <li>서비스를 실질적으로 이용한 경우</li>
+                  <li>이미 환불 받은 이력이 있는 경우</li>
+                </ul>
+              </div>
+
+              <div className={styles.policySection}>
+                <h4>환불 처리 안내</h4>
+                <ul className={styles.policyList}>
+                  <li>환불 요청 접수 후 <strong>3~5 영업일 이내</strong> 검토</li>
+                  <li>승인 시 결제 수단으로 <strong>자동 환불</strong> 처리</li>
+                  <li>카드 결제의 경우 카드사 정책에 따라 2~7일 소요</li>
+                </ul>
+              </div>
+
+              <div className={styles.policyWarning}>
+                ⚠️ 환불 신청 시 즉시 서비스 이용이 중단됩니다.
+              </div>
+            </div>
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.cancelModalBtn}
+                onClick={() => setShowRefundModal(false)}
+              >
+                취소
+              </button>
+              <button 
+                type="button" 
+                className={styles.refundConfirmBtn}
+                onClick={handleRefundRequest}
+              >
+                환불 요청하기
+              </button>
+            </div>
           </div>
         </div>
       )}

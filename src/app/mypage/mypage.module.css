@@ -1,15 +1,15 @@
 .container {
-  max-width: 800px;
+  max-width: 768px;
   margin: 0 auto;
-  padding: 40px 20px;
+  
   min-height: calc(100vh - 200px);
 }
 
 .content {
-  background: white;
+  
   border-radius: 12px;
-  padding: 40px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    padding: 40px 0px;
+  
 }
 
 .header {
@@ -161,6 +161,29 @@
   color: #111827;
 }
 
+.paymentMethodInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.changePaymentBtn {
+  padding: 6px 14px;
+  background: white;
+  color: #0051FF;
+  border: 1px solid #0051FF;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.changePaymentBtn:hover {
+  background: #0051FF;
+  color: white;
+}
+
 .subscriptionMessage {
   margin: 24px 0;
   font-size: 15px;
@@ -192,7 +215,6 @@
 }
 
 .cancelBtn,
-.refundBtn,
 .renewBtn {
   flex: 1;
   padding: 12px 20px;
@@ -206,15 +228,34 @@
   transition: all 0.2s;
 }
 
+.refundBtn {
+  flex: 1;
+  padding: 12px 20px;
+  background: white;
+  color: #9ca3af;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
 .renewBtn {
   background: #0051FF;
   color: white;
   border: none;
 }
 
-.cancelBtn:hover,
+.cancelBtn:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
 .refundBtn:hover {
-  background: #f9fafb;
+  background: #fafafa;
+  color: #6b7280;
+  border-color: #d1d5db;
 }
 
 .renewBtn:hover {
@@ -464,6 +505,81 @@
 
 .submitBtn:hover {
   opacity: 0.9;
+}
+
+/* 환불 정책 모달 스타일 */
+.refundPolicyContent {
+  padding: 20px 0;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.policySection {
+  margin-bottom: 24px;
+}
+
+.policySection h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 12px 0;
+}
+
+.policyList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.policyList li {
+  padding: 8px 0;
+  padding-left: 20px;
+  position: relative;
+  font-size: 14px;
+  color: #4b5563;
+  line-height: 1.6;
+}
+
+.policyList li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #0051FF;
+  font-weight: bold;
+}
+
+.policyList li strong {
+  color: #0051FF;
+  font-weight: 600;
+}
+
+.policyWarning {
+  margin-top: 20px;
+  padding: 16px;
+  background: #fef3c7;
+  border: 1px solid #fbbf24;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #92400e;
+  font-weight: 500;
+  text-align: center;
+}
+
+.refundConfirmBtn {
+  flex: 1;
+  padding: 12px 24px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.refundConfirmBtn:hover {
+  background-color: #dc2626;
 }
 
 /* 반응형 */

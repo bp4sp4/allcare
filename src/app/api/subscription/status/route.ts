@@ -29,12 +29,12 @@ export async function GET(req: NextRequest) {
 
     const userId = decoded.userId;
 
-    // 구독 정보 조회
+    // 구독 정보 조회 (active 또는 cancel_scheduled 상태)
     const { data: subscription, error: subError } = await supabaseAdmin
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
-      .eq('status', 'active')
+      .in('status', ['active', 'cancel_scheduled'])
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
