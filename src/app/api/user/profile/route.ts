@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabaseAdmin } from '@/lib/supabase';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
@@ -28,13 +28,17 @@ export async function GET(req: NextRequest) {
     }
 
     const userId = decoded.userId;
+    console.log('Profile API - userId from JWT:', userId);
 
-    // public.users 테이블에서 사용자 정보 조회
-    const { data: userData, error: userError } = await supabase
+    // public.users 테이블에서 사용자 정보 조회 (Service Role 사용)
+    const { data: userData, error: userError } = await supabaseAdmin
       .from('users')
-      .select('email, name, phone, provider')
+      .select('id, email, name, phone, provider')
       .eq('id', userId)
       .maybeSingle();
+
+    console.log('Profile API - userData:', userData);
+    console.log('Profile API - userError:', userError);
 
     if (userError) {
       console.error('User data fetch error:', userError);
@@ -46,6 +50,7 @@ export async function GET(req: NextRequest) {
 
     // users 테이블에 데이터가 없으면 JWT 토큰의 정보 사용
     if (!userData) {
+      console.log('Profile API - No user data, using JWT defaults');
       return NextResponse.json({
         email: decoded.email,
         name: '사용자',
@@ -54,10 +59,16 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    console.log('Profile API - Returning user data:', {
       email: userData.email,
       name: userData.name,
-      phone: userData.phone,
+      phone: userData.phone
+    });
+
+    return NextResponse.json({
+      email: userData.email,
+      name: userData.name || '사용자',
+      phone: userData.phone || '',
       provider: userData.provider || 'email'
     });
 

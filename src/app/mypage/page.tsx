@@ -260,7 +260,7 @@ export default function MyPage() {
             <div className={styles.infoRow}>
               <span className={styles.infoLabel}>전화번호</span>
               <span className={styles.infoValue}>
-                {userInfo?.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3')}
+                {userInfo?.phone ? userInfo.phone.replace(/(\d{3})(\d{4})(\d{4})/, '$1-$2-$3') : '등록된 전화번호가 없습니다'}
               </span>
             </div>
             {userInfo?.provider === 'email' && (

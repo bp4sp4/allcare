@@ -105,18 +105,29 @@ export async function POST(request: NextRequest) {
           console.log('Subscription created/updated for user:', userId);
         }
 
-        // users 테이블에 이름/전화번호 업데이트 (없으면 추가)
-        if (orderData.name && orderData.phone) {
-          await supabase
+        // users 테이블에 이름/전화번호 업데이트 (결제 폼에서 입력한 데이터)
+        if (orderData.name || orderData.phone) {
+          const updateData: any = { id: userId };
+          
+          if (orderData.name) {
+            updateData.name = orderData.name;
+          }
+          
+          if (orderData.phone) {
+            updateData.phone = orderData.phone;
+          }
+          
+          const { error: userUpdateError } = await supabase
             .from('users')
-            .upsert({
-              id: userId,
-              name: orderData.name,
-              phone: orderData.phone
-            }, {
-              onConflict: 'id',
-              ignoreDuplicates: false
+            .upsert(updateData, {
+              onConflict: 'id'
             });
+
+          if (userUpdateError) {
+            console.error('Users table update error:', userUpdateError);
+          } else {
+            console.log('Users table updated:', updateData);
+          }
         }
       } else {
         console.warn('User not found for payment. RECVPHONE:', RECVPHONE, 'var1:', var1);
