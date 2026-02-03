@@ -391,17 +391,6 @@ export default function MyPage() {
                       </div>
                     </>
                   )}
-                  {paymentHistory.length > 0 && paymentHistory[0].paymentMethod && (
-                    <div className={styles.detailRow}>
-                      <span className={styles.detailLabel}>등록된 결제 수단</span>
-                      <div className={styles.paymentMethodInfo}>
-                        <span className={styles.detailValue}>{paymentHistory[0].paymentMethod}</span>
-                        <button className={styles.changePaymentBtn} onClick={() => router.push('/payment?mode=change-payment')}>
-                          변경
-                        </button>
-                      </div>
-                    </div>
-                  )}
                 </div>
                 <div className={styles.subscriptionActions}>
                   {subscription.cancelled_at ? (

@@ -509,20 +509,42 @@
 
 /* 환불 정책 모달 스타일 */
 .refundPolicyContent {
-  padding: 20px 0;
-  max-height: 500px;
+  padding: 24px 0;
+  max-height: 520px;
   overflow-y: auto;
 }
 
 .policySection {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border-left: 4px solid #0051FF;
+  transition: all 0.3s ease;
+}
+
+.policySection:hover {
+  background: #f1f5f9;
+  box-shadow: 0 2px 8px rgba(0, 81, 255, 0.1);
 }
 
 .policySection h4 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
-  margin: 0 0 12px 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0051FF;
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.policySection h4::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: #0051FF;
+  border-radius: 50%;
+  display: inline-block;
 }
 
 .policyList {
@@ -532,54 +554,104 @@
 }
 
 .policyList li {
-  padding: 8px 0;
-  padding-left: 20px;
+  padding: 10px 0 10px 28px;
   position: relative;
   font-size: 14px;
-  color: #4b5563;
-  line-height: 1.6;
+  color: #334155;
+  line-height: 1.7;
+  transition: all 0.2s ease;
+}
+
+.policyList li:hover {
+  color: #0f172a;
 }
 
 .policyList li::before {
-  content: "•";
+  content: "✓";
   position: absolute;
   left: 0;
+  top: 10px;
   color: #0051FF;
   font-weight: bold;
+  font-size: 16px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0f2fe;
+  border-radius: 50%;
 }
 
 .policyList li strong {
   color: #0051FF;
-  font-weight: 600;
+  font-weight: 700;
+  background: linear-gradient(120deg, #e0f2fe 0%, #bae6fd 100%);
+  padding: 2px 6px;
+  border-radius: 4px;
 }
 
 .policyWarning {
-  margin-top: 20px;
-  padding: 16px;
-  background: #fef3c7;
-  border: 1px solid #fbbf24;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #92400e;
-  font-weight: 500;
+  margin-top: 24px;
+  padding: 20px;
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #fbbf24;
+  border-radius: 12px;
+  font-size: 15px;
+  color: #78350f;
+  font-weight: 600;
   text-align: center;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.policyWarning::before {
+  content: '⚠️';
+  font-size: 24px;
+  display: block;
+  margin-bottom: 8px;
 }
 
 .refundConfirmBtn {
   flex: 1;
-  padding: 12px 24px;
-  background-color: #ef4444;
+  padding: 14px 28px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 15px;
-  font-weight: 600;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.refundConfirmBtn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s ease;
 }
 
 .refundConfirmBtn:hover {
-  background-color: #dc2626;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+}
+
+.refundConfirmBtn:hover::before {
+  left: 100%;
+}
+
+.refundConfirmBtn:active {
+  transform: translateY(0);
 }
 
 /* 반응형 */
