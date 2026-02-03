@@ -112,24 +112,57 @@ export async function POST(request: NextRequest) {
 
         console.log('구독 데이터:', subscriptionData);
 
-        const { data: subscriptionResult, error: subscriptionError } = await supabaseAdmin
+        // 기존 활성 구독이 있는지 확인
+        const { data: existingSub } = await supabaseAdmin
           .from('subscriptions')
-          .upsert(subscriptionData, {
-            onConflict: 'user_id'
-          })
-          .select();
+          .select('id')
+          .eq('user_id', userId)
+          .eq('status', 'active')
+          .maybeSingle();
 
-        if (subscriptionError) {
-          console.error('❌ Subscription creation error:', subscriptionError);
-          console.error('에러 상세:', JSON.stringify(subscriptionError, null, 2));
+        if (existingSub) {
+          // 기존 구독 업데이트
+          const { data: subscriptionResult, error: subscriptionError } = await supabaseAdmin
+            .from('subscriptions')
+            .update(subscriptionData)
+            .eq('id', existingSub.id)
+            .select();
+
+          if (subscriptionError) {
+            console.error('❌ Subscription update error:', subscriptionError);
+          } else {
+            console.log('✅ Subscription updated for user:', userId);
+            console.log('업데이트된 구독 데이터:', subscriptionResult);
+          }
         } else {
-          console.log('✅ Subscription created/updated for user:', userId);
-          console.log('저장된 구독 데이터:', subscriptionResult);
+          // 새 구독 생성
+          const { data: subscriptionResult, error: subscriptionError } = await supabaseAdmin
+            .from('subscriptions')
+            .insert(subscriptionData)
+            .select();
+
+          if (subscriptionError) {
+            console.error('❌ Subscription creation error:', subscriptionError);
+            console.error('에러 상세:', JSON.stringify(subscriptionError, null, 2));
+          } else {
+            console.log('✅ Subscription created for user:', userId);
+            console.log('저장된 구독 데이터:', subscriptionResult);
+          }
         }
 
         // users 테이블에 이름/전화번호 업데이트 (결제 폼에서 입력한 데이터)
         if (orderData.name || orderData.phone) {
+          // 기존 사용자 정보 먼저 조회 (email 유지를 위해)
+          const { data: existingUser } = await supabaseAdmin
+            .from('users')
+            .select('email')
+            .eq('id', userId)
+            .maybeSingle();
+
           const updateData: any = { id: userId };
+          
+          // 기존 email 유지 (없으면 빈 문자열)
+          updateData.email = existingUser?.email || '';
           
           if (orderData.name) {
             updateData.name = orderData.name;
