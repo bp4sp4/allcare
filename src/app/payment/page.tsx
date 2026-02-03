@@ -135,13 +135,13 @@ export default function PaymentPage() {
       console.log('Payment request:', {
         userid: payappUserId,
         shopname: shopName,
-        goodname: pa
+        goodname: paymentData.goodname,
         goodprice: paymentData.goodprice,
         buyername: paymentData.buyername,
         recvphone: paymentData.recvphone,
         rebillCycleType: paymentData.rebillCycleType,
         rebillCycleMonth: paymentData.rebillCycleMonth,
-        rebillExpire: paymentData.rebillExpire,
+        rebillExpire,
         baseUrl,
         feedbackurl: `${baseUrl}/api/payments/webhook`,
         returnurl: `${baseUrl}/payment?success=true`,
