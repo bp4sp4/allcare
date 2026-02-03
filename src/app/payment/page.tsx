@@ -26,8 +26,6 @@ export default function PaymentPage() {
     buyername: '',
     recvphone: '',
     buyeremail: '',
-    rebillCycleType: 'Month',
-    rebillCycleMonth: '1',
     var1: '',
   });
 
@@ -124,8 +122,7 @@ export default function PaymentPage() {
         window.PayApp.setParam('buyeremail', paymentData.buyeremail);
       }
       window.PayApp.setParam('smsuse', 'n'); // SMS 전송 안함
-      window.PayApp.setParam('rebillCycleType', paymentData.rebillCycleType);
-      window.PayApp.setParam('rebillCycleMonth', paymentData.rebillCycleMonth);
+      window.PayApp.setParam('rebillCycleType', 'Month'); // 매월 결제
       window.PayApp.setParam('rebillExpire', rebillExpire);
       window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
       window.PayApp.setParam('returnurl', `${baseUrl}/payment?success=true`);
@@ -140,8 +137,7 @@ export default function PaymentPage() {
         recvphone: paymentData.recvphone,
         rebillCycleType: paymentData.rebillCycleType,
         rebillCycleMonth: paymentData.rebillCycleMonth,
-        rebillExpire,
-        baseUrl,
+        rebillExpire,'Month'
         feedbackurl: `${baseUrl}/api/payments/webhook`,
         returnurl: `${baseUrl}/payment?success=true`,
         orderData
