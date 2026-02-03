@@ -233,7 +233,7 @@ export default function PaymentPage() {
                 <strong>월 구독료:</strong> {Number(paymentData.goodprice).toLocaleString()}원
               </div>
               <div style={{ fontSize: '0.95rem', color: '#1e40af' }}>
-                <strong>다음 결제일:</strong> 매월 {paymentData.rebillCycleMonth}일
+                <strong>다음 결제일:</strong> 매월 {new Date().getDate()}일
               </div>
             </div>
 
