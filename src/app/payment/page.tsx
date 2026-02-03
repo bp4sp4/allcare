@@ -29,7 +29,6 @@ export default function PaymentPage() {
     buyeremail: '',
     rebillCycleType: 'Month',
     rebillCycleMonth: '1',
-    rebillExpire: '2027-12-31',
     var1: '',
   });
 
@@ -103,6 +102,12 @@ export default function PaymentPage() {
       window.PayApp.setDefault('userid', payappUserId);
       window.PayApp.setDefault('shopname', shopName);
       
+      // 현재 날짜 기준으로 구독 만료일 계산 (1년 후)
+      const now = new Date();
+      const expireDate = new Date(now);
+      expireDate.setFullYear(expireDate.getFullYear() + 1);
+      const rebillExpire = expireDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+      
       // user_id를 var1에 포함
       const orderData = {
         orderId: `ORDER-${Date.now()}`,
@@ -122,7 +127,7 @@ export default function PaymentPage() {
       window.PayApp.setParam('smsuse', 'n'); // SMS 전송 안함
       window.PayApp.setParam('rebillCycleType', paymentData.rebillCycleType);
       window.PayApp.setParam('rebillCycleMonth', paymentData.rebillCycleMonth);
-      window.PayApp.setParam('rebillExpire', paymentData.rebillExpire);
+      window.PayApp.setParam('rebillExpire', rebillExpire);
       window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
       window.PayApp.setParam('returnurl', `${baseUrl}/payment?success=true`);
       window.PayApp.setParam('var1', JSON.stringify(orderData));
@@ -130,7 +135,7 @@ export default function PaymentPage() {
       console.log('Payment request:', {
         userid: payappUserId,
         shopname: shopName,
-        goodname: paymentData.goodname,
+        goodname: pa
         goodprice: paymentData.goodprice,
         buyername: paymentData.buyername,
         recvphone: paymentData.recvphone,
