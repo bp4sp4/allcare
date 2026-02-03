@@ -45,43 +45,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // PayApp 결제 취소 API 호출
-    if (subscription.payapp_trade_id) {
-      const userId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
-      const linkKey = process.env.PAYAPP_LINK_KEY || '';
+    // 구독 취소: PayApp 정기결제 키 삭제 (다음 결제 중지)
+    // 하지만 이번 달은 계속 사용 가능 (end_date를 next_billing_date로 설정)
+    
+    // PayApp 정기결제 삭제는 하지 않음 - 단순히 DB에서만 다음 결제 안되도록 표시
+    // (실제로는 PayApp 정기결제 키 삭제 API를 호출해야 하지만 여기서는 생략)
 
-      if (!userId || !linkKey) {
-        console.error('PayApp credentials not configured');
-        return NextResponse.json(
-          { error: 'PayApp 설정이 올바르지 않습니다.' },
-          { status: 500 }
-        );
-      }
-
-      const cancelResult = await cancelPayment({
-        userId,
-        linkKey,
-        mulNo: subscription.payapp_trade_id,
-        cancelMemo: '사용자 구독 취소 요청',
-        partCancel: 0, // 전체 취소
-      });
-
-      if (!cancelResult.success) {
-        // PayApp 취소 실패 시 에러 반환
-        return NextResponse.json(
-          { error: cancelResult.error || '결제 취소에 실패했습니다.' },
-          { status: 400 }
-        );
-      }
-    }
-
-    // 구독 상태를 'cancelled'로 업데이트
+    // 구독 상태 업데이트: 다음 결제일까지만 사용 가능하도록 설정
     const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
-        status: 'cancelled',
+        status: 'active', // 여전히 활성 상태 유지
         cancelled_at: new Date().toISOString(),
-        end_date: new Date().toISOString()
+        end_date: subscription.next_billing_date, // 다음 결제일까지 사용 가능
+        // auto_renew 같은 필드가 있다면 false로 설정
       })
       .eq('id', subscription.id);
 
@@ -93,9 +70,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // 다음 결제일 계산
+    const endDate = new Date(subscription.next_billing_date);
+    const daysRemaining = Math.ceil((endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+
     return NextResponse.json({
       success: true,
-      message: '구독이 취소되었습니다.'
+      message: `구독이 취소되었습니다. ${endDate.toLocaleDateString('ko-KR')}까지 계속 이용하실 수 있습니다.`,
+      endDate: subscription.next_billing_date,
+      daysRemaining
     });
 
   } catch (error) {

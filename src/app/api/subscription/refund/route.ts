@@ -52,12 +52,12 @@ export async function POST(req: NextRequest) {
     const now = new Date();
     const daysSinceStart = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
-    // PayApp 환불 처리
+    // PayApp 환불 처리 (실제로 돈을 돌려줌)
     if (subscription.payapp_trade_id) {
-      const userId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
+      const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
       const linkKey = process.env.PAYAPP_LINK_KEY || '';
 
-      if (!userId || !linkKey) {
+      if (!payappUserId || !linkKey) {
         console.error('PayApp credentials not configured');
         return NextResponse.json(
           { error: 'PayApp 설정이 올바르지 않습니다.' },
@@ -69,9 +69,9 @@ export async function POST(req: NextRequest) {
 
       // D+5일 이내면 즉시 취소, 이후면 취소 요청
       if (daysSinceStart <= 5) {
-        // 즉시 취소
+        // 즉시 환불 (전액)
         const cancelResult = await cancelPayment({
-          userId,
+          userId: payappUserId,
           linkKey,
           mulNo: subscription.payapp_trade_id,
           cancelMemo,
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
       } else {
         // 취소 요청 (정산 후)
         const cancelReqResult = await requestPaymentCancellation({
-          userId,
+          userId: payappUserId,
           linkKey,
           mulNo: subscription.payapp_trade_id,
           cancelMemo,
@@ -101,6 +101,16 @@ export async function POST(req: NextRequest) {
           );
         }
 
+        // 구독 즉시 종료
+        await supabaseAdmin
+          .from('subscriptions')
+          .update({
+            status: 'cancelled',
+            cancelled_at: new Date().toISOString(),
+            end_date: new Date().toISOString()
+          })
+          .eq('id', subscription.id);
+
         // 취소 요청의 경우 관리자 확인이 필요함을 알림
         return NextResponse.json({
           success: true,
@@ -111,7 +121,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 구독 상태를 'cancelled'로 업데이트
+    // 환불 완료: 구독 즉시 종료
     const { error: updateError } = await supabaseAdmin
       .from('subscriptions')
       .update({
@@ -131,9 +141,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: daysSinceStart <= 5 
-        ? '환불이 완료되었습니다. 영업일 기준 3-5일 내에 결제 수단으로 환불됩니다.'
-        : '환불 요청이 접수되었습니다.'
+      message: '환불이 완료되었습니다. 영업일 기준 3-5일 내에 결제 수단으로 환불됩니다. 구독은 즉시 종료됩니다.'
     });
 
   } catch (error) {
