@@ -34,12 +34,27 @@ export default function PaymentPage() {
   });
 
   useEffect(() => {
-    // URL에서 success 파라미터 확인
+    // 팝업인지 확인하고 결제 완료 시 팝업 닫기
+    const isPopup = window.opener && window.opener !== window;
     const urlParams = new URLSearchParams(window.location.search);
+    
     if (urlParams.get('success') === 'true') {
-      setPaymentSuccess(true);
-      // URL 정리 (브라우저 히스토리에 clean URL 유지)
-      window.history.replaceState({}, '', '/payment');
+      if (isPopup) {
+        // 팝업인 경우: 부모 창을 리프레시하고 팝업 닫기
+        console.log('결제 완료 - 팝업 닫기');
+        try {
+          window.opener.location.href = '/mypage'; // 마이페이지로 이동
+          window.close();
+        } catch (e) {
+          console.error('팝업 닫기 실패:', e);
+          setPaymentSuccess(true);
+        }
+      } else {
+        // 일반 페이지인 경우: 성공 메시지 표시
+        setPaymentSuccess(true);
+        // URL 정리
+        window.history.replaceState({}, '', '/payment');
+      }
     }
   }, []);
 
