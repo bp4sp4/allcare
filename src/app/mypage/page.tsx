@@ -477,7 +477,6 @@ export default function MyPage() {
                       <span className={styles.benefitItemInactive}>미이수 전액환급 보장</span>
                       <span className={styles.benefitItemInactive}>보장중 </span>
                     </div>
-                  
                   <div className={styles.benefitItemInactive}>한평생 직업훈련 무료수강권</div>
                   <div className={styles.benefitItemInactive}>올케어 실습매칭 시스템</div>
                 </div>
