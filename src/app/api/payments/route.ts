@@ -41,20 +41,27 @@ export async function POST(request: NextRequest) {
     });
 
     // PayApp 결제 URL 생성
-    const payappBaseUrl = process.env.NEXT_PUBLIC_PAYAPP_BASE_URL || 'https://api.payapp.kr';
-    const merchantId = process.env.PAYAPP_MERCHANT_ID || 'YOUR_MERCHANT_ID';
+    const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || 'korhrdcorp';
+    const payappShopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어';
+    const payappLinkKey = process.env.PAYAPP_LINK_KEY;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
     
     // PayApp 결제 요청 파라미터
     const payappParams = new URLSearchParams({
-      merchant_id: merchantId,
-      order_id: finalOrderId,
-      amount: amount.toString(),
-      product_name: finalOrderName,
-      return_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/payments/result`,
-      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/payment/cancel`
+      userid: payappUserId,
+      linkkey: payappLinkKey || '',
+      shopname: payappShopName,
+      goodname: finalOrderName,
+      price: amount.toString(),
+      recvphone: customerPhone || '',
+      recvname: customerName || '',
+      var1: finalOrderId, // 주문번호
+      returnurl: `${baseUrl}/api/payments/result`,
+      feedbackurl: `${baseUrl}/api/payments/webhook`
     });
 
-    const paymentUrl = `${payappBaseUrl}/payment/checkout?${payappParams.toString()}`;
+    const paymentUrl = `https://api.payapp.kr/order/order_pay.php?${payappParams.toString()}`;
 
     return NextResponse.json({
       success: true,

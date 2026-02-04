@@ -63,7 +63,31 @@ export default function Home() {
     };
     window.addEventListener('scroll', handleScroll);
     handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    // 결제 결과 수신 (팝업 창으로부터)
+    const handlePaymentResult = (event: MessageEvent) => {
+      if (event.data.type === 'paymentResult') {
+        const { status, orderId, amount, message } = event.data.data;
+        
+        if (status === 'success') {
+          alert(`결제가 완료되었습니다!\n주문번호: ${orderId}\n결제금액: ${Number(amount).toLocaleString()}원`);
+          // TODO: 결제 완료 후 처리 (예: 구독 활성화, 페이지 리로드 등)
+          // router.push('/payment/success');
+        } else {
+          alert(`결제에 실패했습니다.\n${message || '다시 시도해 주세요.'}`);
+        }
+        
+        // 시트 닫기
+        setShowSheet(false);
+      }
+    };
+    
+    window.addEventListener('message', handlePaymentResult);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('message', handlePaymentResult);
+    };
   }, []);
 
   // Prevent background scroll when subscribeSheet is open
@@ -236,6 +260,36 @@ export default function Home() {
               onClick={async () => {
                 if (agreeAll) {
                   try {
+                    // 로그인 체크
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                      alert('로그인이 필요합니다.');
+                      router.push('/auth/login');
+                      return;
+                    }
+
+                    // API를 통해 사용자 정보 가져오기
+                    const userResponse = await fetch('/api/user/profile', {
+                      headers: {
+                        'Authorization': `Bearer ${token}`
+                      }
+                    });
+
+                    if (!userResponse.ok) {
+                      alert('사용자 정보를 가져올 수 없습니다. 다시 로그인해주세요.');
+                      localStorage.removeItem('token');
+                      router.push('/auth/login');
+                      return;
+                    }
+
+                    const { name, phone } = await userResponse.json();
+
+                    if (!name || !phone) {
+                      alert('사용자 정보(이름, 연락처)가 없습니다. 회원정보를 먼저 입력해주세요.');
+                      // TODO: 회원정보 입력 페이지로 이동
+                      return;
+                    }
+
                     // PayApp API 결제 요청
                     const response = await fetch('/api/payments', {
                       method: 'POST',
@@ -246,7 +300,9 @@ export default function Home() {
                         amount: 20000,
                         productName: '한평생 올케어 월간 이용권',
                         productType: 'subscription',
-                        billingCycle: 'monthly'
+                        billingCycle: 'monthly',
+                        customerName: name,
+                        customerPhone: phone
                       }),
                     });
                     
