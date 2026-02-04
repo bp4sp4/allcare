@@ -3,8 +3,22 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
 import { supabase } from '@/lib/supabase';
 import styles from './page.module.css';
+
+// PayApp SDK 타입 정의
+declare global {
+  interface Window {
+    PayApp: {
+      setDefault: (key: string, value: string) => typeof window.PayApp;
+      setParam: (key: string, value: string) => typeof window.PayApp;
+      call: (params?: Record<string, string>) => void;
+      payrequest: () => void;
+      rebill: () => void;
+    };
+  }
+}
 
 
 export default function Home() {
@@ -36,6 +50,7 @@ export default function Home() {
   const [agreements, setAgreements] = useState([false, false, false]);
   const [showTerms, setShowTerms] = useState(false);
   const [showSubscriptionTerms, setShowSubscriptionTerms] = useState(false);
+  const [isPayAppLoaded, setIsPayAppLoaded] = useState(false);
 
   useEffect(() => {
     // URL에서 토큰 확인 (OAuth 리다이렉트)
@@ -146,7 +161,27 @@ export default function Home() {
   };
 
   return (
-    <main className={styles.main_wrapper}>
+    <>
+      <Script
+        src="https://lite.payapp.kr/public/api/v2/payapp-lite.js"
+        strategy="afterInteractive"
+        onLoad={() => {
+          console.log('PayApp SDK loaded');
+          if (window.PayApp) {
+            const userId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
+            console.log('PayApp USER_ID:', userId ? 'Set' : 'Not Set');
+            window.PayApp.setDefault('userid', userId);
+            window.PayApp.setDefault('shopname', process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어');
+            setIsPayAppLoaded(true);
+          } else {
+            console.error('PayApp object not found');
+          }
+        }}
+        onError={(e) => {
+          console.error('PayApp SDK failed to load:', e);
+        }}
+      />
+      <main className={styles.main_wrapper}>
       <div className={styles.mobileWrapper}>
         <div className={styles.heroBadge}>
           <span className={styles.heroTitle}>한평생 올케어</span>
@@ -258,78 +293,125 @@ export default function Home() {
             <button 
               className={`${styles.sheetButton} ${!agreeAll ? styles.sheetButtonDisabled : ''}`} 
               onClick={async () => {
-                if (agreeAll) {
-                  try {
-                    // 로그인 체크
-                    const token = localStorage.getItem('token');
-                    if (!token) {
-                      alert('로그인이 필요합니다.');
-                      router.push('/auth/login');
-                      return;
-                    }
+                if (!agreeAll) return;
+                
+                if (!isPayAppLoaded || !window.PayApp) {
+                  alert('결제 시스템을 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+                  return;
+                }
 
-                    // API를 통해 사용자 정보 가져오기
-                    const userResponse = await fetch('/api/user/profile', {
-                      headers: {
-                        'Authorization': `Bearer ${token}`
-                      }
-                    });
-
-                    if (!userResponse.ok) {
-                      alert('사용자 정보를 가져올 수 없습니다. 다시 로그인해주세요.');
-                      localStorage.removeItem('token');
-                      router.push('/auth/login');
-                      return;
-                    }
-
-                    const { name, phone } = await userResponse.json();
-
-                    if (!name || !phone) {
-                      alert('사용자 정보(이름, 연락처)가 없습니다. 회원정보를 먼저 입력해주세요.');
-                      // TODO: 회원정보 입력 페이지로 이동
-                      return;
-                    }
-
-                    // PayApp API 결제 요청
-                    const response = await fetch('/api/payments', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        amount: 20000,
-                        productName: '한평생 올케어 월간 이용권',
-                        productType: 'subscription',
-                        billingCycle: 'monthly',
-                        customerName: name,
-                        customerPhone: phone
-                      }),
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.paymentUrl) {
-                      // PayApp 결제 팝업창 열기
-                      const width = 500;
-                      const height = 700;
-                      const left = (window.screen.width - width) / 2;
-                      const top = (window.screen.height - height) / 2;
-                      
-                      window.open(
-                        data.paymentUrl,
-                        'payapp_payment',
-                        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-                      );
-                    } else {
-                      alert('결제 요청에 실패했습니다.');
-                    }
-                  } catch (error) {
-                    console.error('Payment error:', error);
-                    alert('결제 처리 중 오류가 발생했습니다.');
+                try {
+                  // 로그인 체크
+                  const token = localStorage.getItem('token');
+                  if (!token) {
+                    alert('로그인이 필요합니다.');
+                    router.push('/auth/login');
+                    return;
                   }
+
+                  // API를 통해 사용자 정보 가져오기
+                  const userResponse = await fetch('/api/user/profile', {
+                    headers: {
+                      'Authorization': `Bearer ${token}`
+                    }
+                  });
+
+                  if (!userResponse.ok) {
+                    alert('사용자 정보를 가져올 수 없습니다. 다시 로그인해주세요.');
+                    localStorage.removeItem('token');
+                    router.push('/auth/login');
+                    return;
+                  }
+
+                  const { name, phone } = await userResponse.json();
+
+                  if (!name || !phone) {
+                    alert('사용자 정보(이름, 연락처)가 없습니다. 회원정보를 먼저 입력해주세요.');
+                    return;
+                  }
+
+                  // localStorage에서 토큰 가져와서 user_id 추출
+                  let userId = '';
+                  try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    userId = payload.userId || '';
+                  } catch (e) {
+                    console.error('Token parse error:', e);
+                  }
+
+                  // 현재 도메인 가져오기 (배포 환경 대응)
+                  const baseUrl = window.location.origin;
+                  const shopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어';
+                  const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
+
+                  if (!payappUserId) {
+                    alert('결제 시스템 설정 오류입니다. 관리자에게 문의하세요.');
+                    console.error('PAYAPP_USER_ID is not set');
+                    return;
+                  }
+
+                  // PayApp 초기화
+                  window.PayApp.setDefault('userid', payappUserId);
+                  window.PayApp.setDefault('shopname', shopName);
+                  
+                  // 현재 날짜 기준으로 설정
+                  const now = new Date();
+                  
+                  // 구독 만료일 계산 (1년 후)
+                  const expireDate = new Date(now);
+                  expireDate.setFullYear(expireDate.getFullYear() + 1);
+                  const rebillExpire = expireDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+                  
+                  // 결제일: 오늘 날짜 (1~31)
+                  const rebillCycleMonth = now.getDate().toString();
+                  
+                  // user_id를 var1에 포함
+                  const orderData = {
+                    orderId: `ORDER-${Date.now()}`,
+                    userId: userId,
+                    phone: phone,
+                    name: name,
+                    mode: 'new'
+                  };
+                  
+                  // 정기결제 정보 설정
+                  window.PayApp.setParam('goodname', '올케어구독상품');
+                  window.PayApp.setParam('goodprice', '20000');
+                  window.PayApp.setParam('recvphone', phone);
+                  window.PayApp.setParam('buyername', name);
+                  window.PayApp.setParam('smsuse', 'n');
+                  window.PayApp.setParam('rebillCycleType', 'Month');
+                  window.PayApp.setParam('rebillCycleMonth', rebillCycleMonth);
+                  window.PayApp.setParam('rebillExpire', rebillExpire);
+                  window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
+                  window.PayApp.setParam('returnurl', `${baseUrl}/payment?success=true`);
+                  window.PayApp.setParam('var1', JSON.stringify(orderData));
+                  
+                  console.log('Payment request:', {
+                    userid: payappUserId,
+                    shopname: shopName,
+                    goodname: '올케어구독상품',
+                    goodprice: '20000',
+                    buyername: name,
+                    recvphone: phone,
+                    rebillCycleType: 'Month',
+                    rebillCycleMonth,
+                    rebillExpire,
+                    baseUrl,
+                    orderData
+                  });
+                  
+                  // 정기결제 호출
+                  window.PayApp.rebill();
+                  
+                  // 시트 닫기
+                  setShowSheet(false);
+                } catch (error) {
+                  console.error('Payment error:', error);
+                  alert('결제 처리 중 오류가 발생했습니다.');
                 }
               }}
-              disabled={!agreeAll}
+              disabled={!agreeAll || !isPayAppLoaded}
             >
               한평생올케어 시작하기
             </button>
@@ -416,5 +498,6 @@ export default function Home() {
         ))}
       </div>
     </main>
+    </>
   );
 }
