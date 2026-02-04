@@ -473,7 +473,11 @@ export default function MyPage() {
                 </div>
                 <div className={styles.subscriptionMessages}>올케어 구독으로 더 많은 혜택을 받아보세요!</div>
                 <div className={styles.benefitList}>
-                  <div className={styles.benefitItemInactive}>미이수 전액환급 보장</div>
+                        <div className={styles.detailRowCustom} style={{margin: '0px', padding: '0px'}}>
+                      <span className={styles.benefitItemInactive}>미이수 전액환급 보장</span>
+                      <span className={styles.benefitItemInactive}>보장중 </span>
+                    </div>
+                  
                   <div className={styles.benefitItemInactive}>한평생 직업훈련 무료수강권</div>
                   <div className={styles.benefitItemInactive}>올케어 실습매칭 시스템</div>
                 </div>
