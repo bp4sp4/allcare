@@ -2,6 +2,7 @@
   max-width: 360px;
   margin: 0 auto;
   min-height: calc(100vh - 200px);
+  padding : 61px 16px 0 16px; 
 }
 
 .content {
@@ -597,35 +598,4 @@
   transform: scale(0.98);
 }
 
-/* 반응형 */
-@media (max-width: 768px) {
-  .container {
-    padding: 20px 16px;
-  }
 
-  .content {
-    padding: 24px 20px;
-  }
-
-  .title {
-    font-size: 24px;
-  }
-
-  .infoRow {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .subscriptionCard {
-    padding: 24px;
-  }
-
-  .subscriptionActions {
-    flex-direction: column;
-  }
-
-  .modal {
-    margin: 0 16px;
-  }
-}

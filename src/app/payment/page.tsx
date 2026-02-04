@@ -139,7 +139,7 @@ export default function PaymentPage() {
       window.PayApp.setParam('rebillCycleMonth', rebillCycleMonth); // 오늘 날짜로 설정
       window.PayApp.setParam('rebillExpire', rebillExpire);
       window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
-      window.PayApp.setParam('returnurl', `${baseUrl}/payment?success=true`);
+      window.PayApp.setParam('returnurl', `${baseUrl}/payment/success`);
       window.PayApp.setParam('var1', JSON.stringify(orderData));
       
       console.log('Payment request:', {
@@ -190,7 +190,8 @@ export default function PaymentPage() {
       />
 
       <div style={{ 
-        padding: '2rem', 
+        padding: '2rem',
+        paddingTop: '61px',
         maxWidth: '600px', 
         margin: '0 auto',
         minHeight: '100vh',

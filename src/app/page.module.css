@@ -12,6 +12,7 @@ html.no-scroll, body.no-scroll {
 .main_wrapper{
   max-width: 360px;
   margin: 0 auto;
+  padding-top: 61px;
 }
 
 .mobileWrapper {

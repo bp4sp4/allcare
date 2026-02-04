@@ -384,7 +384,7 @@ export default function Home() {
                   window.PayApp.setParam('rebillCycleMonth', rebillCycleMonth);
                   window.PayApp.setParam('rebillExpire', rebillExpire);
                   window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
-                  window.PayApp.setParam('returnurl', `${baseUrl}/payment?success=true`);
+                  window.PayApp.setParam('returnurl', `${baseUrl}/payment/success`);
                   window.PayApp.setParam('var1', JSON.stringify(orderData));
                   
                   console.log('Payment request:', {
