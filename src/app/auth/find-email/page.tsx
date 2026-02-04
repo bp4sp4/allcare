@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import AlertModal from '@/components/AlertModal';
 import styles from '../auth.module.css';
 
 export default function FindEmailPage() {
@@ -15,6 +16,7 @@ export default function FindEmailPage() {
   const [foundEmail, setFoundEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
   const [timer, setTimer] = useState(0);
   const [touched, setTouched] = useState({
     name: false,
@@ -25,6 +27,7 @@ export default function FindEmailPage() {
   const handleSendVerification = async () => {
     if (!formData.phone) {
       setError('전화번호를 입력해주세요.');
+      setShowErrorModal(true);
       return;
     }
 
@@ -54,11 +57,16 @@ export default function FindEmailPage() {
             return prev - 1;
           });
         }, 1000);
+        
+        setError('인증번호가 발송되었습니다.');
+        setShowErrorModal(true);
       } else {
         setError(data.error || '인증번호 발송에 실패했습니다.');
+        setShowErrorModal(true);
       }
     } catch (err) {
       setError('인증번호 발송 중 오류가 발생했습니다.');
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -76,6 +84,7 @@ export default function FindEmailPage() {
 
     if (!formData.name || !formData.phone || !formData.verificationCode) {
       setError('모든 항목을 입력해주세요.');
+      setShowErrorModal(true);
       return;
     }
 
@@ -94,9 +103,11 @@ export default function FindEmailPage() {
         setFoundEmail(data.email);
       } else {
         setError(data.error || '이메일을 찾을 수 없습니다.');
+        setShowErrorModal(true);
       }
     } catch (err) {
       setError('이메일 찾기 중 오류가 발생했습니다.');
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -104,17 +115,24 @@ export default function FindEmailPage() {
 
   if (foundEmail) {
     return (
-      <div className={styles.container}>
+      <>
+        {showErrorModal && (
+          <AlertModal
+            message={error}
+            onClose={() => setShowErrorModal(false)}
+          />
+        )}
+        <div className={styles.container}>
         <div className={styles.emailLoginWrap}>
-          <div className={styles.logo}>
-            <img src="/logo.png" alt="한평생올케어" />
-          </div>  
+
 
           
           <div className={styles.emailResult}>
-            <p className={styles.foundEmail}>이메일 :  {foundEmail}</p>
+            <p className={styles.foundEmail}>사용자님의 이메일 아이디는 <br/>
+             <span className={styles.successEmail}>{foundEmail}</span>
+             입니다.</p>
           </div>
-          
+          <div className={styles.successBtnWrap}>
           <button
             onClick={() => window.location.href = '/auth/login'}
             className={styles.loginButton}
@@ -122,15 +140,32 @@ export default function FindEmailPage() {
           >
             로그인하기
           </button>
+
+                <button
+            onClick={() => window.location.href = '/auth/reset-password'}
+            className={styles.passwordButton}
+            style={{ marginBottom: 0 }}
+          >
+            비밀번호 찾기
+          </button>
+          </div>
         </div>
       </div>
+      </>
     );
   }
 
   const isFormValid = formData.name && formData.phone && formData.verificationCode && isVerificationSent;
 
   return (
-    <div className={styles.container}>
+    <>
+      {showErrorModal && (
+        <AlertModal
+          message={error}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
+      <div className={styles.container}>
       <div className={styles.emailLoginWrap}>
         <div className={styles.logo}>
           <img src="/logo.png" alt="한평생올케어" />
@@ -219,12 +254,6 @@ export default function FindEmailPage() {
             </div>
           )}
 
-          {error && (
-            <div className={styles.errorMessage} style={{ marginBottom: '16px', textAlign: 'center' }}>
-              {error}
-            </div>
-          )}
-
           <button
             type="submit"
             disabled={!isFormValid || loading}
@@ -244,5 +273,6 @@ export default function FindEmailPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

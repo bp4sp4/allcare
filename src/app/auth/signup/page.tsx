@@ -4,11 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import AlertModal from '@/components/AlertModal';
 import styles from '../auth.module.css';
 
 export default function SignupPage() {
   const router = useRouter();
   const [error, setError] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
 
   const handleSocialLogin = async (provider: 'kakao' | 'naver') => {
     try {
@@ -24,22 +26,28 @@ export default function SignupPage() {
       });
       if (error) {
         setError(`${provider === 'kakao' ? '카카오' : '네이버'} 회원가입에 실패했습니다.`);
+        setShowErrorModal(true);
       }
     } catch (err) {
       setError('소셜 회원가입 중 오류가 발생했습니다.');
+      setShowErrorModal(true);
     }
   };
 
   return (
-    <div className={styles.card}>
+    <>
+      {showErrorModal && (
+        <AlertModal
+          message={error}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
+      <div className={styles.card}>
       <div className={styles.container}>
         <div className={styles.logo}><img src="/logo.png" alt="한평생올케어 로고" /></div>
         <div className={styles.divider}>
           <span>회원가입</span>
         </div>
-        {error && (
-          <div className={styles.errorBox}>{error}</div>
-        )}
         
         <div style={{ marginBottom: '24px' }}>
           <p style={{ 
@@ -96,5 +104,6 @@ export default function SignupPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

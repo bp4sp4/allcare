@@ -7,15 +7,16 @@
 }
 
 .container{
-    margin : 180px auto;
+    margin: 120px auto;
     width: 360px;
-
+    padding: 0 20px;
+    
 }
 
 .logo {
-    width: 160px;
-    height: 22px;
-    margin: 0 auto;
+    width: 180px;
+    height: 26px;
+    margin: 0 auto 2rem auto;
 }
 
 .logo img {
@@ -33,8 +34,8 @@
 .divider {
   display: flex;
   align-items: center;
-  margin: 1rem 0;
-  gap: 0.5rem;
+  margin: 2rem 0 1.5rem 0;
+  gap: 0.75rem;
 }
 
 .divider::before,
@@ -42,22 +43,27 @@
   content: '';
   flex: 1;
   height: 1px;
-  background-color: #e5e7eb;
+  background-color: #E5E7EB;
 }
 
 .divider span {
-  color: #6b7280;
-  font-size: 0.875rem;
+  color: #374151;
+  font-size: 15px;
+  font-weight: 600;
   white-space: nowrap;
 }
 
 .errorBox {
-  padding: 1rem;
-  background-color: #fee2e2;
-  border: 1px solid #fca5a5;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  color: #dc2626;
+  padding: 0.875rem 1rem;
+  background-color: #FEF2F2;
+  border: 1px solid #FCA5A5;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+  color: #DC2626;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1.5;
 }
 
 .formGroup {
@@ -229,19 +235,20 @@ font-size: 13px;
 
 .successBadge {
   display: inline-block;
-  
-  color: #0051FF;
-  border-radius: 12px;
-  font-size: 13px;;
-  font-weight: 700;
-  margin-left: 0.5rem;
+color: #000;
+text-align: center;
+font-family: Pretendard;
+font-size: 20px;
+font-style: normal;
+font-weight: 500;
+line-height: normal;
 }
 
 .socialButtons {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1rem;
+  gap: 12px;
+  margin-top: 1.5rem;
 }
 
 .kakaoButton,
@@ -249,20 +256,20 @@ font-size: 13px;
 .emailButton,
 .signupButton {
   width: 100%;
-height: 52px;
+  height: 54px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 8px;
   text-decoration: none;
-  
-  transition: opacity 0.2s;
+  transition: all 0.2s;
   line-height: 19px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .kakaoButton {
@@ -271,7 +278,9 @@ height: 52px;
 }
 
 .kakaoButton:hover {
-  opacity: 0.9;
+  background-color: #FDD835;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .naverButton {
@@ -280,23 +289,33 @@ height: 52px;
 }
 
 .naverButton:hover {
-  opacity: 0.9;
+  background-color: #02B550;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .emailButton {
   background-color: #0051FF;
   color: #fff;
-  border: 1px solid #e5e7eb;
+  border: none;
 }
 
 .emailButton:hover {
-  opacity: 0.9;
+  background-color: #0041CC;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 81, 255, 0.3);
 }
 
 .signupButton {
   background-color: #374151;
   color: #fff;
-  border: 1px solid #e5e7eb;
+  border: none;
+}
+
+.signupButton:hover {
+  background-color: #1F2937;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .signupButton:hover {
@@ -371,6 +390,7 @@ height: 52px;
   background-color: #0051FF;
   color: #ffffff;
   cursor: pointer;
+  border-radius: 999px;
 }
 
 .loginButton:not(:disabled):hover {
@@ -501,15 +521,45 @@ height: 52px;
 }
 
 .emailResult {
-
-
- margin: 2rem 0;
   text-align: center;
 }
 
 .foundEmail {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #111827;
-  word-break: break-all;
+display: flex;
+padding: 10px 12px;
+justify-content: center;
+align-items: center;
+flex-direction: column;
+gap: 10px;
+
+}
+
+.successEmail{
+  border-radius: 8px;
+background: var(--Blue-50, #E5EDFF);
+padding: 10px 12px;
+}
+
+
+.successBtnWrap{
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 1.5rem;
+}
+
+
+.passwordButton{
+  display: flex;
+width: 328px;
+height: 51px;
+padding: var(--unit-5, 16px) 16px;
+justify-content: center;
+align-items: center;
+gap: 10px;
+
+border-radius: 999px;
+background: var(--Blue-50, #E5EDFF);
+  font-size: 16px;
+  font-weight: 700;
 }

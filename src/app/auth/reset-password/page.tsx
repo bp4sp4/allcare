@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import AlertModal from '@/components/AlertModal';
 import styles from '../auth.module.css';
 
 export default function ResetPasswordPage() {
@@ -11,6 +12,7 @@ export default function ResetPasswordPage() {
   const [tempPassword, setTempPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
   const [touched, setTouched] = useState({
     email: false
   });
@@ -25,6 +27,7 @@ export default function ResetPasswordPage() {
 
     if (!email || !validateEmail(email)) {
       setError('올바른 이메일을 입력해주세요.');
+      setShowErrorModal(true);
       return;
     }
 
@@ -43,9 +46,11 @@ export default function ResetPasswordPage() {
         setTempPassword(data.tempPassword);
       } else {
         setError(data.error || '임시 비밀번호 발급에 실패했습니다.');
+        setShowErrorModal(true);
       }
     } catch (err) {
       setError('임시 비밀번호 발급 중 오류가 발생했습니다.');
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -55,27 +60,33 @@ export default function ResetPasswordPage() {
 
   if (tempPassword) {
     return (
-      <div className={styles.container}>
+      <>
+        {showErrorModal && (
+          <AlertModal
+            message={error}
+            onClose={() => setShowErrorModal(false)}
+          />
+        )}
+        <div className={styles.container}>
         <div className={styles.emailLoginWrap}>
-          <div className={styles.logo}>
-            <img src="/logo.png" alt="한평생올케어" />
-          </div>
+
         
           
           <div className={styles.emailResult}>
-            <p className={styles.foundEmail}>{tempPassword}</p>
+            <p className={styles.foundEmail}>
+              사용자님의 임시 비밀번호는 <span className={styles.successEmail}>{tempPassword}</span>입니다. </p>
           </div>
           
           <p style={{
             textAlign: 'center',
-            color: '#dc2626',
+            color: '#FF3A3A',
             fontSize: '13px',
             marginTop: '16px',
             marginBottom: '24px'
           }}>
             ⚠️ 로그인 후 반드시 비밀번호를 변경해주세요
           </p>
-          
+          <div className={styles.successBtnWrap}>
           <button
             onClick={() => router.push('/auth/login')}
             className={styles.loginButton}
@@ -83,13 +94,29 @@ export default function ResetPasswordPage() {
           >
             로그인하기
           </button>
+              <button
+            onClick={() => window.location.href = '/'}
+            className={styles.passwordButton}
+            style={{ marginBottom: 0 }}
+          >
+            홈으로 돌아가기
+          </button>
+          </div>
         </div>
       </div>
+      </>
     );
   }
 
   return (
-    <div className={styles.container}>
+    <>
+      {showErrorModal && (
+        <AlertModal
+          message={error}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
+      <div className={styles.container}>
       <div className={styles.emailLoginWrap}>
         <div className={styles.logo}>
           <img src="/logo.png" alt="한평생올케어" />
@@ -120,12 +147,6 @@ export default function ResetPasswordPage() {
             )}
           </div>
 
-          {error && (
-            <div className={styles.errorMessage} style={{ marginBottom: '16px', textAlign: 'center' }}>
-              {error}
-            </div>
-          )}
-
           <button
             type="submit"
             disabled={!isEmailValid || loading}
@@ -145,5 +166,6 @@ export default function ResetPasswordPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

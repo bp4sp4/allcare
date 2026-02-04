@@ -255,7 +255,7 @@ html.no-scroll, body.no-scroll {
   align-items: flex-start;
   align-self: stretch;
   background: var(--Gray-50, #FFF);
-  margin-top: 24px;
+  
 }
 
 .productNoticeTitle {
@@ -336,7 +336,7 @@ html.no-scroll, body.no-scroll {
   transform: translateX(-50%);
   z-index: 10000;
   max-width: 360px;
-  width: 100vw;
+  width: 100%;
   min-height: 220px;
   animation: bottomSheetUp 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }

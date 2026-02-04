@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import AlertModal from '@/components/AlertModal';
 import styles from '../../auth.module.css';
 
 export default function EmailSignupPage() {
@@ -20,6 +21,7 @@ export default function EmailSignupPage() {
   const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordConfirmError, setPasswordConfirmError] = useState('');
@@ -138,6 +140,7 @@ export default function EmailSignupPage() {
   const handleSendVerification = async () => {
     if (!formData.phone) {
       setError('전화번호를 입력해주세요.');
+      setShowErrorModal(true);
       return;
     }
 
@@ -168,12 +171,15 @@ export default function EmailSignupPage() {
           });
         }, 1000);
         
-        alert('인증번호가 발송되었습니다.');
+        setError('인증번호가 발송되었습니다.');
+        setShowErrorModal(true);
       } else {
         setError(data.error || '인증번호 발송에 실패했습니다.');
+        setShowErrorModal(true);
       }
     } catch (err) {
       setError('인증번호 발송 중 오류가 발생했습니다.');
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -182,6 +188,7 @@ export default function EmailSignupPage() {
   const handleVerifyCode = async () => {
     if (!formData.verificationCode) {
       setError('인증번호를 입력해주세요.');
+      setShowErrorModal(true);
       return;
     }
 
@@ -202,12 +209,15 @@ export default function EmailSignupPage() {
 
       if (response.ok) {
         setIsVerified(true);
-        alert('전화번호 인증이 완료되었습니다.');
+        setError('전화번호 인증이 완료되었습니다.');
+        setShowErrorModal(true);
       } else {
         setError(data.error || '인증번호가 일치하지 않습니다.');
+        setShowErrorModal(true);
       }
     } catch (err) {
       setError('인증 확인 중 오류가 발생했습니다.');
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
@@ -220,16 +230,19 @@ export default function EmailSignupPage() {
     // 유효성 검사
     if (!formData.email || !formData.password || !formData.name || !formData.phone) {
       setError('모든 필수 항목을 입력해주세요.');
+      setShowErrorModal(true);
       return;
     }
 
     if (formData.password !== formData.passwordConfirm) {
       setError('비밀번호가 일치하지 않습니다.');
+      setShowErrorModal(true);
       return;
     }
 
     if (!isVerified) {
       setError('전화번호 인증을 완료해주세요.');
+      setShowErrorModal(true);
       return;
     }
 
@@ -245,20 +258,32 @@ export default function EmailSignupPage() {
       const data = await response.json();
 
       if (response.ok) {
-        alert('회원가입이 완료되었습니다!');
-        router.push('/auth/login');
+        setError('회원가입이 완료되었습니다!');
+        setShowErrorModal(true);
+        setTimeout(() => {
+          router.push('/auth/login');
+        }, 1500);
       } else {
         setError(data.error || '회원가입에 실패했습니다.');
+        setShowErrorModal(true);
       }
     } catch (err) {
       setError('회원가입 중 오류가 발생했습니다.');
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className={styles.card}>
+    <>
+      {showErrorModal && (
+        <AlertModal
+          message={error}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
+      <div className={styles.card}>
       <div className={styles.container} style={{ marginTop: '90px' }}>
         <div className={styles.logoWrap}>
           <img src="/logo.png" alt="한평생올케어 로고" className={styles.logo} />
@@ -397,8 +422,8 @@ export default function EmailSignupPage() {
           <span>이미 계정이 있으신가요?</span>
           <Link href="/auth/login" className={styles.signupLink}>로그인</Link>
         </div>
-        {error && <div className={styles.errorBox}>{error}</div>}
       </div>
     </div>
+    </>
   );
 }

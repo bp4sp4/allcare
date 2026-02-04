@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import AlertModal from '@/components/AlertModal';
 import styles from './auth.module.css';
 
 
@@ -13,6 +14,7 @@ export default function EmailLoginForm({ onSuccess }: EmailLoginFormProps) {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showErrorModal, setShowErrorModal] = useState(false);
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [touched, setTouched] = useState({ email: false, password: false });
@@ -70,6 +72,7 @@ export default function EmailLoginForm({ onSuccess }: EmailLoginFormProps) {
     setError('');
     if (!formData.email || !formData.password) {
       setError('이메일과 비밀번호를 입력해주세요.');
+      setShowErrorModal(true);
       return;
     }
     setLoading(true);
@@ -90,16 +93,24 @@ export default function EmailLoginForm({ onSuccess }: EmailLoginFormProps) {
         router.push('/');
       } else {
         setError(data.error || '로그인에 실패했습니다.');
+        setShowErrorModal(true);
       }
     } catch (err) {
       setError('로그인 중 오류가 발생했습니다.');
+      setShowErrorModal(true);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    
+    <>
+      {showErrorModal && (
+        <AlertModal
+          message={error}
+          onClose={() => setShowErrorModal(false)}
+        />
+      )}
     <div className={styles.emailLoginWrap}>
         
       <div className={styles.logoWrap}>
@@ -153,7 +164,7 @@ export default function EmailLoginForm({ onSuccess }: EmailLoginFormProps) {
         
         <Link href="/auth/signup" className={styles.signupLink}>이메일로 회원가입</Link>
       </div>
-      {error && <div className={styles.errorBox}>{error}</div>}
     </div>
+    </>
   );
 }
