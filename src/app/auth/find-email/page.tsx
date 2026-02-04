@@ -135,7 +135,7 @@ export default function FindEmailPage() {
           <div className={styles.successBtnWrap}>
           <button
             onClick={() => window.location.href = '/auth/login'}
-            className={styles.loginButton}
+            className={styles.loginButtonfind}
             style={{ marginBottom: 0 }}
           >
             로그인하기

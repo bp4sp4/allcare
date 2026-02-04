@@ -89,7 +89,7 @@ export default function ResetPasswordPage() {
           <div className={styles.successBtnWrap}>
           <button
             onClick={() => router.push('/auth/login')}
-            className={styles.loginButton}
+            className={styles.loginButtonfind}
             style={{ marginBottom: 0 }}
           >
             로그인하기
