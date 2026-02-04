@@ -1,3 +1,155 @@
+/* 구독중인 플랜 없음 - 작은 파란 버튼 */
+.startBtnSmall {
+  background: #0051FF;
+  color: #fff;
+  font-size: 14px;
+  font-family: Pretendard, sans-serif;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 8px 12px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  box-shadow: none;
+  margin-left: 4px;
+}
+.startBtnSmall:hover {
+  background: #2563eb;
+}
+/* 구독 취소/환불 요청 버튼 나란히 */
+.subscriptionActionRow {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  width: 100%;
+  justify-content: flex-end;
+}
+.cancelBtn, .refundBtn {
+  flex: none;
+  background: none;
+  color: #9CA3AF;
+  font-family: Pretendard, sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  border-radius: 0;
+  text-align: center;
+  text-decoration: underline;
+  box-shadow: none;
+  padding: 0 0 8px 0;
+  margin: 10px 0 0 0;
+  cursor: pointer;
+}
+
+.subscriptionMessages{
+ color: var(--Grayscale-700, #3D3D3D);
+font-family: Pretendard;
+font-size: 16px;
+font-style: normal;
+font-weight: 600;
+line-height: 100%; /* 16px */
+margin-bottom: 10px;
+}
+
+.cancelBtn:hover, .refundBtn:hover {
+  color: #656565;
+  background: none;
+}
+/* 혜택 디자인 개선 */
+.benefitSectionBox {
+  margin: 18px 0 10px 0;
+  width: 100%;
+}
+.benefitTitles {
+  color: var(--Grayscale-900, #010101);
+  font-family: Pretendard, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  padding: 20px 0;
+  font-weight: 700;
+  line-height: 100%;
+}
+.benefitItemCustom {
+  color: var(--Grayscale-600, #656565);
+  font-family: Pretendard, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 100%;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 12px 18px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.benefitItemInactive {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 20px 0;
+  font-size: 16px;
+  font-family: Pretendard, sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  color: var(--Grayscale-300, #D0D0D0);
+  line-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  opacity: 1;
+  min-height: 44px;
+}
+
+.detailRowCustom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+.detailLabelCustom {
+  color: var(--Grayscale-600, #656565);
+  font-family: Pretendard, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 100%;
+}
+.detailValueCustom {
+  color: var(--Grayscale-600, #656565);
+  font-family: Pretendard, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 100%;
+}
+.benefitTitle {
+  margin: 18px 0 8px 0;
+  color: var(--Grayscale-900, #010101);
+  font-family: Pretendard, sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 100%;
+}
+.detailValueCustomBtn{
+    display: flex;
+padding: 6px 8px;
+justify-content: center;
+align-items: center;
+gap: 10px;
+border-radius: 999px;
+background: var(--Grayscale-200, #E4E4E4);
+color: var(--Grayscale-700, #3D3D3D);
+font-family: Pretendard;
+font-size: 12px;
+font-style: normal;
+font-weight: 600;
+line-height: normal;
+}
+
+
 .container {
   max-width: 360px;
   margin: 0 auto;
@@ -96,23 +248,32 @@
 .subscriptionCard {
   background: #f9fafb;
   border-radius: 12px;
-  padding: 32px;
+  padding: 16px;
   border: 1px solid #e5e7eb;
   color: #111827;
 }
 
 .subscriptionStatus {
-  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 8px;
+    background: var(--Blue-50, #E5EDFF);
+    padding: 20px 10px;
 }
 
 .statusBadge {
-  display: inline-block;
-  padding: 6px 16px;
-  background: #dcfce7;
-  color: #166534;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  color: var(--Grayscale-900, #010101);
+ font-family: Pretendard;
+font-size: 18px;
+font-style: normal;
+font-weight: 700;
+line-height: 100%; /* 18px */
+justify-content: space-between;
 }
 
 .statusBadgeWarning {
@@ -214,53 +375,44 @@
   opacity: 0.9;
 }
 
+
 .cancelBtn,
 .renewBtn {
-  flex: 1;
-  padding: 12px 20px;
-  background: white;
-  color: #374151;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+color: var(--Grayscale-500, #919191);
+text-align: right;
+font-family: Pretendard;
+font-size: 14px;
+font-style: normal;
+font-weight: 500;
+line-height: 100%; /* 14px */
+text-decoration-line: underline;
+text-decoration-style: solid;
+text-decoration-skip-ink: auto;
+text-decoration-thickness: auto;
+text-underline-offset: auto;
+text-underline-position: from-font;
 }
 
 .refundBtn {
-  flex: 1;
-  padding: 12px 20px;
-  background: white;
-  color: #9ca3af;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
+color: var(--Grayscale-500, #919191);
+text-align: right;
+font-family: Pretendard;
+font-size: 14px;
+font-style: normal;
+font-weight: 500;
+line-height: 100%; /* 14px */
+text-decoration-line: underline;
+text-decoration-style: solid;
+text-decoration-skip-ink: auto;
+text-decoration-thickness: auto;
+text-underline-offset: auto;
+text-underline-position: from-font;
 }
 
 .renewBtn {
-  background: #0051FF;
-  color: white;
+  
+  color: #919191;
   border: none;
-}
-
-.cancelBtn:hover {
-  background: #f3f4f6;
-  border-color: #9ca3af;
-}
-
-.refundBtn:hover {
-  background: #fafafa;
-  color: #6b7280;
-  border-color: #d1d5db;
-}
-
-.renewBtn:hover {
-  background: #0041CC;
-  transform: translateY(-1px);
 }
 
 /* 푸터 */
@@ -304,9 +456,11 @@
 }
 
 .table td {
-  padding: 14px 16px;
-  font-size: 14px;
+  padding: 20px 0px;
+  font-size: 12px;
   color: #4b5563;
+  font-weight: 400;
+  text-align: center;
   border-bottom: 1px solid #f3f4f6;
 }
 
@@ -316,12 +470,12 @@
 
 .statusBadgeActive {
   display: inline-block;
-  padding: 4px 12px;
-  background: #d1fae5;
-  color: #065f46;
-  border-radius: 12px;
+  padding: 8px 12px;
+  color: #fff; 
+  background: var(--Blue-500, #0051FF);
+  border-radius: 999px;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 700;
 }
 
 .statusBadgeCancelled {
@@ -590,12 +744,26 @@
   transition: all 0.2s ease;
 }
 
-.refundConfirmBtn:hover {
-  background: #dc2626;
+.paymentHeader{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.refundConfirmBtn:active {
-  transform: scale(0.98);
+.moreBtn{
+    display: flex;
+padding: 8px 12px;
+justify-content: center;
+align-items: center;
+gap: 10px;
+border-radius: 999px;
+background: var(--Grayscale-200, #E4E4E4);
+color: var(--Grayscale-700, #3D3D3D);
+font-family: Pretendard;
+font-size: 14px;
+font-style: normal;
+font-weight: 700;
+line-height: normal;
 }
 
 

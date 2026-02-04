@@ -32,13 +32,16 @@ export async function POST(req: NextRequest) {
 
     const userId = decoded.userId;
 
-    // 활성 구독 조회
+
+    // 활성 또는 취소예정 구독 조회
     const { data: subscription, error: subError } = await supabaseAdmin
       .from('subscriptions')
       .select('*')
       .eq('user_id', userId)
-      .eq('status', 'active')
-      .single();
+      .in('status', ['active', 'cancel_scheduled'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (subError || !subscription) {
       return NextResponse.json(

@@ -14,6 +14,7 @@ interface UserInfo {
 
 interface SubscriptionInfo {
   isActive: boolean;
+  id?: string;
   plan?: string;
   amount?: number;
   startDate?: string;
@@ -247,11 +248,18 @@ export default function MyPage() {
         }
       } else if (action === 'cancel') {
         if (confirm('구독을 취소하시겠습니까?')) {
+          console.log('구독 취소 시도, subscription:', subscription);
+          if (!subscription.id) {
+            alert('구독 정보가 올바르지 않습니다. 새로고침 후 다시 시도해 주세요.');
+            return;
+          }
           const response = await fetch('/api/subscription/cancel', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${token}`
-            }
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ subscriptionId: subscription.id })
           });
 
           const data = await response.json();
@@ -350,89 +358,110 @@ export default function MyPage() {
         <section className={styles.section}>
           <h2 className={styles.sectionTitle}>구독 정보</h2>
           <div className={styles.subscriptionCard}>
-            {subscription.isActive ? (
+            {/* 구독중인 플랜 없음 */}
+            {subscription.isActive && !subscription.plan ? (
               <>
                 <div className={styles.subscriptionStatus}>
-                  {subscription.cancelled_at ? (
-                    <span className={styles.statusBadgeWarning}>구독 중 (구독취소 상태)</span>
-                  ) : (
-                    <span className={styles.statusBadge}>구독 중</span>
-                  )}
+                  <span className={styles.statusBadgeInactive}>구독중인 플랜이 없습니다.</span>
+                  <button className={styles.startBtn} onClick={() => handleSubscriptionAction('start')}>구독 시작</button>
                 </div>
-                <div className={styles.subscriptionDetails}>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>구독 플랜</span>
-                    <span className={styles.detailValue}>{subscription.plan || '프리미엄'}</span>
-                  </div>
-                  <div className={styles.detailRow}>
-                    <span className={styles.detailLabel}>시작일</span>
-                    <span className={styles.detailValue}>{subscription.startDate || '2026.01.01'}</span>
-                  </div>
-                  {subscription.cancelled_at ? (
-                    <div className={styles.detailRow}>
-                      <span className={styles.detailLabel}>이용 가능 종료일</span>
-                      <span className={styles.detailValue} style={{ color: '#ef4444', fontWeight: 'bold' }}>
-                        {subscription.endDate || subscription.nextBillingDate || '-'}
-                      </span>
-                    </div>
-                  ) : (
-                    <>
-                      <div className={styles.detailRow}>
-                        <span className={styles.detailLabel}>다음 결제일</span>
-                        <span className={styles.detailValue}>
-                          {subscription.nextBillingDate || '2026.02.01'}
-                        </span>
-                      </div>
-                      <div className={styles.detailRow}>
-                        <span className={styles.detailLabel}>결제 예정 금액</span>
-                        <span className={styles.detailValue} style={{ color: '#2563eb', fontWeight: '600' }}>
-                          {subscription.amount?.toLocaleString() || '20,000'}원
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
-                <div className={styles.subscriptionActions}>
-                  {subscription.cancelled_at ? (
-                    <button 
-                      className={styles.renewBtn}
-                      onClick={() => handleSubscriptionAction('renew')}
-                    >
-                      재갱신
-                    </button>
-                  ) : (
-                    <>
-                      <button 
-                        className={styles.cancelBtn}
-                        onClick={() => handleSubscriptionAction('cancel')}
-                      >
-                        구독 취소
-                      </button>
-                      <button 
-                        className={styles.refundBtn}
-                        onClick={() => handleSubscriptionAction('refund')}
-                      >
-                        환불 요청
-                      </button>
-                    </>
-                  )}
+                <div className={styles.benefitList}>
+                  <div className={styles.benefitItemInactive}>미이수 전액환급 보장</div>
+                  <div className={styles.benefitItemInactive}>한평생 직업훈련 무료수강권</div>
+                  <div className={styles.benefitItemInactive}>올케어 실습매칭 시스템</div>
                 </div>
               </>
+            ) : subscription.isActive ? (
+              subscription.cancelled_at ? (
+                <>
+                  <div className={styles.subscriptionStatus}>
+                    <span className={styles.statusBadge}>한평생 올케어</span>
+                    <span className={styles.statusBadgeActive}>구독 종료 예정</span>
+                  </div>
+                  <div className={styles.subscriptionDetailsBox}>
+                    <div className={styles.detailRowCustom}>
+                      <span className={styles.detailLabelCustom}>이용기간</span>
+                      <span className={styles.detailValueCustom}>{subscription.startDate} ~ {subscription.nextBillingDate}</span>
+                    </div>
+                    <div className={styles.detailRowCustom}>
+                      <span className={styles.detailLabelCustom}>다음 결제일</span>
+                      <span className={styles.detailValueCustom} style={{ color: '#ef4444', fontWeight: 700 }}>구독 종료 예정</span>
+                    </div>
+                    <div className={styles.detailRowCustom}>
+                      <span className={styles.detailLabelCustom}>결제 예정금액</span>
+                      <span className={styles.detailValueCustom}>-</span>
+                    </div>
+                  </div>
+                  <div className={styles.benefitTitle}>이용중인 혜택</div>
+                  <div className={styles.detailRowCustom}>
+                    <span className={styles.detailLabelCustom}>미이수 전액환급 보장</span>
+                  </div>
+                  <div className={styles.detailRowCustom}>
+                    <span className={styles.detailLabelCustom}>한평생 직업훈련 무료수강권</span>
+                    <span className={styles.detailValueCustomBtn}>사이트 바로가기</span>
+                  </div>
+                  <div className={styles.detailRowCustom}>
+                    <span className={styles.detailLabelCustom}>올케어 실습매칭 시스템</span>
+                    <span className={styles.detailValueCustomBtn}> 바로가기</span>
+                  </div>
+                  <div className={styles.subWrapper}>
+                    <div className={styles.subscriptionActionRow}>
+                      <button className={styles.renewBtn} onClick={() => handleSubscriptionAction('renew')}>재갱신</button>
+                      <button className={styles.refundBtn} onClick={() => handleSubscriptionAction('refund')}>환불 요청</button>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={styles.subscriptionStatus}>
+                    <span className={styles.statusBadge}>한평생 올케어</span>
+                    <span className={styles.statusBadgeActive}>구독중</span>
+                  </div>
+                  <div className={styles.subscriptionDetailsBox}>
+                    <div className={styles.detailRowCustom}>
+                      <span className={styles.detailLabelCustom}>이용기간</span>
+                      <span className={styles.detailValueCustom}>{subscription.startDate} ~ {subscription.nextBillingDate}</span>
+                    </div>
+                    <div className={styles.detailRowCustom}>
+                      <span className={styles.detailLabelCustom}>다음 결제일</span>
+                      <span className={styles.detailValueCustom}>{subscription.nextBillingDate}</span>
+                    </div>
+                    <div className={styles.detailRowCustom}>
+                      <span className={styles.detailLabelCustom}>결제 예정금액</span>
+                      <span className={styles.detailValueCustom}>{subscription.amount?.toLocaleString()}원</span>
+                    </div>
+                  </div>
+                  <div className={styles.benefitTitle}>이용중인 혜택</div>
+                  <div className={styles.detailRowCustom}>
+                    <span className={styles.detailLabelCustom}>미이수 전액환급 보장</span>
+                  </div>
+                  <div className={styles.detailRowCustom}>
+                    <span className={styles.detailLabelCustom}>한평생 직업훈련 무료수강권</span>
+                    <span className={styles.detailValueCustomBtn}>사이트 바로가기</span>
+                  </div>
+                  <div className={styles.detailRowCustom}>
+                    <span className={styles.detailLabelCustom}>올케어 실습매칭 시스템</span>
+                    <span className={styles.detailValueCustomBtn}> 바로가기</span>
+                  </div>
+                  <div className={styles.subWrapper}>
+                    <div className={styles.subscriptionActionRow}>
+                      <button className={styles.cancelBtn} onClick={() => handleSubscriptionAction('cancel')}>구독 취소</button>
+                      <button className={styles.refundBtn} onClick={() => handleSubscriptionAction('refund')}>환불 요청</button>
+                    </div>
+                  </div>
+                </>
+              )
             ) : (
               <>
-                <div className={styles.subscriptionStatus}>
-                  <span className={styles.statusBadgeInactive}>구독 안 함</span>
+                <div className={styles.benefitTitles} style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px'}}>
+                  구독중인 플랜이 없습니다.
+                  <button className={styles.startBtnSmall} onClick={() => handleSubscriptionAction('start')}>구독 시작</button>
                 </div>
-                <p className={styles.subscriptionMessage}>
-                  프리미엄 구독으로 더 많은 혜택을 받아보세요!
-                </p>
-                <div className={styles.subscriptionActions}>
-                  <button 
-                    className={styles.startBtn}
-                    onClick={() => handleSubscriptionAction('start')}
-                  >
-                    구독 시작하기
-                  </button>
+                <div className={styles.subscriptionMessages}>올케어 구독으로 더 많은 혜택을 받아보세요!</div>
+                <div className={styles.benefitList}>
+                  <div className={styles.benefitItemInactive}>미이수 전액환급 보장</div>
+                  <div className={styles.benefitItemInactive}>한평생 직업훈련 무료수강권</div>
+                  <div className={styles.benefitItemInactive}>올케어 실습매칭 시스템</div>
                 </div>
               </>
             )}
@@ -441,7 +470,10 @@ export default function MyPage() {
 
         {/* 결제 내역 섹션 */}
         <section className={styles.section}>
+            <div className={styles.paymentHeader}>
           <h2 className={styles.sectionTitle}>결제 내역</h2>
+          <button className={styles.moreBtn} onClick={() => router.push('/payment/history')}>더보기</button>
+</div>
           <div className={styles.paymentHistoryCard}>
             {paymentHistory.length > 0 ? (
               <div className={styles.paymentTable}>
@@ -452,31 +484,17 @@ export default function MyPage() {
                       <th>플랜</th>
                       <th>금액</th>
                       <th>결제방법</th>
-                      <th>상태</th>
+                      
                     </tr>
                   </thead>
                   <tbody>
                     {paymentHistory.map((payment) => (
                       <tr key={payment.id}>
                         <td>{new Date(payment.date).toLocaleDateString('ko-KR')}</td>
-                        <td>{payment.plan}</td>
+                        <td>{payment.plan === 'premium' ? '올케어' : payment.plan}</td>
                         <td>{payment.amount.toLocaleString()}원</td>
                         <td>{payment.paymentMethod}</td>
-                        <td>
-                          <span className={
-                            payment.status === 'active' 
-                              ? styles.statusBadgeActive
-                              : payment.status === 'cancel_scheduled'
-                              ? styles.statusBadgeWarning
-                              : payment.status === 'cancelled'
-                              ? styles.statusBadgeCancelled
-                              : styles.statusBadgeExpired
-                          }>
-                            {payment.status === 'active' ? '구독중' : 
-                             payment.status === 'cancel_scheduled' ? '구독취소 상태' :
-                             payment.status === 'cancelled' ? '환불' : '만료'}
-                          </span>
-                        </td>
+                   
                       </tr>
                     ))}
                   </tbody>
@@ -488,11 +506,7 @@ export default function MyPage() {
           </div>
         </section>
 
-        <div className={styles.footer}>
-          <Link href="/" className={styles.backLink}>
-            홈으로 돌아가기
-          </Link>
-        </div>
+
       </div>
 
       {/* 비밀번호 변경 모달 */}

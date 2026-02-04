@@ -57,6 +57,7 @@ export async function GET(req: NextRequest) {
     // 구독이 있는 경우
     return NextResponse.json({
       isActive: true,
+      id: subscription.id,
       plan: subscription.plan,
       amount: subscription.amount,
       startDate: new Date(subscription.start_date).toLocaleDateString('ko-KR'),
