@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
+import AlertModal from '@/components/AlertModal';
 import Script from 'next/script';
 import { supabase } from '@/lib/supabase';
 import styles from './page.module.css';
@@ -22,6 +22,7 @@ declare global {
 
 
 export default function Home() {
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showSticky, setShowSticky] = useState(true);
@@ -162,6 +163,16 @@ export default function Home() {
 
   return (
     <>
+      {showLoginModal && (
+        <AlertModal
+          message="로그인이 필요합니다."
+          onClose={() => {
+            setShowLoginModal(false);
+            setShowSheet(false);
+            router.push('/auth/login');
+          }}
+        />
+      )}
       <Script
         src="https://lite.payapp.kr/public/api/v2/payapp-lite.js"
         strategy="afterInteractive"
@@ -304,10 +315,19 @@ export default function Home() {
                   // 로그인 체크
                   const token = localStorage.getItem('token');
                   if (!token) {
-                    alert('로그인이 필요합니다.');
-                    router.push('/auth/login');
+                    setShowLoginModal(true);
                     return;
                   }
+      {showLoginModal && (
+        <AlertModal
+          message="로그인이 필요합니다."
+          onClose={() => {
+            setShowLoginModal(false);
+            setShowSheet(false);
+            router.push('/auth/login');
+          }}
+        />
+      )}
 
                   // API를 통해 사용자 정보 가져오기
                   const userResponse = await fetch('/api/user/profile', {
