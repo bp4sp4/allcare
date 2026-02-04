@@ -398,11 +398,25 @@ export default function MyPage() {
                   </div>
                   <div className={styles.detailRowCustom}>
                     <span className={styles.detailLabelCustom}>한평생 직업훈련 무료수강권</span>
-                    <span className={styles.detailValueCustomBtn}>사이트 바로가기</span>
+                    <a
+                      className={styles.detailValueCustomBtn}
+                      href="https://korhrd.co.kr/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      사이트 바로가기
+                    </a>
                   </div>
                   <div className={styles.detailRowCustom}>
                     <span className={styles.detailLabelCustom}>올케어 실습매칭 시스템</span>
-                    <span className={styles.detailValueCustomBtn}> 바로가기</span>
+                    <a
+                      className={styles.detailValueCustomBtn}
+                      href="https://allcare-korhrd.vercel.app/matching"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      바로가기
+                    </a>
                   </div>
                   <div className={styles.subWrapper}>
                     <div className={styles.subscriptionActionRow}>

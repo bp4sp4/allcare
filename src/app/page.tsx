@@ -150,15 +150,20 @@ export default function Home() {
   const handleSheetOpen = () => setShowSheet(true);
   const handleSheetClose = () => setShowSheet(false);
 
+  // 동의 체크 로직 개선: 상태 동기화 보장
   const handleAgreeAll = () => {
-    const next = !agreeAll;
-    setAgreeAll(next);
-    setAgreements([next, next, next]);
+    setAgreeAll((prev) => {
+      const next = !prev;
+      setAgreements([next, next, next]);
+      return next;
+    });
   };
   const handleAgreement = (idx: number) => {
-    const next = agreements.map((v, i) => (i === idx ? !v : v));
-    setAgreements(next);
-    setAgreeAll(next.every(Boolean));
+    setAgreements((prev) => {
+      const next = prev.map((v, i) => (i === idx ? !v : v));
+      setAgreeAll(next.every(Boolean));
+      return next;
+    });
   };
 
   return (
