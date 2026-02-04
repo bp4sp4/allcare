@@ -4,10 +4,10 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { amount, orderId, orderName, customerName, customerPhone } = body;
+    const { amount, orderId, orderName, productName, productType, billingCycle, customerName, customerPhone } = body;
 
     // 결제 요청 검증
-    if (!amount || !orderName) {
+    if (!amount || (!orderName && !productName)) {
       return NextResponse.json(
         { error: '필수 파라미터가 누락되었습니다.' },
         { status: 400 }
@@ -16,12 +16,15 @@ export async function POST(request: NextRequest) {
 
     // 주문번호 생성 (없는 경우)
     const finalOrderId = orderId || `ORDER-${Date.now()}`;
+    const finalOrderName = orderName || productName;
 
     // TODO: 데이터베이스에 주문 정보 저장
     // await db.orders.create({
     //   orderId: finalOrderId,
     //   amount,
-    //   orderName,
+    //   orderName: finalOrderName,
+    //   productType,
+    //   billingCycle,
     //   customerName,
     //   customerPhone,
     //   status: 'pending'
@@ -30,10 +33,28 @@ export async function POST(request: NextRequest) {
     console.log('Payment request created:', {
       orderId: finalOrderId,
       amount,
-      orderName,
+      orderName: finalOrderName,
+      productType,
+      billingCycle,
       customerName,
       customerPhone
     });
+
+    // PayApp 결제 URL 생성
+    const payappBaseUrl = process.env.NEXT_PUBLIC_PAYAPP_BASE_URL || 'https://api.payapp.kr';
+    const merchantId = process.env.PAYAPP_MERCHANT_ID || 'YOUR_MERCHANT_ID';
+    
+    // PayApp 결제 요청 파라미터
+    const payappParams = new URLSearchParams({
+      merchant_id: merchantId,
+      order_id: finalOrderId,
+      amount: amount.toString(),
+      product_name: finalOrderName,
+      return_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/payments/result`,
+      cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/payment/cancel`
+    });
+
+    const paymentUrl = `${payappBaseUrl}/payment/checkout?${payappParams.toString()}`;
 
     return NextResponse.json({
       success: true,
@@ -41,10 +62,10 @@ export async function POST(request: NextRequest) {
       data: {
         orderId: finalOrderId,
         amount,
-        orderName,
-        status: 'pending',
-        paymentUrl: '/payment' // 페이앱 결제 페이지로 이동
-      }
+        orderName: finalOrderName,
+        status: 'pending'
+      },
+      paymentUrl: paymentUrl
     });
 
   } catch (error) {

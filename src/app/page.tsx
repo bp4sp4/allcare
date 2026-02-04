@@ -253,8 +253,17 @@ export default function Home() {
                     const data = await response.json();
                     
                     if (data.paymentUrl) {
-                      // PayApp 결제 페이지로 리다이렉트
-                      window.location.href = data.paymentUrl;
+                      // PayApp 결제 팝업창 열기
+                      const width = 500;
+                      const height = 700;
+                      const left = (window.screen.width - width) / 2;
+                      const top = (window.screen.height - height) / 2;
+                      
+                      window.open(
+                        data.paymentUrl,
+                        'payapp_payment',
+                        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+                      );
                     } else {
                       alert('결제 요청에 실패했습니다.');
                     }
