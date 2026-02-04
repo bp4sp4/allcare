@@ -474,7 +474,7 @@ export default function MyPage() {
                           }>
                             {payment.status === 'active' ? '구독중' : 
                              payment.status === 'cancel_scheduled' ? '구독취소 상태' :
-                             payment.status === 'cancelled' ? '취소됨' : '만료'}
+                             payment.status === 'cancelled' ? '환불' : '만료'}
                           </span>
                         </td>
                       </tr>
