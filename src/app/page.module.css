@@ -13,6 +13,7 @@ html.no-scroll, body.no-scroll {
   max-width: 360px;
   margin: 0 auto;
   padding-top: 61px;
+  padding-bottom: 110px;
 }
 
 .mobileWrapper {
@@ -24,8 +25,8 @@ html.no-scroll, body.no-scroll {
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  background: linear-gradient(180deg, var(--Blue-200, #7FA8FF) 0%, var(--Blue-50, #E5EDFF) 100%);
-  background-image: url('/images/main_banner.png');
+  
+  background: linear-gradient(0deg, rgba(178, 202, 255, 0.00) 62.67%, #B2CAFF 84.89%), url('/images/main_banner.png') lightgray -140.39px 0.106px / 138.978% 99.976% no-repeat;
   background-size: cover;
   background-position: center;
 }
@@ -55,7 +56,7 @@ html.no-scroll, body.no-scroll {
 }
 
 .heroSubtitle {
-  color: var(--white, #FFF);
+  color: var(--white, #1d1d1d);
   text-align: center;
   font-family: Pretendard, sans-serif;
   font-size: 14px;
@@ -158,7 +159,7 @@ html.no-scroll, body.no-scroll {
   width: 328px;
   height: 240px;
   object-fit: contain;
-  background: #e5edff;
+
   border-radius: 16px;
   display: flex;
   align-items: center;
@@ -189,7 +190,7 @@ html.no-scroll, body.no-scroll {
   font-size: 12px;
   font-style: normal;
   font-weight: 500;
-  line-height: 100%;
+  line-height: 140%;
   
 }
 
@@ -230,14 +231,18 @@ html.no-scroll, body.no-scroll {
   position: fixed;
   left: 0;
   right: 0;
-  bottom: 24px;
+  bottom: 0;
   z-index: 100;
-  width: 100vw;
+  width: 100%;
+  max-width: 360px;
+  margin : 0 auto;
   display: flex;
   justify-content: center;
   pointer-events: none;
-  padding: 0 16px;
+  padding: 16px;
   box-sizing: border-box;
+  background: var(--white, #FFF);
+  
 }
 
 .stickyButtonInner {

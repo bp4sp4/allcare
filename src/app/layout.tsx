@@ -47,7 +47,7 @@ export default async function RootLayout({
       <body style={{ fontFamily: "Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif" }}>
         <Header />  
         {children}
-        {!isAdminPage && !isAuthHideFooterPage && <Footer />}
+        {!isAdminPage && !isAuthHideFooterPage && pathname !== '/' && <Footer />}
       </body>
     </html>
   );

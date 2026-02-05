@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import AlertModal from '@/components/AlertModal';
+import Footer from '@/components/Footer';
 import Script from 'next/script';
 import { supabase } from '@/lib/supabase';
 import styles from './page.module.css';
@@ -199,11 +200,13 @@ export default function Home() {
       />
       <main className={styles.main_wrapper}>
       <div className={styles.mobileWrapper}>
+        <p className={styles.heroSubtitle}>시작부터 끝까지 안전하게</p>
         <div className={styles.heroBadge}>
+          
           <span className={styles.heroTitle}>한평생 올케어</span>
         </div>
-        <p className={styles.heroSubtitle}>한 번의 구독으로, 시작부터 취업 도움까지</p>
-        <div className={styles.mainImage}></div>
+        
+        
       </div>
       <div className={styles.descriptionSection}>
         <span className={styles.descriptionText}>학습은 안전히 학습자 올케어 서비스</span>
@@ -218,22 +221,25 @@ export default function Home() {
             수강을 다 했는데도 이수하지 못했다면<br/>해당 과목은 전액환급을 보장합니다.
           </div>
           <div className={styles.pointNote}>
-            출석 100%, 기말고사, 중간고사 응시 기준*
+            출석 100%, 기말고사, 중간고사 응시 기준*<br/>
+미이수 환급대상이 아니라면 30~60만원 추가발생**
           </div>
         </div>
          </div>
             <div className={styles.pointCardSection}>
         <div className={styles.pointCard}>
           <div className={styles.pointBadge}>POINT 2</div>
-          <div className={styles.pointTitle}>학습자 맞춤 관리</div>
+          <div className={styles.pointTitle}>직업훈련과정 무료수강권</div>
           
             <img src="/images/main_img_003.png" alt="맞춤 관리 아이콘" className={styles.pointImage} />
           
           <div className={styles.pointDesc}>
-            구독 기간 동안 원하는 직업훈련 과정을<br/>
-자유롭게 수강하실 수 있습니다.
+            한평생 직업훈련원의 모든과정을<br/>무료로 자유롭게 수강하실수 있습니다.
           </div>
-
+   <div className={styles.pointNote}>
+           올케어 미구독시 1과정당 수강료 40만원*<br/>
+자격증 발급비 별도**
+          </div>
         </div>
         </div>
         <div className={styles.pointCardSection}>
@@ -244,16 +250,13 @@ export default function Home() {
             <img src="/images/main_img_004.png" alt="취업 지원 아이콘" className={styles.pointImage} />
           
           <div className={styles.pointDesc}>
-            내 거주지 근처 실습처를 쉽게 검색할 수 있는<br/>실습매칭 시스템을 무료로 이용할 수 있습니다.
+          내 거주지 근처 실습처를 쉽게 검색할 수 있는<br/>실습매칭 시스템을 무료로 이용할 수 있습니다.
           </div>
           <div className={styles.pointNote}>
-            미구독자 이용 시 비용 발생*
+            미구독자 열람 시 150,000원 발생*
           </div>
         </div>
         </div>
-      <div ref={buttonSectionRef} className={styles.buttonSection}>
-        <button className={styles.subscribeButton} onClick={handleSheetOpen}>한평생올케어 구독하기</button>
-      </div>
       {showSticky && (
         <div className={styles.stickyButton}>
           <div className={styles.stickyButtonInner}>
@@ -522,7 +525,9 @@ export default function Home() {
           </div>
         ))}
       </div>
+      <Footer />
     </main>
+    
     </>
   );
 }

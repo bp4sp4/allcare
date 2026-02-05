@@ -10,11 +10,11 @@ export default function Footer() {
       </div>
       
       <div className={styles.infoText}>
-        대표 양병웅 | 사업자등록번호 227-88-03196
+        대표 양병웅 | 사업자등록번호 392-88-03618
       </div>
       
       <div className={styles.infoText}>
-        서울시 도봉구 창동 미들로13길 61 씨드큐브 905호
+        서울특별시 도봉구 도봉로150다길 61, 601호(방학동, 여산빌딩)
       </div>
       
       <div className={styles.links}>
