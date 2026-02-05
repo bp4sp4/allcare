@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import Head from 'next/head';
 import { useState, useEffect, useRef } from 'react';
 import AlertModal from '@/components/AlertModal';
 import Footer from '@/components/Footer';
@@ -169,6 +170,9 @@ export default function Home() {
 
   return (
     <>
+      <Head>
+        <link rel="preload" as="image" href="/images/main_banner.png" />
+      </Head>
       {showLoginModal && (
         <AlertModal
           message="로그인이 필요합니다."
