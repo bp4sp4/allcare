@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import jwt from 'jsonwebtoken';
 
 // Service Role Key로 Supabase Admin 클라이언트 생성
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
 
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
@@ -95,8 +98,14 @@ export async function GET(request: NextRequest) {
       console.log('새 사용자 생성:', userId);
     }
 
-    // 세션 생성 (간단하게 JWT 토큰 생성)
-    const token = Buffer.from(JSON.stringify({ userId, email: userEmail })).toString('base64');
+    // JWT 토큰 생성 (제대로 서명된 토큰)
+    const token = jwt.sign(
+      { userId, email: userEmail },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    console.log('JWT 토큰 생성 완료:', userId);
 
     // 메인 페이지로 리다이렉트 (토큰을 쿼리 파라미터로 전달)
     const redirectUrl = new URL('/', process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000');

@@ -3,7 +3,21 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Script from 'next/script';
 import styles from './mypage.module.css';
+
+// PayApp SDK 타입 정의
+declare global {
+  interface Window {
+    PayApp: {
+      setDefault: (key: string, value: string) => typeof window.PayApp;
+      setParam: (key: string, value: string) => typeof window.PayApp;
+      call: (params?: Record<string, string>) => void;
+      payrequest: () => void;
+      rebill: () => void;
+    };
+  }
+}
 
 interface UserInfo {
   email: string;
@@ -48,6 +62,10 @@ export default function MyPage() {
     newPassword: '',
     confirmPassword: ''
   });
+  const [showSubscriptionSheet, setShowSubscriptionSheet] = useState(false);
+  const [agreeAll, setAgreeAll] = useState(false);
+  const [agreements, setAgreements] = useState([false, false, false]);
+  const [isPayAppLoaded, setIsPayAppLoaded] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -56,10 +74,32 @@ export default function MyPage() {
       return;
     }
 
+    // 결제 결과 수신 (팝업 창으로부터)
+    const handlePaymentResult = (event: MessageEvent) => {
+      if (event.data.type === 'paymentResult') {
+        const { status, orderId, amount, message } = event.data.data;
+        
+        if (status === 'success') {
+          alert(`결제가 완료되었습니다!\n주문번호: ${orderId}\n결제금액: ${Number(amount).toLocaleString()}원`);
+          // 구독 정보 새로고침
+          fetchSubscriptionInfo();
+          handleSheetClose();
+        } else {
+          alert(`결제에 실패했습니다.\n${message || '다시 시도해 주세요.'}`);
+        }
+      }
+    };
+
+    window.addEventListener('message', handlePaymentResult);
+
     // 사용자 정보 불러오기 (API 호출 시뮬레이션)
     fetchUserInfo();
     fetchSubscriptionInfo();
     fetchPaymentHistory();
+
+    return () => {
+      window.removeEventListener('message', handlePaymentResult);
+    };
   }, [router]);
 
   const fetchUserInfo = async () => {
@@ -220,12 +260,31 @@ export default function MyPage() {
     }
   };
 
+  const handleAgreeAll = () => {
+    const newValue = !agreeAll;
+    setAgreeAll(newValue);
+    setAgreements([newValue, newValue, newValue]);
+  };
+
+  const handleAgreement = (index: number) => {
+    const newAgreements = [...agreements];
+    newAgreements[index] = !newAgreements[index];
+    setAgreements(newAgreements);
+    setAgreeAll(newAgreements.every(a => a));
+  };
+
+  const handleSheetClose = () => {
+    setShowSubscriptionSheet(false);
+    setAgreeAll(false);
+    setAgreements([false, false, false]);
+  };
+
   const handleSubscriptionAction = async (action: 'start' | 'cancel' | 'refund' | 'renew') => {
     try {
       const token = localStorage.getItem('token');
 
       if (action === 'start') {
-        router.push('/payment');
+        setShowSubscriptionSheet(true);
       } else if (action === 'renew') {
         if (confirm('구독을 재갱신하시겠습니까? 다음 결제일부터 자동 결제가 재개됩니다.')) {
           const response = await fetch('/api/subscription/renew', {
@@ -658,6 +717,157 @@ export default function MyPage() {
           </div>
         </div>
       )}
+
+      {/* 구독 시트 모달 */}
+      {showSubscriptionSheet && (
+        <>
+          <div className={styles.modalOverlay} onClick={handleSheetClose} />
+          <div className={styles.subscribeSheet}>
+            <button className={styles.modalCloseBtn} onClick={handleSheetClose}>&times;</button>
+            <div className={styles.sheetTitle}>한평생 올케어 월간 이용권</div>
+            <div className={styles.sheetSub}>월 <span className={styles.sheetPrice}>20,000원</span> 결제</div>
+            <hr className={styles.sheetDivider} />
+            <div className={styles.sheetAgreeRow}>
+              <span className={styles.sheetAgreeAll}>모두 동의합니다.</span>
+              <span
+                className={`${styles.sheetCheckbox} ${agreeAll ? styles.sheetCheckboxChecked : ''}`}
+                onClick={handleAgreeAll}
+              >
+                {agreeAll && (
+                  <svg className={styles.sheetCheckIcon} xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 9 9" fill="none">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M8.07976 1.91662C8.18521 2.0221 8.24445 2.16515 8.24445 2.31431C8.24445 2.46346 8.18521 2.60651 8.07976 2.71199L3.86364 6.92812C3.80792 6.98385 3.74177 7.02806 3.66896 7.05822C3.59616 7.08838 3.51813 7.1039 3.43932 7.1039C3.36052 7.1039 3.28249 7.08838 3.20968 7.05822C3.13688 7.02806 3.07073 6.98385 3.01501 6.92812L0.92026 4.83374C0.866535 4.78186 0.823683 4.71979 0.794203 4.65116C0.764723 4.58253 0.749205 4.50872 0.748556 4.43403C0.747907 4.35934 0.76214 4.28527 0.790423 4.21615C0.818706 4.14702 0.860473 4.08421 0.913288 4.0314C0.966102 3.97858 1.02891 3.93682 1.09804 3.90853C1.16716 3.88025 1.24123 3.86602 1.31592 3.86667C1.39061 3.86731 1.46442 3.88283 1.53305 3.91231C1.60168 3.94179 1.66375 3.98464 1.71563 4.03837L3.43914 5.76187L7.28401 1.91662C7.33625 1.86435 7.39827 1.82288 7.46654 1.79459C7.53481 1.7663 7.60799 1.75174 7.68189 1.75174C7.75579 1.75174 7.82896 1.7663 7.89723 1.79459C7.9655 1.82288 8.02752 1.86435 8.07976 1.91662Z" fill="#fff"/>
+                  </svg>
+                )}
+              </span>
+            </div>
+            {[
+              <span className={styles.sheetAgreeSub}>이용권 정기결제 동의 <span className={styles.sheetAgreeRequired}>(필수)</span></span>,
+              <span>이용약관 및 결제 및 구독 유의사항 <span className={styles.sheetAgreeRequired}>(필수)</span></span>,
+              <span>멤버십 제3자 개인정보 제공 <span className={styles.sheetAgreeRequired}>(필수)</span></span>
+            ].map((txt, idx: number) => (
+              <div className={styles.sheetAgreeRow} key={idx}>
+                {txt}
+                <span
+                  className={`${styles.sheetCheckbox} ${agreements[idx] ? styles.sheetCheckboxChecked : ''}`}
+                  onClick={() => handleAgreement(idx)}
+                >
+                  {agreements[idx] && (
+                    <svg className={styles.sheetCheckIcon} xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 9 9" fill="none">
+                      <path fillRule="evenodd" clipRule="evenodd" d="M8.07976 1.91662C8.18521 2.0221 8.24445 2.16515 8.24445 2.31431C8.24445 2.46346 8.18521 2.60651 8.07976 2.71199L3.86364 6.92812C3.80792 6.98385 3.74177 7.02806 3.66896 7.05822C3.59616 7.08838 3.51813 7.1039 3.43932 7.1039C3.36052 7.1039 3.28249 7.08838 3.20968 7.05822C3.13688 7.02806 3.07073 6.98385 3.01501 6.92812L0.92026 4.83374C0.866535 4.78186 0.823683 4.71979 0.794203 4.65116C0.764723 4.58253 0.749205 4.50872 0.748556 4.43403C0.747907 4.35934 0.76214 4.28527 0.790423 4.21615C0.818706 4.14702 0.860473 4.08421 0.913288 4.0314C0.966102 3.97858 1.02891 3.93682 1.09804 3.90853C1.16716 3.88025 1.24123 3.86602 1.31592 3.86667C1.39061 3.86731 1.46442 3.88283 1.53305 3.91231C1.60168 3.94179 1.66375 3.98464 1.71563 4.03837L3.43914 5.76187L7.28401 1.91662C7.33625 1.86435 7.39827 1.82288 7.46654 1.79459C7.53481 1.7663 7.60799 1.75174 7.68189 1.75174C7.75579 1.75174 7.82896 1.7663 7.89723 1.79459C7.9655 1.82288 8.02752 1.86435 8.07976 1.91662Z" fill="#fff"/>
+                    </svg>
+                  )}
+                </span>
+              </div>
+            ))}
+            <button 
+              className={`${styles.sheetButton} ${!agreeAll ? styles.sheetButtonDisabled : ''}`} 
+              onClick={async () => {
+                if (!agreeAll) return;
+                
+                if (!isPayAppLoaded || !window.PayApp) {
+                  alert('결제 시스템을 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+                  return;
+                }
+
+                try {
+                  const token = localStorage.getItem('token');
+                  if (!token || !userInfo) {
+                    alert('사용자 정보를 불러올 수 없습니다.');
+                    return;
+                  }
+
+                  const { name, phone } = userInfo;
+
+                  if (!name || !phone) {
+                    alert('사용자 정보(이름, 연락처)가 없습니다. 회원정보를 먼저 입력해주세요.');
+                    return;
+                  }
+
+                  // localStorage에서 토큰 가져와서 user_id 추출
+                  let userId = '';
+                  try {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    userId = payload.userId || '';
+                  } catch (e) {
+                    console.error('Token parse error:', e);
+                  }
+
+                  const baseUrl = window.location.origin;
+                  const shopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어';
+                  const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
+
+                  if (!payappUserId) {
+                    alert('결제 시스템 설정 오류입니다. 관리자에게 문의하세요.');
+                    return;
+                  }
+
+                  // PayApp 초기화
+                  window.PayApp.setDefault('userid', payappUserId);
+                  window.PayApp.setDefault('shopname', shopName);
+                  
+                  const now = new Date();
+                  const expireDate = new Date(now);
+                  expireDate.setFullYear(expireDate.getFullYear() + 1);
+                  const rebillExpire = expireDate.toISOString().split('T')[0];
+                  const rebillCycleMonth = now.getDate().toString();
+                  const orderId = `SUBS-${userId}-${Date.now()}`;
+
+                  // PayApp 파라미터 설정
+                  window.PayApp
+                    .setParam('goodname', '한평생 올케어 월 구독')
+                    .setParam('price', '20000')
+                    .setParam('recvphone', phone.replace(/-/g, ''))
+                    .setParam('recvname', name)
+                    .setParam('orderid', orderId)
+                    .setParam('timestamp', Math.floor(Date.now() / 1000).toString())
+                    .setParam('rebillamount', '20000')
+                    .setParam('rebillexpire', rebillExpire)
+                    .setParam('rebill_cycle_month', rebillCycleMonth)
+                    .setParam('var1', userId)
+                    .setParam('returnurl', `${baseUrl}/api/payments/result`)
+                    .setParam('startpaytype', 'card')
+                    .setParam('servicetype', 'BR');
+
+                  // 팝업 창으로 결제 진행
+                  const width = 430;
+                  const height = 660;
+                  const left = (window.screen.width / 2) - (width / 2);
+                  const top = (window.screen.height / 2) - (height / 2);
+
+                  const popup = window.open('about:blank', 'payapp_payment', 
+                    `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`);
+
+                  if (popup) {
+                    window.PayApp.call();
+                  } else {
+                    alert('팝업이 차단되었습니다. 팝업 차단을 해제하고 다시 시도해주세요.');
+                  }
+                } catch (error) {
+                  console.error('Payment error:', error);
+                  alert('결제 처리 중 오류가 발생했습니다.');
+                }
+              }}
+            >
+              한평생 올케어 구독하기
+            </button>
+          </div>
+        </>
+      )}
+
+      {/* PayApp SDK */}
+      <Script
+        src="https://api.payapp.kr/resources/payrequest/payrequest.min.js"
+        strategy="lazyOnload"
+        onLoad={() => {
+          setIsPayAppLoaded(true);
+          if (window.PayApp) {
+            console.log('PayApp SDK loaded successfully');
+          }
+        }}
+        onError={(e) => {
+          console.error('PayApp SDK failed to load:', e);
+        }}
+      />
     </div>
   );
 }

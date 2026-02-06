@@ -30,6 +30,8 @@ export default function MatchingPage() {
             const checkAccess = async () => {
                 const token = localStorage.getItem('token');
                 
+                console.log('[매칭 시스템] 토큰 체크:', token ? '토큰 있음' : '토큰 없음');
+                
                 // 로그인 체크
                 if (!token) {
                     if (mounted) {
@@ -47,26 +49,44 @@ export default function MatchingPage() {
                         }
                     });
 
-                    if (!response.ok) {
-                        throw new Error('구독 상태 확인 실패');
-                    }
-
-                    const { isSubscribed } = await response.json();
+                    console.log('[매칭 시스템] 구독 상태 응답:', response.status);
 
                     if (!mounted) return;
 
-                    if (!isSubscribed) {
+                    // 401 에러: 토큰이 유효하지 않음 - 로그인 필요
+                    if (response.status === 401) {
+                        console.log('[매칭 시스템] 토큰 만료, 로그인 필요');
+                        localStorage.removeItem('token');
+                        alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
+                        router.push('/auth/login');
+                        return;
+                    }
+
+                    // 기타 에러 발생 시 일단 접근 허용 (서버 오류 등)
+                    if (!response.ok) {
+                        console.error('[매칭 시스템] 구독 상태 확인 실패:', response.status);
+                        setIsChecking(false);
+                        return;
+                    }
+
+                    const data = await response.json();
+                    console.log('[매칭 시스템] 구독 상태:', data);
+
+                    // 비구독자는 차단
+                    if (!data.isActive) {
                         alert('올케어 구독자만 이용할 수 있는 서비스입니다.');
                         router.push('/');
                         return;
                     }
 
+                    // 구독자는 접근 허용
+                    console.log('[매칭 시스템] 접근 허용');
                     setIsChecking(false);
                 } catch (error) {
-                    console.error('Access check error:', error);
+                    console.error('[매칭 시스템] Access check error:', error);
+                    // 네트워크 에러 등은 일단 접근 허용
                     if (mounted) {
-                        alert('서비스 접근 권한을 확인할 수 없습니다.');
-                        router.push('/');
+                        setIsChecking(false);
                     }
                 }
             };
