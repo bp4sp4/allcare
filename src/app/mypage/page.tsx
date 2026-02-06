@@ -856,7 +856,7 @@ export default function MyPage() {
 
       {/* PayApp SDK */}
       <Script
-        src="https://api.payapp.kr/resources/payrequest/payrequest.min.js"
+        src="https://lite.payapp.kr/public/api/v2/payapp-lite.js"
         strategy="lazyOnload"
         onLoad={() => {
           setIsPayAppLoaded(true);
