@@ -9,6 +9,7 @@ import { loadPayAppSDK } from '@/lib/payapp';
 import { supabase } from '@/lib/supabase';
 import styles from './page.module.css';
 import BottomSheetHandle from '@/components/BottomSheetHandle';
+import Portal from '@/components/Portal';
 
 // PayApp SDK 타입 정의
 declare global {
@@ -38,7 +39,24 @@ export default function Home() {
     },
     {
       title: '결제/변경/해지/환불 안내',
-      content: '<strong>1. 청약철회 제한</strong><br/>본 상품은 결제 즉시 제공되는 디지털 콘텐츠 및 교육 서비스가 포함된 상품으로, 전자상거래법 제17조 제2항에 따라 단순 변심에 의한 청약철회가 제한됩니다.<br/><br/><strong>2. 구독 해지</strong><br/>구독 해지는 가능하나, 구독 기간 중 제공된 서비스가 존재할 경우 위약금이 발생합니다.<br/>해지는 다음 결제일 이전에 신청해야 하며, 이미 결제된 이용료는 원칙적으로 환불되지 않습니다.<br/><br/><strong>3. 중도 해지 위약금</strong><br/>구독 기간 중 해지 시, 아래 항목을 기준으로 위약금이 산정됩니다.<br/><strong>[위약금 구성]</strong><br/>- 이미 제공된 디지털 콘텐츠 이용 대가<br/>- 무료수강권 제공에 따른 할인분 환산 금액<br/>- 실습매칭 프로그램 열람권 제공에 따른 이용료<br/>위약금은 잔여 기간 요금의 50~100% 범위 내에서 산정될 수 있으며, 회사 내부 기준에 따라 개별 산정됩니다.<br/>위약금이 결제 금액을 초과할 경우, 환불은 발생하지 않습니다.<br/><br/><strong>4. 환불 불가 항목</strong><br/>무료 제공된 수강권, 열람권, 콘텐츠 이용 내역은 환불 및 현금 환산이 불가합니다.<br/>이용 여부와 관계없이, 제공 사실만으로 이용한 것으로 간주됩니다.'
+    content: `
+  <strong>1. 청약철회 및 이용 간주 기준</strong><br/>
+  본 상품은 결제 즉시 제공되는 디지털 콘텐츠(열람권, 자료 등)가 포함된 상품으로, <strong>이용 여부와 관계없이 제공 사실만으로 서비스를 이용한 것으로 간주</strong>합니다. 이에 따라 전자상거래법 제17조 제2항에 의거, 상세 내용을 확인하거나 7일이 경과한 경우 단순 변심에 의한 청약철회가 제한됩니다.<br/><br/>
+
+  <strong>2. 구독 해지</strong><br/>
+  구독 해지는 언제든지 가능하나, 차기 결제를 중단하기 위해서는 다음 결제일 이전에 신청해야 합니다. 이미 결제된 회차의 이용료는 서비스 제공이 개시(열람권 부여 등)된 경우 원칙적으로 환불되지 않습니다.<br/><br/>
+
+  <strong>3. 중도 해지 시 이용 대가 산정</strong><br/>
+  구독 기간 중 해지 신청 시, 회사는 아래 항목을 '기이용 대가'로 산정하여 환불 금액에서 차감합니다.<br/>
+  <strong>[차감 항목 구성]</strong><br/>
+  - 이미 제공된 디지털 콘텐츠 및 데이터 이용료 (정가 기준)<br/>
+  - 무료수강권 및 혜택 제공에 따른 할인 차액<br/>
+  - 실습매칭 프로그램 열람권 제공에 따른 고정 비용<br/>
+  기이용 대가와 업무 처리 수수료의 합계가 결제 금액을 초과할 경우 환불 금액은 발생하지 않습니다.<br/><br/>
+
+  <strong>4. 환불 불가 항목</strong><br/>
+  무료 제공된 수강권, 열람권, 콘텐츠 이용 내역은 환불 및 현금 환산이 불가합니다. 이는 디지털 콘텐츠의 특성상 복제 및 정보 획득이 즉시 가능하기 때문입니다.
+`
     },
     {
       title: '상품 이용 안내',
@@ -58,6 +76,7 @@ export default function Home() {
   const [agreements, setAgreements] = useState([false, false, false]);
   const [showTerms, setShowTerms] = useState(false);
   const [showSubscriptionTerms, setShowSubscriptionTerms] = useState(false);
+  const [showThirdPartyProvision, setShowThirdPartyProvision] = useState(false);
   const [isPayAppLoaded, setIsPayAppLoaded] = useState(false);
   const [isPayAppLoading, setIsPayAppLoading] = useState(false);
   const [payappLoadError, setPayappLoadError] = useState<string | null>(null);
@@ -152,7 +171,7 @@ export default function Home() {
 
   // Prevent background scroll when subscribeSheet is open
   useEffect(() => {
-    if (showSheet) {
+    if (showSheet || showThirdPartyProvision) {
       document.body.style.overflow = 'hidden';
       document.documentElement.classList.add('no-scroll');
     } else {
@@ -362,7 +381,16 @@ export default function Home() {
                 <span className={styles.sheetAgreeUnderline} onClick={() => setShowSubscriptionTerms(true)}>결제 및 구독 유의사항</span>
                 <span className={styles.sheetAgreeRequired}> (필수)</span>
               </span>,
-              <span><span className={styles.sheetAgreeUnderline} onClick={() => setShowTerms(true)}>멤버십 제3자 개인정보 제공</span><span className={styles.sheetAgreeRequired}> (필수)</span></span>
+              <span>
+                <span
+                  className={styles.sheetAgreeUnderline}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setShowThirdPartyProvision(true)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowThirdPartyProvision(true); }}
+                >멤버십 제3자 개인정보 제공</span>
+                <span className={styles.sheetAgreeRequired}> (필수)</span>
+              </span>
             ].map((txt, idx: number) => (
               <div className={styles.sheetAgreeRow} key={idx}>
                 {txt}
@@ -515,6 +543,53 @@ export default function Home() {
           </div>
         </>
       )}
+      {showThirdPartyProvision && (
+        <Portal>
+          <div className={styles.modalOverlay} onClick={() => setShowThirdPartyProvision(false)} />
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button className={styles.modalCloseBtn} onClick={() => setShowThirdPartyProvision(false)}>&times;</button>
+            <div className={styles.modalTitle}>멤버십 제3자 개인정보 제공 안내</div>
+            <div className={styles.modalBody}>
+              <div>
+                본인은 한평생올케어 멤버십 서비스 이용에 동의함에 따라,
+한평생교육이 멤버십 서비스 제공 및 운영을 목적으로 아래와 같이 개인정보를 제3자에게 제공하는 것에 동의합니다.
+              </div>
+              <div style={{ height: 8 }} />
+              <div>
+                <strong>1. 제공받는 자</strong><br/>
+                한평생그룹 계열사<br/>
+                한평생실습 멤버십 운영 및 실습 연계 기관
+              </div>
+              <div style={{ height: 8 }} />
+              <div>
+                <strong>2. 제공 목적</strong><br/>
+                한평생실습 멤버십 서비스 제공<br/>
+                실습 과정 운영 및 관리<br/>
+                관련 행정 처리 및 고객 지원
+              </div>
+              <div style={{ height: 8 }} />
+              <div>
+                <strong>3. 제공하는 개인정보 항목</strong><br/>
+                이름, 연락처(휴대전화번호), 이메일<br/>
+                ※ 서비스 제공에 필요한 최소한의 정보만 제공됩니다.
+              </div>
+              <div style={{ height: 8 }} />
+              <div>
+                <strong>4. 보유 및 이용 기간</strong><br/>
+                멤버십 서비스 이용 기간 동안 보유·이용<br/>
+                관련 법령에 따라 보존이 필요한 경우 해당 기간까지 보관
+              </div>
+              <div style={{ height: 8 }} />
+              <div>
+                <strong>5. 동의 거부 권리 및 불이익 안내</strong><br/>
+                개인정보 제3자 제공에 대한 동의를 거부할 수 있습니다.<br/>
+                다만, 동의를 거부할 경우 한평생실습 멤버십 서비스 및 실습 연계 제공이 제한될 수 있습니다.
+              </div>
+            </div>
+            
+          </div>
+        </Portal>
+      )}
       {showTerms && (
         <>
           <div className={styles.modalOverlay} onClick={() => setShowTerms(false)} />
@@ -561,7 +636,7 @@ export default function Home() {
 - 학점은행제 수강신청 시 할인 혜택을 적용받은 경우<br/>
 - 실습 매칭 시스템에 접속하여 정보를 열람한 경우<br/>
 - 직업훈련 수강권(쿠폰 번호)을 확인하거나 발급받은 경우<br/>
-- 중도 해지 시 공제: 환불 가능 대상일지라도 중도 해지 시에는 [위약금( %)]과 [수강료 할인 차액]을 차감한 후 정산됩니다.<br/>
+- 중도 해지 시 공제: 환불 가능 대상일지라도 중도 해지 시에는 위약금 50~100%의 [수강료 할인 차액]을 차감한 후 정산됩니다.<br/>
 <br/>
 <strong>[학습자 주의 의무]</strong><br/>
 학습자 귀책에 대한 면책 : 현장실습기관, 실습과목 교육원별 상세 공지 미숙지, 서류(선이수 과목 증명서 등) 제출 누락, 기한 초과 등 학습자 본인의 귀책으로 발생한 실습 미이수 및 신청 거절은 한평생교육이 책임지지 않으며, 이를 이유로 환불을 요구할 수 없습니다.<br/>

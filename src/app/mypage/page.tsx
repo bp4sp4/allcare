@@ -73,6 +73,7 @@ export default function MyPage() {
   const [isPayAppLoaded, setIsPayAppLoaded] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showSubscriptionTerms, setShowSubscriptionTerms] = useState(false);
+  const [showThirdPartyProvision, setShowThirdPartyProvision] = useState(false);
   const [isPayAppLoading, setIsPayAppLoading] = useState(false);
   const [payappLoadError, setPayappLoadError] = useState<string | null>(null);
 
@@ -111,7 +112,7 @@ export default function MyPage() {
   }, []);
 
   useEffect(() => {
-    const modalOpen = showPasswordModal || showRefundModal || showSubscriptionSheet || showTerms || showSubscriptionTerms;
+    const modalOpen = showPasswordModal || showRefundModal || showSubscriptionSheet || showTerms || showSubscriptionTerms || showThirdPartyProvision;
     if (modalOpen) {
       document.body.style.overflow = 'hidden';
       document.documentElement.classList.add('no-scroll');
@@ -1060,6 +1061,13 @@ export default function MyPage() {
             <div className={styles.sheetAgreeRow}>
               <span>
                 <span className={styles.sheetAgreeUnderline}>멤버십 제3자 개인정보 제공</span>
+                <span
+                  className={styles.sheetAgreeUnderline}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setShowThirdPartyProvision(true)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowThirdPartyProvision(true); }}
+                >멤버십 제3자 개인정보 제공</span>
                 <span className={styles.sheetAgreeRequired}> (필수)</span>
               </span>
               <span
@@ -1233,6 +1241,74 @@ export default function MyPage() {
             </div>
           </div>
         </>
+      )}
+
+      {showThirdPartyProvision && (
+        <Portal>
+          <div className={styles.modalOverlay} onClick={() => setShowThirdPartyProvision(false)} />
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button className={styles.modalCloseBtn} onClick={() => setShowThirdPartyProvision(false)}>&times;</button>
+            <div className={styles.modalTitle}>멤버십 제3자 개인정보 제공 안내</div>
+            <div className={styles.modalBody}>
+              <div>
+                <strong>개인정보 제3자 제공 동의 안내</strong>
+              </div>
+              <div style={{ height: 8 }} />
+              <div>
+                한평생그룹은 한평생실습 멤버십 서비스 제공을 위하여 아래와 같이 개인정보를 제3자에게 제공할 수 있습니다.
+              </div>
+              <div style={{ height: 8 }} />
+              <div>
+                <strong>1. 제공받는 자</strong>
+                <br/>
+                한평생그룹 계열사
+                <br/>
+                한평생실습 멤버십 운영 및 실습 연계 기관
+              </div>
+              <div style={{ height: 8 }} />
+              <div>
+                <strong>2. 제공 목적</strong>
+                <br/>
+                한평생실습 멤버십 서비스 제공
+                <br/>
+                실습 과정 운영 및 관리
+                <br/>
+                실습 연계, 출결 관리, 안내 및 공지 사항 전달
+                <br/>
+                관련 행정 처리 및 고객 지원
+              </div>
+              <div style={{ height: 8 }} />
+              <div>
+                <strong>3. 제공하는 개인정보 항목</strong>
+                <br/>
+                이름, 연락처(휴대전화번호), 이메일
+                <br/>
+                소속 정보, 멤버십 이용 내역
+                <br/>
+                실습 참여 및 이력 관련 정보
+                <br/>
+                ※ 서비스 제공에 필요한 최소한의 정보만 제공됩니다.
+              </div>
+              <div style={{ height: 8 }} />
+              <div>
+                <strong>4. 보유 및 이용 기간</strong>
+                <br/>
+                멤버십 서비스 이용 기간 동안 보유·이용
+                <br/>
+                관련 법령에 따라 보존이 필요한 경우 해당 기간까지 보관
+              </div>
+              <div style={{ height: 8 }} />
+              <div>
+                <strong>5. 동의 거부 권리 및 불이익 안내</strong>
+                <br/>
+                개인정보 제3자 제공에 대한 동의를 거부할 수 있습니다.
+                <br/>
+                다만, 동의를 거부할 경우 한평생실습 멤버십 서비스 및 실습 연계 제공이 제한될 수 있습니다.
+              </div>
+            </div>
+     
+          </div>
+        </Portal>
       )}
 
       {/* PayApp SDK loading handled via loadPayAppSDK util */}
