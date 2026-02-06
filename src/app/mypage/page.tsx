@@ -57,7 +57,7 @@ export default function MyPage() {
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showPasswordInline, setShowPasswordInline] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleteError, setDeleteError] = useState('');
@@ -112,7 +112,7 @@ export default function MyPage() {
   }, []);
 
   useEffect(() => {
-    const modalOpen = showPasswordModal || showRefundModal || showSubscriptionSheet || showTerms || showSubscriptionTerms || showThirdPartyProvision;
+    const modalOpen = showPasswordInline || showRefundModal || showSubscriptionSheet || showTerms || showSubscriptionTerms || showThirdPartyProvision;
     if (modalOpen) {
       document.body.style.overflow = 'hidden';
       document.documentElement.classList.add('no-scroll');
@@ -125,7 +125,7 @@ export default function MyPage() {
       document.body.style.overflow = '';
       document.documentElement.classList.remove('no-scroll');
     };
-  }, [showPasswordModal, showRefundModal, showSubscriptionSheet, showTerms, showSubscriptionTerms]);
+  }, [showPasswordInline, showRefundModal, showSubscriptionSheet, showTerms, showSubscriptionTerms]);
 
   // Bottom sheet drag state (to match main page behavior)
   const [dragY, setDragY] = useState(0);
@@ -336,7 +336,7 @@ export default function MyPage() {
       }
 
       alert('비밀번호가 변경되었습니다.');
-      setShowPasswordModal(false);
+      setShowPasswordInline(false);
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     } catch (err) {
       setError('비밀번호 변경 중 오류가 발생했습니다.');
@@ -518,10 +518,76 @@ export default function MyPage() {
                 <span className={styles.infoLabel}>비밀번호</span>
                 <button 
                   className={styles.changePasswordBtn}
-                  onClick={() => setShowPasswordModal(true)}
+                  onClick={() => setShowPasswordInline((s) => !s)}
                 >
                   비밀번호 변경
                 </button>
+              </div>
+            )}
+
+            {showPasswordInline && (
+              <div className={styles.inlinePasswordSection}>
+                <form onSubmit={handlePasswordChange} className={styles.inlineForm}>
+                  {error && <div className={styles.errorBox}>{error}</div>}
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>현재 비밀번호</label>
+                    <input
+                      type="password"
+                      value={passwordData.currentPassword}
+                      onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
+                      className={styles.input}
+                      required
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>새 비밀번호</label>
+                    <input
+                      type="password"
+                      value={passwordData.newPassword}
+                      onChange={(e) => { setPasswordData({ ...passwordData, newPassword: e.target.value }); setError(''); }}
+                      className={styles.input}
+                      placeholder="8자 이상 입력하세요"
+                      required
+                    />
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>새 비밀번호 확인</label>
+                    <input
+                      type="password"
+                      value={passwordData.confirmPassword}
+                      onChange={(e) => { setPasswordData({ ...passwordData, confirmPassword: e.target.value }); setError(''); }}
+                      className={styles.input}
+                      placeholder="비밀번호를 다시 입력하세요"
+                      required
+                    />
+                    {passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword && (
+                      <div style={{ color: '#ef4444', fontSize: '13px', marginTop: '6px' }}>새 비밀번호가 일치하지 않습니다.</div>
+                    )}
+                    {passwordData.newPassword && passwordData.newPassword.length > 0 && passwordData.newPassword.length < 8 && (
+                      <div style={{ color: '#ef4444', fontSize: '13px', marginTop: '6px' }}>비밀번호는 8자 이상이어야 합니다.</div>
+                    )}
+                  </div>
+
+                  <div className={styles.inlineActions}>
+                    <button
+                      type="button"
+                      className={styles.cancelInlineBtn}
+                      onClick={() => { setShowPasswordInline(false); setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' }); setError(''); }}
+                    >
+                      취소
+                    </button>
+                    <button
+                      type="submit"
+                      className={styles.submitBtn}
+                      disabled={passwordData.newPassword.length < 8 || passwordData.newPassword !== passwordData.confirmPassword}
+                    >
+                      변경하기
+                    </button>
+                  </div>
+                </form>
               </div>
             )}
             <div className={styles.infoRow}>
@@ -769,71 +835,7 @@ export default function MyPage() {
 
       </div>
 
-      {/* 비밀번호 변경 모달 */}
-      {showPasswordModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowPasswordModal(false)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <button
-              className={styles.modalCloseBtn}
-              onClick={() => setShowPasswordModal(false)}
-            >
-              ×
-            </button>
-            <div className={styles.modalTitle}>비밀번호 변경</div>
-            <form onSubmit={handlePasswordChange} className={styles.modalForm}>
-              {error && <div className={styles.errorBox}>{error}</div>}
-              
-              <div className={styles.formGroup}>
-                <label className={styles.label}>현재 비밀번호</label>
-                <input
-                  type="password"
-                  value={passwordData.currentPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, currentPassword: e.target.value })}
-                  className={styles.input}
-                  required
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.label}>새 비밀번호</label>
-                <input
-                  type="password"
-                  value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                  className={styles.input}
-                  placeholder="8자 이상 입력하세요"
-                  required
-                />
-              </div>
-
-              <div className={styles.formGroup}>
-                <label className={styles.label}>새 비밀번호 확인</label>
-                <input
-                  type="password"
-                  value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                  className={styles.input}
-                  placeholder="비밀번호를 다시 입력하세요"
-                  required
-                />
-              </div>
-
-              <div className={styles.modalActions}>
-                <button
-                  type="button"
-                  className={styles.cancelModalBtn}
-                  onClick={() => setShowPasswordModal(false)}
-                >
-                  취소
-                </button>
-                <button type="submit" className={styles.submitBtn}>
-                  변경하기
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      
 
       {/* 회원 탈퇴 모달 */}
       {showDeleteModal && (

@@ -691,7 +691,7 @@ background: var(--Blue-500, #0051FF);
 }
 
 .input:focus {
-  outline: none;
+  border-radius: 8px;
   border-color: #0051FF;
 }
 
@@ -752,6 +752,34 @@ background: var(--Blue-500, #0051FF);
 
 .submitBtn:hover {
   opacity: 0.9;
+}
+
+.inlinePasswordSection {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.inlineForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.inlineActions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.cancelInlineBtn {
+  flex: 1;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f3f4f6;
+  color: #374151;
+  cursor: pointer;
 }
 
 /* 환불 정책 모달 스타일 */

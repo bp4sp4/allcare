@@ -9,24 +9,53 @@ import styles from '../auth.module.css';
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isVerificationSent, setIsVerificationSent] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
+  const [timer, setTimer] = useState(0);
   const [tempPassword, setTempPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [touched, setTouched] = useState({
-    email: false
+    email: false,
+    phone: false,
+    verificationCode: false
   });
 
   const validateEmail = (email: string) => {
     return email.includes('@');
   };
 
+  const validatePhone = (phone: string) => {
+    return /^01[0-9]{8,9}$/.test(phone);
+  };
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const handleSendTempPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
+    // require email and phone verification
     if (!email || !validateEmail(email)) {
       setError('올바른 이메일을 입력해주세요.');
+      setShowErrorModal(true);
+      return;
+    }
+
+    if (!phone || !validatePhone(phone)) {
+      setError('올바른 전화번호를 입력해주세요.');
+      setShowErrorModal(true);
+      return;
+    }
+
+    if (!isVerified) {
+      setError('전화번호 인증을 완료해주세요.');
       setShowErrorModal(true);
       return;
     }
@@ -37,7 +66,7 @@ export default function ResetPasswordPage() {
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email, phone })
       });
 
       const data = await response.json();
@@ -50,6 +79,88 @@ export default function ResetPasswordPage() {
       }
     } catch (err) {
       setError('임시 비밀번호 발급 중 오류가 발생했습니다.');
+      setShowErrorModal(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendVerification = async () => {
+    if (!phone) {
+      setError('전화번호를 입력해주세요.');
+      setShowErrorModal(true);
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/verification/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsVerificationSent(true);
+        setTimer(300);
+
+        const countdown = setInterval(() => {
+          setTimer((prev) => {
+            if (prev <= 1) {
+              clearInterval(countdown);
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+
+        setError('인증번호가 발송되었습니다.');
+        setShowErrorModal(true);
+      } else {
+        setError(data.error || '인증번호 발송에 실패했습니다.');
+        setShowErrorModal(true);
+      }
+    } catch (err) {
+      setError('인증번호 발송 중 오류가 발생했습니다.');
+      setShowErrorModal(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!verificationCode) {
+      setError('인증번호를 입력해주세요.');
+      setShowErrorModal(true);
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('/api/auth/verification/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone, code: verificationCode })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsVerified(true);
+        setError('전화번호 인증이 완료되었습니다.');
+        setShowErrorModal(true);
+      } else {
+        setError(data.error || '인증번호가 일치하지 않습니다.');
+        setShowErrorModal(true);
+      }
+    } catch (err) {
+      setError('인증 확인 중 오류가 발생했습니다.');
       setShowErrorModal(true);
     } finally {
       setLoading(false);
@@ -147,9 +258,77 @@ export default function ResetPasswordPage() {
             )}
           </div>
 
+          <div className={styles.formGroup}>
+            <label className={styles.label}>
+              전화번호 <span className={styles.required}>*</span>
+            </label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^0-9]/g, '');
+                  setPhone(val);
+                  setTouched({ ...touched, phone: true });
+                }}
+                onBlur={() => setTouched({ ...touched, phone: true })}
+                className={`${styles.input} ${touched.phone && !validatePhone(phone) ? styles.inputError : ''}`}
+                placeholder="01012345678"
+                style={{ flex: 1 }}
+              />
+              <button
+                type="button"
+                onClick={handleSendVerification}
+                disabled={loading || timer > 0 || !phone}
+                className={styles.sendVerificationButton}
+              >
+                {timer > 0 ? formatTime(timer) : '인증번호'}
+              </button>
+            </div>
+            {touched.phone && !validatePhone(phone) && (
+              <div className={styles.errorMessage}>전화번호를 입력해주세요.</div>
+            )}
+          </div>
+
+          {isVerificationSent && (
+            <div className={styles.formGroup}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label className={styles.label}>
+                  인증번호 <span className={styles.required}>*</span>
+                </label>
+                {timer > 0 && (
+                  <span className={styles.timerText}>{formatTime(timer)}</span>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <input
+                  type="text"
+                  value={verificationCode}
+                  onChange={(e) => {
+                    setVerificationCode(e.target.value);
+                    setTouched({ ...touched, verificationCode: true });
+                  }}
+                  onBlur={() => setTouched({ ...touched, verificationCode: true })}
+                  className={`${styles.input} ${touched.verificationCode && !verificationCode ? styles.inputError : ''}`}
+                  placeholder="인증번호를 입력하세요."
+                  maxLength={6}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={handleVerifyCode}
+                  disabled={loading || !verificationCode}
+                  className={styles.sendVerificationButton}
+                >
+                  확인
+                </button>
+              </div>
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={!isEmailValid || loading}
+            disabled={!isEmailValid || loading || !isVerified}
             className={styles.loginButton}
           >
             {loading ? '발급 중...' : '임시 비밀번호 발급'}
