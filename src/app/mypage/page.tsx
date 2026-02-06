@@ -941,25 +941,32 @@ export default function MyPage() {
             <div className={styles.modalTitle}>환불 정책 안내</div>
             <div className={styles.refundPolicyContent}>
              
+<div className={styles.policySection}>
+  <h4>청약철회 제한 (필독)</h4>
+  <p className={styles.policyNotice}>
+    본 상품은 결제 즉시 혜택이 부여되는 디지털 콘텐츠로, 아래 <strong>[이용 간주 기준]</strong> 중 하나라도 해당하는 경우 전자상거래법에 의거하여 <strong>환불 및 청약철회가 절대 불가능</strong>합니다.
+  </p>
+  <ul className={styles.policyList}>
+    <li>• <strong>혜택 적용:</strong> 학점은행제 수강신청 시 구독 회원 할인을 적용받은 경우</li>
+    <li>• <strong>정보 열람:</strong> 실습 매칭 시스템에 접속하여 상세 정보를 1회 이상 확인한 경우</li>
+    <li>• <strong>권한 사용:</strong> 직업훈련 수강권(쿠폰 번호 등)을 조회하거나 발급받은 경우</li>
+  </ul>
+</div>
 
-              <div className={styles.policySection}>
-                <h4>청약철회 제한 - 필독</h4>
-                <ul className={styles.policyList}>
-                  <li>결제 후 아래 서비스 중 하나라도 이용한 경우, 디지털 컨텐츠 이용이 개시된 것으로 간주하여 <strong>환불 및 청약철회가 불가능</strong>합니다.</li>
-                  <li>학점은행제 수강신청 시 할인 혜택을 적용받은 경우</li>
-                  <li>실습 매칭 시스템에 접속하여 정보를 열람한 경우</li>
-                  <li>직업훈련 수강권(쿠폰 번호)을 확인하거나 발급받은 경우</li>
-                </ul>
-              </div>
-
-              <div className={styles.policySection}>
-                <h4>환불 및 중도 해지</h4>
-                <ul className={styles.policyList}>
-                  <li><strong>서비스 개시:</strong> 본 서비스는 결제 즉시 '수강료 할인 혜택' 및 '정보 열람 권한'이 부여되므로, 결제 완료 시 서비스 이용이 개시된 것으로 간주합니다.</li>
-                  <li><strong>중도 해지 시 공제:</strong> 환불 가능 대상일지라도 중도 해지 시에는 위약금과 수강료 할인 차액을 차감한 후 정산됩니다.</li>
-                  <li><strong>할인 회수:</strong> 1년 구독을 조건으로 제공된 혜택이므로, 중도 해지 시 이미 적용받은 수강료 할인 차액(정상가 - 할인가)을 공제한 후 잔여 금액을 환불합니다.</li>
-                </ul>
-              </div>
+<div className={styles.policySection}>
+  <h4>환불 및 중도 해지 규정</h4>
+  <ul className={styles.policyList}>
+    <li>
+      <strong>서비스 개시 기준:</strong> 본 서비스는 결제 완료와 동시에 '할인 권한' 및 '정보 접근권'이 즉시 부여되므로, 시스템상 <strong>서비스 제공이 완료된 것으로 간주</strong>합니다.
+    </li>
+    <li>
+      <strong>중도 해지 시 정산:</strong> 환불 가능 대상(미이용자)이라 하더라도 중도 해지 시에는 <strong>[제공된 서비스의 정가 차액]</strong> 및 대행 수수료를 공제한 후 정산됩니다.
+    </li>
+    <li>
+      <strong>할인 혜택 회수:</strong> 1년 구독을 전제로 제공된 혜택이므로, 중도 해지 시에는 이미 적용받은 수강료 할인분(정상가 - 할인가)을 전액 환불 금액에서 차감하며, 차감액이 결제 금액을 초과할 경우 환불되지 않습니다.
+    </li>
+  </ul>
+</div>
 
   
             </div>
