@@ -44,7 +44,7 @@ export default function LoginPage() {
           <div className={styles.errorBox}>{error}</div>
         )}
         <div className={styles.socialButtons}>
-          <button
+          {/* <button
             type="button"
             onClick={() => handleSocialLogin('kakao')}
             className={styles.kakaoButton}
@@ -59,7 +59,7 @@ export default function LoginPage() {
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="none" viewBox="0 0 21 21"><path fill="#fff" d="M4 16.717h4.377V9.98l4.203 6.737H17v-13h-4.377v6.737l-4.16-6.737H4v13Z"></path></svg>
             네이버로 시작하기
-          </button>
+          </button> */}
           <Link
             href="/auth/email-login"
             className={styles.emailButton}

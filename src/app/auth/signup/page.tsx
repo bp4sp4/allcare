@@ -49,7 +49,7 @@ export default function SignupPage() {
           <span>회원가입</span>
         </div>
         
-        <div style={{ marginBottom: '24px' }}>
+        {/* <div style={{ marginBottom: '24px' }}>
           <p style={{ 
             fontSize: '14px', 
             color: '#6b7280', 
@@ -76,7 +76,7 @@ export default function SignupPage() {
               네이버로 시작하기
             </button>
           </div>
-        </div>
+        </div> */}
 
         <div style={{ marginBottom: '12px' }}>
           <p style={{ 
