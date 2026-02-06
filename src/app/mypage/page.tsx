@@ -828,19 +828,12 @@ export default function MyPage() {
                     .setParam('startpaytype', 'card')
                     .setParam('servicetype', 'BR');
 
-                  // 팝업 창으로 결제 진행
-                  const width = 430;
-                  const height = 660;
-                  const left = (window.screen.width / 2) - (width / 2);
-                  const top = (window.screen.height / 2) - (height / 2);
-
-                  const popup = window.open('about:blank', 'payapp_payment', 
-                    `width=${width},height=${height},left=${left},top=${top},scrollbars=yes`);
-
-                  if (popup) {
+                  // PayApp SDK가 스스로 결제창을 엽니다. 직접 팝업을 열지 않고 SDK 호출만 합니다.
+                  try {
                     window.PayApp.call();
-                  } else {
-                    alert('팝업이 차단되었습니다. 팝업 차단을 해제하고 다시 시도해주세요.');
+                  } catch (e) {
+                    console.error('PayApp call failed:', e);
+                    alert('결제창을 열 수 없습니다. 팝업 차단을 해제하고 다시 시도해주세요.');
                   }
                 } catch (error) {
                   console.error('Payment error:', error);
