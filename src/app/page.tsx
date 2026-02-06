@@ -8,6 +8,7 @@ import Footer from '@/components/Footer';
 import Script from 'next/script';
 import { supabase } from '@/lib/supabase';
 import styles from './page.module.css';
+import BottomSheetHandle from '@/components/BottomSheetHandle';
 
 // PayApp SDK 타입 정의
 declare global {
@@ -49,6 +50,10 @@ export default function Home() {
     }
   ];
   const [showSheet, setShowSheet] = useState(false);
+  const [dragY, setDragY] = useState(0);
+  const draggingRef = useRef(false);
+  const startYRef = useRef(0);
+  const [sheetTransitionEnabled, setSheetTransitionEnabled] = useState(true);
   const [agreeAll, setAgreeAll] = useState(false);
   const [agreements, setAgreements] = useState([false, false, false]);
   const [showTerms, setShowTerms] = useState(false);
@@ -153,6 +158,36 @@ export default function Home() {
 
   const handleSheetOpen = () => setShowSheet(true);
   const handleSheetClose = () => setShowSheet(false);
+
+  // Drag handlers for bottom sheet (pull down to close)
+  const handleDragStart = (clientY: number) => {
+    draggingRef.current = true;
+    startYRef.current = clientY;
+    setSheetTransitionEnabled(false);
+    setDragY(0);
+  };
+
+  const handleDrag = (clientY: number) => {
+    if (!draggingRef.current) return;
+    const dy = Math.max(0, clientY - startYRef.current);
+    setDragY(dy);
+  };
+
+  const handleDragEnd = (clientY: number) => {
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    const dy = Math.max(0, clientY - startYRef.current);
+    const THRESHOLD = 120; // px to trigger close
+    setSheetTransitionEnabled(true);
+    if (dy > THRESHOLD) {
+      // close sheet
+      setShowSheet(false);
+      setDragY(0);
+    } else {
+      // animate back
+      setDragY(0);
+    }
+  };
 
   // 동의 체크 로직 개선: 상태 동기화 보장
   const handleAgreeAll = () => {
@@ -273,9 +308,20 @@ export default function Home() {
       {showSheet && (
         <>
           <div className={styles.modalOverlay} onClick={handleSheetClose} />
-          <div className={styles.subscribeSheet}>
-            <button className={styles.modalCloseBtn} onClick={handleSheetClose}>&times;</button>
-            <div className={styles.sheetTitle}>한평생 올케어 월간 이용권</div>
+          <div
+            className={`${styles.subscribeSheet} ${sheetTransitionEnabled ? styles.withTransition : styles.dragging}`}
+            style={{ transform: `translateX(-50%) translateY(${dragY}px)` }}
+          >
+              <div className={styles.sheetHandleContainer}>
+                <BottomSheetHandle
+                  onClick={handleSheetClose}
+                  hint=""
+                  onDragStart={handleDragStart}
+                  onDrag={handleDrag}
+                  onDragEnd={handleDragEnd}
+                />
+              </div>
+              <div className={styles.sheetTitle}>한평생 올케어 월간 이용권</div>
             <div className={styles.sheetSub}>월 <span className={styles.sheetPrice}>20,000원</span> 결제</div>
             <hr className={styles.sheetDivider} />
             <div className={styles.sheetAgreeRow}>

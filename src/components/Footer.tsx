@@ -6,7 +6,8 @@ export default function Footer() {
       <div className={styles.companyName}>한평생 올케어</div>
       
       <div className={styles.infoText}>
-        이메일: all-care@korhrd.com
+        이메일: korhrdpartners@gmail.com
+
       </div>
       
       <div className={styles.infoText}>

@@ -17,6 +17,8 @@ export default function MatchingPage() {
     ];
         const [mode, setMode] = useState<'교육원' | '현장실습기관'>('교육원');
         const [filters, setFilters] = useState({ region: '', subregion: '', law: '' });
+        const [filtersTemp, setFiltersTemp] = useState(filters);
+        const [hasSearched, setHasSearched] = useState(false);
         const [centers, setCenters] = useState<any[]>([]);
         const [institutions, setInstitutions] = useState<any[]>([]);
         const [loading, setLoading] = useState(false);
@@ -100,9 +102,37 @@ export default function MatchingPage() {
 
         useEffect(() => {
             setCurrentPage(1);
-        }, [mode, filters]);
+            // reset temp filters to current filters
+            setFiltersTemp(filters);
+
+            // if user has already performed a manual search, don't override results
+            if (hasSearched) return;
+
+            // fetch default (unfiltered) results for the active mode
+            const fetchDefaults = async () => {
+                setLoading(true);
+                try {
+                    if (mode === '교육원') {
+                        const { data } = await supabase.from('training_centers').select('*').limit(20);
+                        setCenters(data || []);
+                        setInstitutions([]);
+                    } else {
+                        const { data } = await supabase.from('training_institution').select('*').limit(20);
+                        setInstitutions(data || []);
+                        setCenters([]);
+                    }
+                } catch (err) {
+                    console.error('[매칭 시스템] 기본 목록 불러오기 실패', err);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            fetchDefaults();
+        }, [mode, hasSearched]);
 
         useEffect(() => {
+            if (!hasSearched) return;
             if (mode !== '교육원') return;
             setLoading(true);
             let query = supabase.from('training_centers').select('*');
@@ -120,9 +150,10 @@ export default function MatchingPage() {
                 setCenters(data || []);
                 setLoading(false);
             });
-        }, [filters, mode]);
+        }, [filters, mode, hasSearched]);
 
         useEffect(() => {
+            if (!hasSearched) return;
             if (mode !== '현장실습기관') return;
             setLoading(true);
             let query = supabase.from('training_institution').select('*');
@@ -132,7 +163,7 @@ export default function MatchingPage() {
                 setInstitutions(data || []);
                 setLoading(false);
             });
-        }, [filters, mode]);
+        }, [filters, mode, hasSearched]);
 
         // 접근 권한 체크 중일 때는 로딩 화면 표시
         if (isChecking) {
@@ -258,11 +289,23 @@ export default function MatchingPage() {
                 </div>
                 <FilterBarCustom
                     mode={mode}
-                    region={filters.region}
-                    subregion={filters.subregion}
-                    law={filters.law}
-                    onChange={setFilters}
+                    region={filtersTemp.region}
+                    subregion={filtersTemp.subregion}
+                    law={filtersTemp.law}
+                    onChange={setFiltersTemp}
                 />
+                <div className={styles.searchButtonWrapper}>
+                <button
+                    className={styles.searchButton}
+                    onClick={() => {
+                        setFilters(filtersTemp);
+                        setHasSearched(true);
+                        setCurrentPage(1);
+                    }}
+                >
+                    검색
+                </button>
+                </div>
                                 </div>
 
                                 {/* 교육원 리스트 */}

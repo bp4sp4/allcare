@@ -345,6 +345,26 @@ html.no-scroll, body.no-scroll {
   animation: bottomSheetUp 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.sheetHandleContainer {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10002;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  pointer-events: auto;
+}
+
+.subscribeSheet.dragging {
+  transition: none !important;
+}
+
+.subscribeSheet.withTransition {
+  transition: transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 @keyframes bottomSheetUp {
   from {
     transform: translateX(-50%) translateY(100%);

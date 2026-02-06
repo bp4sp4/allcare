@@ -96,6 +96,11 @@ export default function Header() {
         )}
         
         <div className={styles.menuItem}>
+          <a href="https://korhrd.co.kr/" target="_blank" rel="noopener noreferrer" onClick={() => setIsMenuOpen(false)}>
+            한평생직업훈련 바로가기
+          </a>
+        </div>
+        <div className={styles.menuItem}>
           <Link href="/matching" onClick={() => setIsMenuOpen(false)}>
             올케어 실습매칭 시스템
           </Link>

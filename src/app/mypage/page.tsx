@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Script from 'next/script';
 import styles from './mypage.module.css';
+import BottomSheetHandle from '../../components/BottomSheetHandle';
 
 // PayApp SDK 타입 정의
 declare global {
@@ -66,6 +67,61 @@ export default function MyPage() {
   const [agreeAll, setAgreeAll] = useState(false);
   const [agreements, setAgreements] = useState([false, false, false]);
   const [isPayAppLoaded, setIsPayAppLoaded] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+  const [showSubscriptionTerms, setShowSubscriptionTerms] = useState(false);
+
+  // Prevent background scroll when any modal or sheet is open
+  useEffect(() => {
+    const modalOpen = showPasswordModal || showRefundModal || showSubscriptionSheet || showTerms || showSubscriptionTerms;
+    if (modalOpen) {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.classList.add('no-scroll');
+    } else {
+      document.body.style.overflow = '';
+      document.documentElement.classList.remove('no-scroll');
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+      document.documentElement.classList.remove('no-scroll');
+    };
+  }, [showPasswordModal, showRefundModal, showSubscriptionSheet, showTerms, showSubscriptionTerms]);
+
+  // Bottom sheet drag state (to match main page behavior)
+  const [dragY, setDragY] = useState(0);
+  const draggingRef = useRef(false);
+  const startYRef = useRef(0);
+  const [sheetTransitionEnabled, setSheetTransitionEnabled] = useState(true);
+
+  const handleSheetOpen = () => setShowSubscriptionSheet(true);
+  
+
+  const handleDragStart = (clientY: number) => {
+    draggingRef.current = true;
+    startYRef.current = clientY;
+    setSheetTransitionEnabled(false);
+    setDragY(0);
+  };
+
+  const handleDrag = (clientY: number) => {
+    if (!draggingRef.current) return;
+    const dy = Math.max(0, clientY - startYRef.current);
+    setDragY(dy);
+  };
+
+  const handleDragEnd = (clientY: number) => {
+    if (!draggingRef.current) return;
+    draggingRef.current = false;
+    const dy = Math.max(0, clientY - startYRef.current);
+    const THRESHOLD = 120;
+    setSheetTransitionEnabled(true);
+    if (dy > THRESHOLD) {
+      setShowSubscriptionSheet(false);
+      setDragY(0);
+    } else {
+      setDragY(0);
+    }
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -188,6 +244,11 @@ export default function MyPage() {
       console.error('결제 내역 로드 실패:', err.message);
     }
   };
+  // Pagination for payment history
+  const [historyPage, setHistoryPage] = useState(1);
+  const historyPageSize = 5;
+  const historyTotalPages = Math.max(1, Math.ceil(paymentHistory.length / historyPageSize));
+  const pagedPaymentHistory = paymentHistory.slice((historyPage - 1) * historyPageSize, historyPage * historyPageSize);
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -277,6 +338,8 @@ export default function MyPage() {
     setShowSubscriptionSheet(false);
     setAgreeAll(false);
     setAgreements([false, false, false]);
+    setDragY(0);
+    setSheetTransitionEnabled(true);
   };
 
   const handleSubscriptionAction = async (action: 'start' | 'cancel' | 'refund' | 'renew') => {
@@ -470,7 +533,7 @@ export default function MyPage() {
                     <span className={styles.detailLabelCustom}>올케어 실습매칭 시스템</span>
                     <a
                       className={styles.detailValueCustomBtn}
-                      href="https://allcare-korhrd.vercel.app/matching"
+                      href="http://localhost:3000/matching"
                       target="_blank"
                       rel="noopener noreferrer"
                     >
@@ -510,11 +573,25 @@ export default function MyPage() {
                   </div>
                   <div className={styles.detailRowCustom}>
                     <span className={styles.detailLabelCustom}>한평생 직업훈련 무료수강권</span>
-                    <span className={styles.detailValueCustomBtn}>사이트 바로가기</span>
+                    <a
+                      className={styles.detailValueCustomBtn}
+                      href="https://korhrd.co.kr/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      사이트 바로가기
+                    </a>
                   </div>
                   <div className={styles.detailRowCustom}>
                     <span className={styles.detailLabelCustom}>올케어 실습매칭 시스템</span>
-                    <span className={styles.detailValueCustomBtn}> 바로가기</span>
+                    <a
+                      className={styles.detailValueCustomBtn}
+                      href="http://localhost:3000/matching"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      바로가기
+                    </a>
                   </div>
                   <div className={styles.subWrapper}>
                     <div className={styles.subscriptionActionRow}>
@@ -564,17 +641,63 @@ export default function MyPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {paymentHistory.map((payment) => (
+                    {pagedPaymentHistory.map((payment) => (
                       <tr key={payment.id}>
                         <td>{new Date(payment.date).toLocaleDateString('ko-KR')}</td>
                         <td>{payment.plan === 'premium' ? '올케어' : payment.plan}</td>
                         <td>{payment.amount.toLocaleString()}원</td>
                         <td>{payment.paymentMethod}</td>
-                   
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                {/* Matching-style Pagination controls */}
+                {paymentHistory.length > historyPageSize && (
+                  <div className={styles.pagination}>
+                    {historyPage > 1 && (
+                      <button className={styles.pageButton} onClick={() => setHistoryPage(historyPage - 1)}>
+                        <svg className={styles.pageArrow} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ transform: 'rotate(180deg)' }}>
+                          <path d="M5.45848 1.79279C5.27101 1.98031 5.16569 2.23462 5.16569 2.49979C5.16569 2.76495 5.27101 3.01926 5.45848 3.20679L10.4085 8.15679L5.45848 13.1068C5.27632 13.2954 5.17552 13.548 5.1778 13.8102C5.18008 14.0724 5.28525 14.3232 5.47066 14.5086C5.65607 14.694 5.90688 14.7992 6.16908 14.8015C6.43127 14.8037 6.68387 14.7029 6.87248 14.5208L12.5295 8.86379C12.7169 8.67626 12.8223 8.42195 12.8223 8.15679C12.8223 7.89162 12.717 7.63731 12.5295 7.44979L6.87248 1.79279C6.68495 1.60532 6.43064 1.5 6.16548 1.5C5.90031 1.5 5.64601 1.60532 5.45848 1.79279Z" fill="#919191"/>
+                        </svg>
+                      </button>
+                    )}
+
+                    {(() => {
+                      const totalPages = Math.max(1, Math.ceil(paymentHistory.length / historyPageSize));
+                      const maxVisible = 4;
+                      let startPage = Math.max(1, historyPage - Math.floor(maxVisible / 2));
+                      let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+                      if (endPage - startPage + 1 < maxVisible) {
+                        startPage = Math.max(1, endPage - maxVisible + 1);
+                      }
+                      return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i).map(page => (
+                        <button
+                          key={page}
+                          className={page === historyPage ? styles.pageButtonActive : styles.pageButton}
+                          onClick={() => setHistoryPage(page)}
+                        >
+                          {page}
+                        </button>
+                      ));
+                    })()}
+
+                    {historyPage < Math.ceil(paymentHistory.length / historyPageSize) && (
+                      <button className={styles.pageButton} onClick={() => setHistoryPage(historyPage + 1)}>
+                        <svg className={styles.pageArrow} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M5.45848 1.79279C5.27101 1.98031 5.16569 2.23462 5.16569 2.49979C5.16569 2.76495 5.27101 3.01926 5.45848 3.20679L10.4085 8.15679L5.45848 13.1068C5.27632 13.2954 5.17552 13.548 5.1778 13.8102C5.18008 14.0724 5.28525 14.3232 5.47066 14.5086C5.65607 14.694 5.90688 14.7992 6.16908 14.8015C6.43127 14.8037 6.68387 14.7029 6.87248 14.5208L12.5295 8.86379C12.7169 8.67626 12.8223 8.42195 12.8223 8.15679C12.8223 7.89162 12.717 7.63731 12.5295 7.44979L6.87248 1.79279C6.68495 1.60532 6.43064 1.5 6.16548 1.5C5.90031 1.5 5.64601 1.60532 5.45848 1.79279Z" fill="#919191"/>
+                        </svg>
+                      </button>
+                    )}
+
+                    {historyPage < Math.ceil(paymentHistory.length / historyPageSize) && (
+                      <button className={styles.pageButton} onClick={() => setHistoryPage(Math.ceil(paymentHistory.length / historyPageSize))}>
+                        <svg className={styles.pageArrow} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                          <path d="M2.99902 1.5C3.26413 1.5 3.51854 1.60557 3.70605 1.79297L9.36328 7.4502C9.55068 7.63771 9.65625 7.89212 9.65625 8.15723C9.65613 8.42223 9.55065 8.67683 9.36328 8.86426L3.70605 14.5205C3.51746 14.7026 3.26509 14.804 3.00293 14.8018C2.74083 14.7994 2.49005 14.6941 2.30469 14.5088C2.11936 14.3235 2.01409 14.0726 2.01172 13.8105C2.00944 13.5484 2.10987 13.295 2.29199 13.1064L7.24219 8.15723L2.29199 3.20703C2.10464 3.01956 2.00006 2.76503 2 2.5C2 2.23499 2.10472 1.98047 2.29199 1.79297C2.47942 1.6056 2.73402 1.50012 2.99902 1.5ZM7.99902 1.5C8.26413 1.5 8.51854 1.60557 8.70605 1.79297L14.3633 7.4502C14.5507 7.63771 14.6562 7.89212 14.6562 8.15723C14.6561 8.42223 14.5506 8.67683 14.3633 8.86426L8.70605 14.5205C8.51746 14.7026 8.26509 14.804 8.00293 14.8018C7.74083 14.7994 7.49005 14.6941 7.30469 14.5088C7.11936 14.3235 7.01409 14.0726 7.01172 13.8105C7.00944 13.5484 7.10987 13.295 7.29199 13.1064L12.2422 8.15723L7.29199 3.20703C7.10464 3.01956 7.00006 2.76503 7 2.5C7 2.23499 7.10472 1.98047 7.29199 1.79297C7.47942 1.6056 7.73402 1.50012 7.99902 1.5Z" fill="#919191"/>
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ) : (
               <p className={styles.emptyMessage}>결제 내역이 없습니다.</p>
@@ -588,16 +711,14 @@ export default function MyPage() {
       {/* 비밀번호 변경 모달 */}
       {showPasswordModal && (
         <div className={styles.modalOverlay} onClick={() => setShowPasswordModal(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3 className={styles.modalTitle}>비밀번호 변경</h3>
-              <button 
-                className={styles.modalClose}
-                onClick={() => setShowPasswordModal(false)}
-              >
-                ×
-              </button>
-            </div>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button
+              className={styles.modalCloseBtn}
+              onClick={() => setShowPasswordModal(false)}
+            >
+              ×
+            </button>
+            <div className={styles.modalTitle}>비밀번호 변경</div>
             <form onSubmit={handlePasswordChange} className={styles.modalForm}>
               {error && <div className={styles.errorBox}>{error}</div>}
               
@@ -656,16 +777,14 @@ export default function MyPage() {
       {/* 환불 정책 안내 모달 */}
       {showRefundModal && (
         <div className={styles.modalOverlay} onClick={() => setShowRefundModal(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h3 className={styles.modalTitle}>환불 정책 안내</h3>
-              <button 
-                className={styles.modalClose}
-                onClick={() => setShowRefundModal(false)}
-              >
-                ×
-              </button>
-            </div>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button
+              className={styles.modalCloseBtn}
+              onClick={() => setShowRefundModal(false)}
+            >
+              ×
+            </button>
+            <div className={styles.modalTitle}>환불 정책 안내</div>
             <div className={styles.refundPolicyContent}>
               <div className={styles.policySection}>
                 <h4>구독 및 결제 안내</h4>
@@ -722,8 +841,16 @@ export default function MyPage() {
       {showSubscriptionSheet && (
         <>
           <div className={styles.modalOverlay} onClick={handleSheetClose} />
-          <div className={styles.subscribeSheet}>
-            <button className={styles.modalCloseBtn} onClick={handleSheetClose}>&times;</button>
+          <div className={`${styles.subscribeSheet} ${sheetTransitionEnabled ? styles.withTransition : styles.dragging}`} style={{ transform: `translateX(-50%) translateY(${dragY}px)` }}>
+            <div className={styles.sheetHandleContainer}>
+              <BottomSheetHandle
+                ariaLabel="구독 시트 핸들"
+                hint=""
+                onDragStart={handleDragStart}
+                onDrag={handleDrag}
+                onDragEnd={handleDragEnd}
+              />
+            </div>
             <div className={styles.sheetTitle}>한평생 올케어 월간 이용권</div>
             <div className={styles.sheetSub}>월 <span className={styles.sheetPrice}>20,000원</span> 결제</div>
             <hr className={styles.sheetDivider} />
@@ -740,25 +867,68 @@ export default function MyPage() {
                 )}
               </span>
             </div>
-            {[
-              <span className={styles.sheetAgreeSub}>이용권 정기결제 동의 <span className={styles.sheetAgreeRequired}>(필수)</span></span>,
-              <span>이용약관 및 결제 및 구독 유의사항 <span className={styles.sheetAgreeRequired}>(필수)</span></span>,
-              <span>멤버십 제3자 개인정보 제공 <span className={styles.sheetAgreeRequired}>(필수)</span></span>
-            ].map((txt, idx: number) => (
-              <div className={styles.sheetAgreeRow} key={idx}>
-                {txt}
+            <div className={styles.sheetAgreeRow}>
+              <span className={styles.sheetAgreeSub}>이용권 정기결제 동의 <span className={styles.sheetAgreeRequired}>(필수)</span></span>
+              <span
+                className={`${styles.sheetCheckbox} ${agreements[0] ? styles.sheetCheckboxChecked : ''}`}
+                onClick={() => handleAgreement(0)}
+              >
+                {agreements[0] && (
+                  <svg className={styles.sheetCheckIcon} xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 9 9" fill="none">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M8.07976 1.91662C8.18521 2.0221 8.24445 2.16515 8.24445 2.31431C8.24445 2.46346 8.18521 2.60651 8.07976 2.71199L3.86364 6.92812C3.80792 6.98385 3.74177 7.02806 3.66896 7.05822C3.59616 7.08838 3.51813 7.1039 3.43932 7.1039C3.36052 7.1039 3.28249 7.08838 3.20968 7.05822C3.13688 7.02806 3.07073 6.98385 3.01501 6.92812L0.92026 4.83374C0.866535 4.78186 0.823683 4.71979 0.794203 4.65116C0.764723 4.58253 0.749205 4.50872 0.748556 4.43403C0.747907 4.35934 0.76214 4.28527 0.790423 4.21615C0.818706 4.14702 0.860473 4.08421 0.913288 4.0314C0.966102 3.97858 1.02891 3.93682 1.09804 3.90853C1.16716 3.88025 1.24123 3.86602 1.31592 3.86667C1.39061 3.86731 1.46442 3.88283 1.53305 3.91231C1.60168 3.94179 1.66375 3.98464 1.71563 4.03837L3.43914 5.76187L7.28401 1.91662C7.33625 1.86435 7.39827 1.82288 7.46654 1.79459C7.53481 1.7663 7.60799 1.75174 7.68189 1.75174C7.75579 1.75174 7.82896 1.7663 7.89723 1.79459C7.9655 1.82288 8.02752 1.86435 8.07976 1.91662Z" fill="#fff"/>
+                  </svg>
+                )}
+              </span>
+            </div>
+
+            <div className={styles.sheetAgreeRow}>
+              <span>
                 <span
-                  className={`${styles.sheetCheckbox} ${agreements[idx] ? styles.sheetCheckboxChecked : ''}`}
-                  onClick={() => handleAgreement(idx)}
-                >
-                  {agreements[idx] && (
-                    <svg className={styles.sheetCheckIcon} xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 9 9" fill="none">
-                      <path fillRule="evenodd" clipRule="evenodd" d="M8.07976 1.91662C8.18521 2.0221 8.24445 2.16515 8.24445 2.31431C8.24445 2.46346 8.18521 2.60651 8.07976 2.71199L3.86364 6.92812C3.80792 6.98385 3.74177 7.02806 3.66896 7.05822C3.59616 7.08838 3.51813 7.1039 3.43932 7.1039C3.36052 7.1039 3.28249 7.08838 3.20968 7.05822C3.13688 7.02806 3.07073 6.98385 3.01501 6.92812L0.92026 4.83374C0.866535 4.78186 0.823683 4.71979 0.794203 4.65116C0.764723 4.58253 0.749205 4.50872 0.748556 4.43403C0.747907 4.35934 0.76214 4.28527 0.790423 4.21615C0.818706 4.14702 0.860473 4.08421 0.913288 4.0314C0.966102 3.97858 1.02891 3.93682 1.09804 3.90853C1.16716 3.88025 1.24123 3.86602 1.31592 3.86667C1.39061 3.86731 1.46442 3.88283 1.53305 3.91231C1.60168 3.94179 1.66375 3.98464 1.71563 4.03837L3.43914 5.76187L7.28401 1.91662C7.33625 1.86435 7.39827 1.82288 7.46654 1.79459C7.53481 1.7663 7.60799 1.75174 7.68189 1.75174C7.75579 1.75174 7.82896 1.7663 7.89723 1.79459C7.9655 1.82288 8.02752 1.86435 8.07976 1.91662Z" fill="#fff"/>
-                    </svg>
-                  )}
-                </span>
-              </div>
-            ))}
+                  className={styles.sheetAgreeUnderline}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setShowTerms(true)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowTerms(true); }}
+                >이용약관</span>
+                <span className={styles.sheetAgreeAnd}> 및 </span>
+                <span
+                  className={styles.sheetAgreeUnderline}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setShowSubscriptionTerms(true)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowSubscriptionTerms(true); }}
+                >결제 및 구독 유의사항</span>
+                <span className={styles.sheetAgreeRequired}> (필수)</span>
+              </span>
+              <span
+                className={`${styles.sheetCheckbox} ${agreements[1] ? styles.sheetCheckboxChecked : ''}`}
+                onClick={() => handleAgreement(1)}
+              >
+                {agreements[1] && (
+                  <svg className={styles.sheetCheckIcon} xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 9 9" fill="none">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M8.07976 1.91662C8.18521 2.0221 8.24445 2.16515 8.24445 2.31431C8.24445 2.46346 8.18521 2.60651 8.07976 2.71199L3.86364 6.92812C3.80792 6.98385 3.74177 7.02806 3.66896 7.05822C3.59616 7.08838 3.51813 7.1039 3.43932 7.1039C3.36052 7.1039 3.28249 7.08838 3.20968 7.05822C3.13688 7.02806 3.07073 6.98385 3.01501 6.92812L0.92026 4.83374C0.866535 4.78186 0.823683 4.71979 0.794203 4.65116C0.764723 4.58253 0.749205 4.50872 0.748556 4.43403C0.747907 4.35934 0.76214 4.28527 0.790423 4.21615C0.818706 4.14702 0.860473 4.08421 0.913288 4.0314C0.966102 3.97858 1.02891 3.93682 1.09804 3.90853C1.16716 3.88025 1.24123 3.86602 1.31592 3.86667C1.39061 3.86731 1.46442 3.88283 1.53305 3.91231C1.60168 3.94179 1.66375 3.98464 1.71563 4.03837L3.43914 5.76187L7.28401 1.91662C7.33625 1.86435 7.39827 1.82288 7.46654 1.79459C7.53481 1.7663 7.60799 1.75174 7.68189 1.75174C7.75579 1.75174 7.82896 1.7663 7.89723 1.79459C7.9655 1.82288 8.02752 1.86435 8.07976 1.91662Z" fill="#fff"/>
+                  </svg>
+                )}
+              </span>
+            </div>
+
+            <div className={styles.sheetAgreeRow}>
+              <span>
+                <span className={styles.sheetAgreeUnderline}>멤버십 제3자 개인정보 제공</span>
+                <span className={styles.sheetAgreeRequired}> (필수)</span>
+              </span>
+              <span
+                className={`${styles.sheetCheckbox} ${agreements[2] ? styles.sheetCheckboxChecked : ''}`}
+                onClick={() => handleAgreement(2)}
+              >
+                {agreements[2] && (
+                  <svg className={styles.sheetCheckIcon} xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 9 9" fill="none">
+                    <path fillRule="evenodd" clipRule="evenodd" d="M8.07976 1.91662C8.18521 2.0221 8.24445 2.16515 8.24445 2.31431C8.24445 2.46346 8.18521 2.60651 8.07976 2.71199L3.86364 6.92812C3.80792 6.98385 3.74177 7.02806 3.66896 7.05822C3.59616 7.08838 3.51813 7.1039 3.43932 7.1039C3.36052 7.1039 3.28249 7.08838 3.20968 7.05822C3.13688 7.02806 3.07073 6.98385 3.01501 6.92812L0.92026 4.83374C0.866535 4.78186 0.823683 4.71979 0.794203 4.65116C0.764723 4.58253 0.749205 4.50872 0.748556 4.43403C0.747907 4.35934 0.76214 4.28527 0.790423 4.21615C0.818706 4.14702 0.860473 4.08421 0.913288 4.0314C0.966102 3.97858 1.02891 3.93682 1.09804 3.90853C1.16716 3.88025 1.24123 3.86602 1.31592 3.86667C1.39061 3.86731 1.46442 3.88283 1.53305 3.91231C1.60168 3.94179 1.66375 3.98464 1.71563 4.03837L3.43914 5.76187L7.28401 1.91662C7.33625 1.86435 7.39827 1.82288 7.46654 1.79459C7.53481 1.7663 7.60799 1.75174 7.68189 1.75174C7.75579 1.75174 7.82896 1.7663 7.89723 1.79459C7.9655 1.82288 8.02752 1.86435 8.07976 1.91662Z" fill="#fff"/>
+                  </svg>
+                )}
+              </span>
+            </div>
+
             <button 
               className={`${styles.sheetButton} ${!agreeAll ? styles.sheetButtonDisabled : ''}`} 
               onClick={async () => {
@@ -870,6 +1040,51 @@ export default function MyPage() {
             >
               한평생 올케어 구독하기
             </button>
+          </div>
+        </>
+      )}
+
+      {showTerms && (
+        <>
+          <div className={styles.modalOverlay} onClick={() => setShowTerms(false)} />
+          <div className={styles.modalContent}>
+            <button className={styles.modalCloseBtn} onClick={() => setShowTerms(false)}>&times;</button>
+            <div className={styles.modalTitle}>이용약관</div>
+            <div className={styles.modalBody}>
+제1조 (서비스의 정의)<br/>
+본 서비스는 학습자의 원활한 학위 취득 및 자격증 취득을 돕기 위해 다음의 항목을 제공하는 1년 정기 구독형 서비스입니다.<br/>
+- 학점은행제 수강료 할인 및 미이수 전액환급 보장<br/>
+- 한평생 직업훈련 무료수강 이용권<br/>
+- 올케어 실습 매칭 시스템 이용권<br/>
+<br/>
+제2조 (혜택별 이행 조건 및 면책)<br/>
+- 학점은행제 수강료 할인 및 미이수 전액환급 보장: 본 혜택은 한평생교육에서 지정한 학점은행제 교육기관에서 수강하는 경우에만 적용됩니다. 회사가 지정하지 않은 타 교육기관에서 개별적으로 수강한 경우에는 할인 및 환급 보장 대상에서 제외됩니다. 출석률 100% 달성 및 모든 시험(중간·기말) 응시 조건을 충족했음에도 미이수(F학점 등)가 발생한 경우에 한해 보장됩니다.<br/>
+- 한평생 직업훈련 무료수강 이용권: 한평생교육은 한평생직업훈련 무료수강 이용권을 제공하며, 학습자는 직접 외부 사이트에 가입 후 이를 등록해야 합니다. 수강료 외 자격증 발급비 등 행정 수수료는 본인 부담입니다.<br/>
+- 실습 매칭 시스템 이용권: 한평생교육은 전국의 실습처 정보를 분류하여 제공하는 '정보 제공자'의 역할을 수행합니다.<br/>
+            </div>
+          </div>
+        </>
+      )}
+
+      {showSubscriptionTerms && (
+        <>
+          <div className={styles.modalOverlay} onClick={() => setShowSubscriptionTerms(false)} />
+          <div className={styles.modalContent}>
+            <button className={styles.modalCloseBtn} onClick={() => setShowSubscriptionTerms(false)}>&times;</button>
+            <div className={styles.modalTitle}>구독 및 결제 안내</div>
+            <div className={styles.modalBody}>
+<strong>[구독 및 결제 안내]</strong><br/>
+본 상품은 1년 정기 구독 상품으로, 최초 가입일 기준 1년마다 정기 결제가 발생합니다.<br/>
+결제와 동시에 '수강료 할인' 및 '매칭 시스템 접속 권한'이 부여됩니다.<br/>
+<br/>
+<strong>[환불 및 해지 유의사항 - 필독]</strong><br/>
+청약철회 제한: 결제 후 아래 서비스 중 하나라도 이용한 경우, 디지털 콘텐츠 이용이 개시된 것으로 간주하여 환불 및 청약철회가 불가능합니다.<br/>
+<br/>
+- 학점은행제 수강신청 시 할인 혜택을 적용받은 경우<br/>
+- 실습 매칭 시스템에 접속하여 정보를 열람한 경우<br/>
+- 직업훈련 수강권(쿠폰 번호)을 확인하거나 발급받은 경우<br/>
+- 중도 해지 시 공제: 환불 가능 대상일지라도 중도 해지 시에는 [위약금( %)]과 [수강료 할인 차액]을 차감한 후 정산됩니다.<br/>
+            </div>
           </div>
         </>
       )}

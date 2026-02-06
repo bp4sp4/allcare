@@ -1,0 +1,29 @@
+.wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 0;
+  user-select: none;
+}
+
+.handle {
+  width: 50px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--Grayscale-200, #E4E4E4);
+  cursor: grab;
+}
+
+.hint {
+  font-size: 12px;
+  color: #6b7280;
+  font-family: Pretendard, sans-serif;
+  font-weight: 600;
+}
+
+.wrapper:active .handle {
+  cursor: grabbing;
+}
