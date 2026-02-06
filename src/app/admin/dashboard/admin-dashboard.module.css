@@ -266,6 +266,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  max-width: 360px;
+  margin: 0 auto;
   gap: 8px;
   padding: 20px;
 }
