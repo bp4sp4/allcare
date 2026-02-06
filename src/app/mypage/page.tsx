@@ -828,11 +828,38 @@ export default function MyPage() {
                     .setParam('startpaytype', 'card')
                     .setParam('servicetype', 'BR');
 
-                  // PayApp SDK가 스스로 결제창을 엽니다. 직접 팝업을 열지 않고 SDK 호출만 합니다.
+                  // 정기결제용 파라미터를 메인 페이지와 동일하게 설정하고 rebill() 호출
+                  window.PayApp.setParam('goodname', '한평생 올케어 월 정기구독');
+                  window.PayApp.setParam('goodprice', '20000');
+                  window.PayApp.setParam('recvphone', phone.replace(/-/g, ''));
+                  window.PayApp.setParam('buyername', name);
+                  window.PayApp.setParam('smsuse', 'n');
+                  window.PayApp.setParam('rebillCycleType', 'Month');
+                  window.PayApp.setParam('rebillCycleMonth', rebillCycleMonth);
+                  window.PayApp.setParam('rebillExpire', rebillExpire);
+                  window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
+                  window.PayApp.setParam('returnurl', `${baseUrl}/payment/success`);
+                  window.PayApp.setParam('var1', JSON.stringify({ orderId: `SUBS-${userId}-${Date.now()}`, userId, phone, name }));
+
+                  console.log('Payment request (mypage):', {
+                    userid: payappUserId,
+                    shopname: shopName,
+                    goodname: '한평생 올케어 월 정기구독',
+                    goodprice: '20000',
+                    buyername: name,
+                    recvphone: phone,
+                    rebillCycleType: 'Month',
+                    rebillCycleMonth,
+                    rebillExpire,
+                    baseUrl
+                  });
+
                   try {
-                    window.PayApp.call();
+                    window.PayApp.rebill();
+                    // 시트 닫기
+                    handleSheetClose();
                   } catch (e) {
-                    console.error('PayApp call failed:', e);
+                    console.error('PayApp rebill failed:', e);
                     alert('결제창을 열 수 없습니다. 팝업 차단을 해제하고 다시 시도해주세요.');
                   }
                 } catch (error) {
