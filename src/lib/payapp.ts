@@ -221,3 +221,69 @@ export async function requestPaymentCancellation(params: PayAppCancelRequestPara
     };
   }
 }
+
+// Robust client-side loader for PayApp lite SDK with retries/backoff
+export async function loadPayAppSDK(options?: { retries?: number; timeout?: number }) {
+  const retries = options?.retries ?? 3;
+  const timeout = options?.timeout ?? 8000;
+  const src = 'https://lite.payapp.kr/public/api/v2/payapp-lite.js';
+
+  if (typeof window === 'undefined') return;
+  if ((window as any).PayApp) return;
+
+  let attempt = 0;
+
+  const loadOnce = () =>
+    new Promise<void>((resolve, reject) => {
+      const existing = document.querySelector(`script[src="${src}"]`);
+      if (existing) {
+        const checkInterval = setInterval(() => {
+          if ((window as any).PayApp) {
+            clearInterval(checkInterval);
+            resolve();
+          }
+        }, 200);
+        setTimeout(() => {
+          clearInterval(checkInterval);
+          if ((window as any).PayApp) resolve();
+          else reject(new Error('PayApp load timeout'));
+        }, timeout);
+        return;
+      }
+
+      const s = document.createElement('script');
+      s.src = src;
+      s.async = true;
+      s.onload = () => {
+        if ((window as any).PayApp) {
+          resolve();
+        } else {
+          const checkInterval = setInterval(() => {
+            if ((window as any).PayApp) {
+              clearInterval(checkInterval);
+              resolve();
+            }
+          }, 200);
+          setTimeout(() => {
+            clearInterval(checkInterval);
+            if ((window as any).PayApp) resolve();
+            else reject(new Error('PayApp not available after load'));
+          }, timeout);
+        }
+      };
+      s.onerror = () => reject(new Error('Failed to load PayApp script'));
+      document.head.appendChild(s);
+    });
+
+  while (attempt < retries) {
+    try {
+      await loadOnce();
+      return;
+    } catch (err) {
+      attempt += 1;
+      const backoff = 500 * Math.pow(2, attempt - 1);
+      await new Promise((r) => setTimeout(r, backoff));
+    }
+  }
+  throw new Error('Unable to load PayApp SDK after retries');
+}

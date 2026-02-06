@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Script from 'next/script';
+import { loadPayAppSDK } from '@/lib/payapp';
 import styles from './mypage.module.css';
 import BottomSheetHandle from '../../components/BottomSheetHandle';
 
@@ -69,8 +69,43 @@ export default function MyPage() {
   const [isPayAppLoaded, setIsPayAppLoaded] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showSubscriptionTerms, setShowSubscriptionTerms] = useState(false);
+  const [isPayAppLoading, setIsPayAppLoading] = useState(false);
+  const [payappLoadError, setPayappLoadError] = useState<string | null>(null);
 
   // Prevent background scroll when any modal or sheet is open
+  useEffect(() => {
+    // load PayApp SDK with retries
+    let mounted = true;
+    setIsPayAppLoading(true);
+    loadPayAppSDK({ retries: 3, timeout: 8000 })
+      .then(() => {
+        if (!mounted) return;
+        setIsPayAppLoaded(true);
+        setIsPayAppLoading(false);
+        if ((window as any).PayApp) {
+          const userId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
+          const shopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어';
+          try {
+            window.PayApp.setDefault('userid', userId);
+            window.PayApp.setDefault('shopname', shopName);
+          } catch (e) {
+            console.warn('PayApp default set failed', e);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('PayApp load failed:', err);
+        if (!mounted) return;
+        setIsPayAppLoaded(false);
+        setIsPayAppLoading(false);
+        setPayappLoadError(String(err?.message || err));
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   useEffect(() => {
     const modalOpen = showPasswordModal || showRefundModal || showSubscriptionSheet || showTerms || showSubscriptionTerms;
     if (modalOpen) {
@@ -930,12 +965,13 @@ export default function MyPage() {
             </div>
 
             <button 
-              className={`${styles.sheetButton} ${!agreeAll ? styles.sheetButtonDisabled : ''}`} 
+              className={`${styles.sheetButton} ${(!agreeAll || !isPayAppLoaded) ? styles.sheetButtonDisabled : ''}`} 
+              disabled={!agreeAll || !isPayAppLoaded}
+              title={!isPayAppLoaded ? (isPayAppLoading ? '결제 시스템을 로딩중입니다' : '결제 시스템 로딩 실패') : ''}
               onClick={async () => {
                 if (!agreeAll) return;
-                
-                if (!isPayAppLoaded || !window.PayApp) {
-                  alert('결제 시스템을 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+                if (!isPayAppLoaded) {
+                  alert(isPayAppLoading ? '결제 시스템을 로딩중입니다. 잠시 후 다시 시도해주세요.' : '결제 시스템 로딩에 실패했습니다. 잠시 후 다시 시도하거나 관리자에게 문의하세요.');
                   return;
                 }
 
@@ -1037,8 +1073,8 @@ export default function MyPage() {
                   alert('결제 처리 중 오류가 발생했습니다.');
                 }
               }}
-            >
-              한평생 올케어 구독하기
+              >
+              {!isPayAppLoaded ? (isPayAppLoading ? '결제 시스템 로딩중...' : '결제 시스템 로딩 실패') : '한평생 올케어 구독하기'}
             </button>
           </div>
         </>
@@ -1089,20 +1125,7 @@ export default function MyPage() {
         </>
       )}
 
-      {/* PayApp SDK */}
-      <Script
-        src="https://lite.payapp.kr/public/api/v2/payapp-lite.js"
-        strategy="lazyOnload"
-        onLoad={() => {
-          setIsPayAppLoaded(true);
-          if (window.PayApp) {
-            console.log('PayApp SDK loaded successfully');
-          }
-        }}
-        onError={(e) => {
-          console.error('PayApp SDK failed to load:', e);
-        }}
-      />
+      {/* PayApp SDK loading handled via loadPayAppSDK util */}
     </div>
   );
 }

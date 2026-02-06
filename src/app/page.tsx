@@ -5,7 +5,7 @@ import Head from 'next/head';
 import { useState, useEffect, useRef } from 'react';
 import AlertModal from '@/components/AlertModal';
 import Footer from '@/components/Footer';
-import Script from 'next/script';
+import { loadPayAppSDK } from '@/lib/payapp';
 import { supabase } from '@/lib/supabase';
 import styles from './page.module.css';
 import BottomSheetHandle from '@/components/BottomSheetHandle';
@@ -59,6 +59,8 @@ export default function Home() {
   const [showTerms, setShowTerms] = useState(false);
   const [showSubscriptionTerms, setShowSubscriptionTerms] = useState(false);
   const [isPayAppLoaded, setIsPayAppLoaded] = useState(false);
+  const [isPayAppLoading, setIsPayAppLoading] = useState(false);
+  const [payappLoadError, setPayappLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     // URL에서 토큰 확인 (OAuth 리다이렉트)
@@ -112,6 +114,36 @@ export default function Home() {
     return () => {
       window.removeEventListener('scroll', handleScroll);
       window.removeEventListener('message', handlePaymentResult);
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    setIsPayAppLoading(true);
+    loadPayAppSDK({ retries: 3, timeout: 8000 })
+      .then(() => {
+        if (!mounted) return;
+        setIsPayAppLoaded(true);
+        setIsPayAppLoading(false);
+        if ((window as any).PayApp) {
+          const userId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
+          try {
+            window.PayApp.setDefault('userid', userId);
+            window.PayApp.setDefault('shopname', process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어');
+          } catch (e) {
+            console.warn('PayApp setDefault failed', e);
+          }
+        }
+      })
+      .catch((err) => {
+        console.error('PayApp load failed:', err);
+        if (!mounted) return;
+        setIsPayAppLoading(false);
+        setPayappLoadError(String(err?.message || err));
+      });
+
+    return () => {
+      mounted = false;
     };
   }, []);
 
@@ -220,25 +252,7 @@ export default function Home() {
           }}
         />
       )}
-      <Script
-        src="https://lite.payapp.kr/public/api/v2/payapp-lite.js"
-        strategy="afterInteractive"
-        onLoad={() => {
-          console.log('PayApp SDK loaded');
-          if (window.PayApp) {
-            const userId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
-            console.log('PayApp USER_ID:', userId ? 'Set' : 'Not Set');
-            window.PayApp.setDefault('userid', userId);
-            window.PayApp.setDefault('shopname', process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어');
-            setIsPayAppLoaded(true);
-          } else {
-            console.error('PayApp object not found');
-          }
-        }}
-        onError={(e) => {
-          console.error('PayApp SDK failed to load:', e);
-        }}
-      />
+      {/* PayApp SDK is loaded via loadPayAppSDK util */}
       <main className={styles.main_wrapper}>
       <div className={styles.mobileWrapper}>
         <p className={styles.heroSubtitle}>시작부터 끝까지 안전하게</p>
@@ -493,7 +507,7 @@ export default function Home() {
               }}
               disabled={!agreeAll || !isPayAppLoaded}
             >
-              한평생올케어 시작하기
+              {!isPayAppLoaded ? (isPayAppLoading ? '결제 시스템 로딩중...' : '결제 시스템 로딩 실패') : '한평생올케어 시작하기'}
             </button>
           </div>
         </>
