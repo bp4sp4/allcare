@@ -34,19 +34,19 @@ export default function Home() {
   const accordionList = [
     {
       title: '상품 정보 고시',
-      content: '여기에 상품 정보 고시 내용을 입력하세요.'
+      content: '<b>상품명</b><br/> 한평생 올케어 구독 서비스<br/><br/> <b>상품 유형</b><br/> 디지털 콘텐츠 및 교육·매칭 지원이 결합된 구독형 서비스<br/><br/> <b>구독 요금</b><br/>월 20,000원 (부가세 포함)<br/><br/><b> 구독 기간</b><br/>결제일로부터 1개월 단위 자동 갱신<br/><br/><b> 제공 서비스 내용</b><br/> 1. 미이수 환급 보장 서비스<br/> 2. 한평생 직업훈련원 온라인 과정 무료수강권<br/> 3.실습매칭 프로그램 열람권<br/> <br/><b>서비스 개시 시점</b><br/>결제 즉시 자동 제공'
     },
     {
       title: '결제/변경/해지/환불 안내',
-      content: '여기에 결제, 변경, 해지, 환불 안내 내용을 입력하세요.'
+      content: '<strong>1. 청약철회 제한</strong><br/>본 상품은 결제 즉시 제공되는 디지털 콘텐츠 및 교육 서비스가 포함된 상품으로, 전자상거래법 제17조 제2항에 따라 단순 변심에 의한 청약철회가 제한됩니다.<br/><br/><strong>2. 구독 해지</strong><br/>구독 해지는 가능하나, 구독 기간 중 제공된 서비스가 존재할 경우 위약금이 발생합니다.<br/>해지는 다음 결제일 이전에 신청해야 하며, 이미 결제된 이용료는 원칙적으로 환불되지 않습니다.<br/><br/><strong>3. 중도 해지 위약금</strong><br/>구독 기간 중 해지 시, 아래 항목을 기준으로 위약금이 산정됩니다.<br/><strong>[위약금 구성]</strong><br/>- 이미 제공된 디지털 콘텐츠 이용 대가<br/>- 무료수강권 제공에 따른 할인분 환산 금액<br/>- 실습매칭 프로그램 열람권 제공에 따른 이용료<br/>위약금은 잔여 기간 요금의 50~100% 범위 내에서 산정될 수 있으며, 회사 내부 기준에 따라 개별 산정됩니다.<br/>위약금이 결제 금액을 초과할 경우, 환불은 발생하지 않습니다.<br/><br/><strong>4. 환불 불가 항목</strong><br/>무료 제공된 수강권, 열람권, 콘텐츠 이용 내역은 환불 및 현금 환산이 불가합니다.<br/>이용 여부와 관계없이, 제공 사실만으로 이용한 것으로 간주됩니다.'
     },
     {
       title: '상품 이용 안내',
-      content: '여기에 상품 이용 안내 내용을 입력하세요.'
+      content: '<strong>1. 미이수 환급 보장 서비스</strong><br/>본 서비스는 회사가 지정한 교육기관 및 과정에 한해 적용됩니다.<br/>환급 보장은 아래 모든 조건을 충족한 경우에만 적용됩니다.<br/><strong>[환급 조건]</strong><br/>- 출석률 100% 달성<br/>- 중간고사 및 기말고사 모두 응시<br/>- 회사가 안내한 학습 가이드 및 절차를 성실히 이행할 것<br/>위 조건 중 단 하나라도 미충족 시 환급 대상에서 제외됩니다.<br/>개인 사정, 단순 미응시, 시스템 미확인, 안내 미숙지 등은 환급 사유로 인정되지 않습니다.<br/><br/><strong>2. 직업훈련원 무료수강권</strong><br/>무료수강권은 수강료에 한해 제공됩니다.<br/>자격증 발급비, 응시료, 재발급 비용 등은 수강생 본인 부담입니다.<br/>무료수강권은 구독 기간 내 1회에 한해 사용 가능하며, 미사용 시 소급 적용 또는 환불되지 않습니다.<br/><br/><strong>3. 실습매칭 프로그램 열람권</strong><br/>본 서비스는 실습기관 자동 매칭 정보 열람 서비스입니다.<br/>회사는 실습기관 섭외, 배정, 실습 성사 여부에 대해 보장하지 않습니다.<br/>실습기관과의 연락, 일정 조율, 실습 진행은 전적으로 이용자 책임입니다.<br/>열람권은 구독 기간 동안만 제공되며, 종료 후 접근이 제한됩니다.'
     },
     {
       title: '판매자 정보',
-      content: '여기에 판매자 정보를 입력하세요.'
+      content: '상호명: 한평생 올케어<br/>운영사: ㈜한평생그룹<br/>대표자: 양병웅<br/>사업자등록번호: 392-88-03618<br/>주소: 서울특별시 도봉구 도봉로150다길 61, 601호<br/>고객센터 이메일: korhrdpartners@gmail.com'
     }
   ];
   const [showSheet, setShowSheet] = useState(false);
@@ -97,9 +97,12 @@ export default function Home() {
         const { status, orderId, amount, message } = event.data.data;
         
         if (status === 'success') {
-          alert(`결제가 완료되었습니다!\n주문번호: ${orderId}\n결제금액: ${Number(amount).toLocaleString()}원`);
-          // TODO: 결제 완료 후 처리 (예: 구독 활성화, 페이지 리로드 등)
-          // router.push('/payment/success');
+          // Navigate main UI to success page so user sees result on main window
+          try {
+            router.push('/payment/success');
+          } catch (e) {
+            window.location.href = '/payment/success';
+          }
         } else {
           alert(`결제에 실패했습니다.\n${message || '다시 시도해 주세요.'}`);
         }
@@ -585,9 +588,10 @@ export default function Home() {
                 </svg>
               </span>
             </div>
-            <div className={openAccordion === idx ? styles.accordionContent + ' ' + styles.accordionContentOpen : styles.accordionContent}>
-              {item.content}
-            </div>
+            <div
+              className={openAccordion === idx ? styles.accordionContent + ' ' + styles.accordionContentOpen : styles.accordionContent}
+              dangerouslySetInnerHTML={{ __html: item.content }}
+            />
           </div>
         ))}
       </div>

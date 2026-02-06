@@ -136,7 +136,7 @@ export default function PaymentHistoryPage() {
           <div className={styles.empty}>
             <p className={styles.emptyIcon}>📭</p>
             <p className={styles.emptyText}>결제 내역이 없습니다</p>
-            <Link href="/payment" className={styles.emptyButton}>
+            <Link href="/mypage" className={styles.emptyButton}>
               첫 구독 시작하기
             </Link>
           </div>

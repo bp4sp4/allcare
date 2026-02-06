@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { loadPayAppSDK } from '@/lib/payapp';
 import styles from './mypage.module.css';
 import BottomSheetHandle from '../../components/BottomSheetHandle';
+import Portal from '../../components/Portal';
 
 // PayApp SDK 타입 정의
 declare global {
@@ -57,6 +58,9 @@ export default function MyPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
   const [showRefundModal, setShowRefundModal] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -171,12 +175,23 @@ export default function MyPage() {
         const { status, orderId, amount, message } = event.data.data;
         
         if (status === 'success') {
-          alert(`결제가 완료되었습니다!\n주문번호: ${orderId}\n결제금액: ${Number(amount).toLocaleString()}원`);
-          // 구독 정보 새로고침
+          // Redirect main window to success page so user sees result on the main UI
+          try {
+            router.push('/payment/success');
+          } catch (e) {
+            // fallback
+            window.location.href = '/payment/success';
+          }
+          // Refresh subscription info and close sheet
           fetchSubscriptionInfo();
           handleSheetClose();
         } else {
-          alert(`결제에 실패했습니다.\n${message || '다시 시도해 주세요.'}`);
+          // navigate to failure page or show alert
+          try {
+            router.push('/payment/result?status=fail&orderId=' + encodeURIComponent(orderId || ''));
+          } catch (e) {
+            alert(`결제에 실패했습니다.\n${message || '다시 시도해 주세요.'}`);
+          }
         }
       }
     };
@@ -508,6 +523,16 @@ export default function MyPage() {
                 </button>
               </div>
             )}
+            <div className={styles.infoRow}>
+              <span className={styles.infoLabel}>계정</span>
+              <button
+                className={styles.deleteAccountBtn}
+                onClick={() => setShowDeleteModal(true)}
+                style={{color: '#000000', fontSize: '15px'}}
+              >
+                회원 탈퇴
+              </button>
+            </div>
           </div>
         </section>
 
@@ -809,9 +834,102 @@ export default function MyPage() {
         </div>
       )}
 
+      {/* 회원 탈퇴 모달 */}
+      {showDeleteModal && (
+        <Portal>
+          <div className={styles.modalOverlay} onClick={() => setShowDeleteModal(false)} />
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button
+              className={styles.modalCloseBtn}
+              onClick={() => setShowDeleteModal(false)}
+            >
+              ×
+            </button>
+            <div className={styles.modalTitle}>회원 탈퇴</div>
+            <div className={styles.modalBody}>
+              <p>계정을 삭제하면 복구할 수 없습니다. 관련 구독/결제 정보가 제거되며, 제공된 혜택은 소급 환불되지 않습니다.</p>
+              {userInfo?.provider === 'email' ? (
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>현재 비밀번호</label>
+                  <input
+                    type="password"
+                    value={deletePassword}
+                    onChange={(e) => setDeletePassword(e.target.value)}
+                    className={styles.input}
+                    placeholder="비밀번호를 입력하세요"
+                  />
+                </div>
+              ) : (
+                <p>소셜 로그인 계정은 소셜 제공자에서 연결을 해제한 후 삭제가 가능합니다.</p>
+              )}
+              {deleteError && <div className={styles.errorBox}>{deleteError}</div>}
+            </div>
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.cancelModalBtn}
+                onClick={() => setShowDeleteModal(false)}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className={styles.deleteConfirmBtn}
+                onClick={async () => {
+                  setDeleteError('');
+                  try {
+                    const token = localStorage.getItem('token');
+                    if (!token) {
+                      setDeleteError('인증 정보가 없습니다. 다시 로그인해주세요.');
+                      return;
+                    }
+
+                    const payload: any = (() => {
+                      try { return JSON.parse(atob(token.split('.')[1])); } catch { return {}; }
+                    })();
+
+                    if (payload.provider === 'email' && !deletePassword) {
+                      setDeleteError('비밀번호를 입력하세요.');
+                      return;
+                    }
+
+                    const response = await fetch('/api/user/delete', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({ password: deletePassword })
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok) {
+                      setDeleteError(data.error || '계정 삭제에 실패했습니다.');
+                      return;
+                    }
+
+                    // 성공하면 로컬 세션 정리하고 홈으로 이동
+                    localStorage.removeItem('token');
+                    window.dispatchEvent(new Event('authChange'));
+                    alert(data.message || '계정이 삭제되었습니다. 이용해 주셔서 감사합니다.');
+                    router.push('/');
+                  } catch (err) {
+                    console.error('Delete account error:', err);
+                    setDeleteError('계정 삭제 중 오류가 발생했습니다.');
+                  }
+                }}
+              >
+                탈퇴하기
+              </button>
+            </div>
+          </div>
+        </Portal>
+      )}
+
       {/* 환불 정책 안내 모달 */}
       {showRefundModal && (
-        <div className={styles.modalOverlay} onClick={() => setShowRefundModal(false)}>
+        <Portal>
+          <div className={styles.modalOverlay} onClick={() => setShowRefundModal(false)} />
           <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
             <button
               className={styles.modalCloseBtn}
@@ -821,13 +939,7 @@ export default function MyPage() {
             </button>
             <div className={styles.modalTitle}>환불 정책 안내</div>
             <div className={styles.refundPolicyContent}>
-              <div className={styles.policySection}>
-                <h4>구독 및 결제 안내</h4>
-                <ul className={styles.policyList}>
-                  <li>본 상품은 <strong>1년 정기 구독 상품</strong>으로, 최초 가입일 기준 1년마다 정기 결제가 발생합니다.</li>
-                  <li>결제와 동시에 '수강료 할인' 및 '매칭 시스템 접속 권한'이 부여됩니다.</li>
-                </ul>
-              </div>
+             
 
               <div className={styles.policySection}>
                 <h4>청약철회 제한 - 필독</h4>
@@ -840,7 +952,7 @@ export default function MyPage() {
               </div>
 
               <div className={styles.policySection}>
-                <h4>제3조 (환불 및 중도 해지)</h4>
+                <h4>환불 및 중도 해지</h4>
                 <ul className={styles.policyList}>
                   <li><strong>서비스 개시:</strong> 본 서비스는 결제 즉시 '수강료 할인 혜택' 및 '정보 열람 권한'이 부여되므로, 결제 완료 시 서비스 이용이 개시된 것으로 간주합니다.</li>
                   <li><strong>중도 해지 시 공제:</strong> 환불 가능 대상일지라도 중도 해지 시에는 위약금과 수강료 할인 차액을 차감한 후 정산됩니다.</li>
@@ -848,9 +960,7 @@ export default function MyPage() {
                 </ul>
               </div>
 
-              <div className={styles.policyWarning}>
-                ⚠️ 환불 신청 시 즉시 서비스 이용이 중단됩니다.
-              </div>
+  
             </div>
             <div className={styles.modalActions}>
               <button
@@ -869,7 +979,7 @@ export default function MyPage() {
               </button>
             </div>
           </div>
-        </div>
+        </Portal>
       )}
 
       {/* 구독 시트 모달 */}
