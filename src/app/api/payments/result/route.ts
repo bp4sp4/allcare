@@ -71,23 +71,42 @@ export async function GET(request: NextRequest) {
           <p style="color: #999; font-size: 14px; margin-top: 20px;">잠시 후 자동으로 창이 닫힙니다.</p>
         </div>
         <script>
-          // 부모 창으로 결제 결과 전달
+          // 부모 창으로 결제 결과 전달 및 페이지 이동
           if (window.opener) {
-            window.opener.postMessage({
-              type: 'paymentResult',
-              data: {
-                orderId: '${orderId}',
-                status: '${status}',
-                amount: ${amount},
-                transactionId: '${transactionId}',
-                message: '${message || ''}'
+            var paymentStatus = '${status}';
+            if (paymentStatus === 'success') {
+              // 성공 시: 부모 창을 결제완료 페이지로 이동시키고 팝업 닫기
+              try {
+                window.opener.location.href = '/payment/success';
+                window.close();
+              } catch (e) {
+                // 팝업 닫기 실패 시 postMessage 폴백
+                window.opener.postMessage({
+                  type: 'paymentResult',
+                  data: {
+                    orderId: '${orderId}',
+                    status: '${status}',
+                    amount: ${amount},
+                    transactionId: '${transactionId}',
+                    message: '${message || ''}'
+                  }
+                }, '*');
+                setTimeout(function() { window.close(); }, 3000);
               }
-            }, '*');
-            
-            // 3초 후 팝업 닫기
-            setTimeout(() => {
-              window.close();
-            }, 3000);
+            } else {
+              // 실패 시: postMessage로 부모에게 알리고 팝업 닫기
+              window.opener.postMessage({
+                type: 'paymentResult',
+                data: {
+                  orderId: '${orderId}',
+                  status: '${status}',
+                  amount: ${amount},
+                  transactionId: '${transactionId}',
+                  message: '${message || ''}'
+                }
+              }, '*');
+              setTimeout(function() { window.close(); }, 3000);
+            }
           }
         </script>
       </body>

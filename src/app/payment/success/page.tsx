@@ -9,21 +9,27 @@ export default function PaymentSuccessPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // 팝업인지 확인하고 팝업 닫기
+    // 팝업인지 확인
     const isPopup = window.opener && window.opener !== window;
-    
-    if (isPopup) {
-      // 팝업인 경우: 3초 후 자동으로 팝업 닫기
-      const timer = setTimeout(() => {
-        try {
-          window.opener.location.reload(); // 부모 창 리로드
-          window.close();
-        } catch (e) {
-          console.error('팝업 닫기 실패:', e);
-        }
-      }, 3000);
 
-      return () => clearTimeout(timer);
+    if (isPopup) {
+      // 팝업인 경우: 부모 창을 결제완료 페이지로 이동시키고 팝업 즉시 닫기
+      try {
+        window.opener.location.href = '/payment/success';
+        window.close();
+      } catch (e) {
+        console.error('팝업 닫기 실패:', e);
+        // 팝업 닫기 실패 시 3초 후 재시도
+        const timer = setTimeout(() => {
+          try {
+            window.opener.location.href = '/payment/success';
+            window.close();
+          } catch (e2) {
+            console.error('팝업 닫기 재시도 실패:', e2);
+          }
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
     }
   }, []);
 

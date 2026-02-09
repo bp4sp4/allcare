@@ -11,17 +11,17 @@ function PaymentResultContent() {
   useEffect(() => {
     // 팝업인지 확인
     const isPopup = window.opener && window.opener !== window;
-    
+
     if (isPopup) {
-      // 팝업인 경우: 부모 창을 /payment로 리다이렉트하고 팝업 닫기
-      console.log('결제 팝업 완료 - 부모 창 리다이렉트');
+      // 팝업인 경우: 부모 창을 결제완료 페이지로 이동시키고 팝업 닫기
+      console.log('결제 팝업 완료 - 부모 창을 결제완료 페이지로 이동');
       try {
-        window.opener.location.href = '/payment';
+        window.opener.location.href = '/payment/success';
         window.close();
       } catch (e) {
         console.error('부모 창 리다이렉트 실패:', e);
         // 실패하면 현재 창에서 이동
-        window.location.href = '/payment';
+        window.location.href = '/payment/success';
       }
       return;
     }
