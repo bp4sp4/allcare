@@ -35,7 +35,7 @@ export default function MatchingPage() {
             const checkAccess = async () => {
                 const token = localStorage.getItem('token');
                 
-                console.log('[매칭 시스템] 토큰 체크:', token ? '토큰 있음' : '토큰 없음');
+               
                 
                 // 로그인 체크
                 if (!token) {
@@ -54,13 +54,10 @@ export default function MatchingPage() {
                         }
                     });
 
-                    console.log('[매칭 시스템] 구독 상태 응답:', response.status);
-
                     if (!mounted) return;
 
                     // 401 에러: 토큰이 유효하지 않음 - 로그인 필요
                     if (response.status === 401) {
-                        console.log('[매칭 시스템] 토큰 만료, 로그인 필요');
                         localStorage.removeItem('token');
                         setAlertMessage('로그인이 만료되었습니다. 다시 로그인해주세요.\n확인 버튼을 눌러 로그인 페이지로 이동합니다.');
                         setAlertOpen(true);
@@ -75,7 +72,6 @@ export default function MatchingPage() {
                     }
 
                     const data = await response.json();
-                    console.log('[매칭 시스템] 구독 상태:', data);
 
                     // 비구독자는 차단
                     if (!data.isActive) {
@@ -85,7 +81,6 @@ export default function MatchingPage() {
                     }
 
                     // 구독자는 접근 허용
-                    console.log('[매칭 시스템] 접근 허용');
                     setIsChecking(false);
                 } catch (error) {
                     console.error('[매칭 시스템] Access check error:', error);

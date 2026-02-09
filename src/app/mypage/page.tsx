@@ -421,7 +421,6 @@ export default function MyPage() {
         }
       } else if (action === 'cancel') {
         if (confirm('구독을 취소하시겠습니까?')) {
-          console.log('구독 취소 시도, subscription:', subscription);
           if (!subscription.id) {
             alert('구독 정보가 올바르지 않습니다. 새로고침 후 다시 시도해 주세요.');
             return;
@@ -1176,19 +1175,6 @@ export default function MyPage() {
                   window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
                   window.PayApp.setParam('returnurl', `${baseUrl}/payment/success`);
                   window.PayApp.setParam('var1', JSON.stringify({ orderId: `SUBS-${userId}-${Date.now()}`, userId, phone, name }));
-
-                  console.log('Payment request (mypage):', {
-                    userid: payappUserId,
-                    shopname: shopName,
-                    goodname: '한평생 올케어 월 정기구독',
-                    goodprice: '20000',
-                    buyername: name,
-                    recvphone: phone,
-                    rebillCycleType: 'Month',
-                    rebillCycleMonth,
-                    rebillExpire,
-                    baseUrl
-                  });
 
                   try {
                     window.PayApp.rebill();

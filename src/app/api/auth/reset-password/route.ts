@@ -52,9 +52,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: 실제로는 이메일이나 SMS로 임시 비밀번호 발송
-    console.log(`임시 비밀번호 for ${email}: ${tempPassword}`);
-
     return NextResponse.json({
       success: true,
       message: '임시 비밀번호가 발급되었습니다.',

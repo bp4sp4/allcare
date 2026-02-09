@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     }
 
     const userId = decoded.userId;
-    console.log('Profile API - userId from JWT:', userId);
+    
 
     // public.users 테이블에서 사용자 정보 조회 (Service Role 사용)
     const { data: userData, error: userError } = await supabaseAdmin
@@ -36,9 +36,6 @@ export async function GET(req: NextRequest) {
       .select('id, email, name, phone, provider')
       .eq('id', userId)
       .maybeSingle();
-
-    console.log('Profile API - userData:', userData);
-    console.log('Profile API - userError:', userError);
 
     if (userError) {
       console.error('User data fetch error:', userError);
@@ -50,7 +47,6 @@ export async function GET(req: NextRequest) {
 
     // users 테이블에 데이터가 없으면 JWT 토큰의 정보 사용
     if (!userData) {
-      console.log('Profile API - No user data, using JWT defaults');
       return NextResponse.json({
         email: decoded.email,
         name: '사용자',
@@ -59,13 +55,7 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    console.log('Profile API - Returning user data:', {
-      email: userData.email,
-      name: userData.name,
-      phone: userData.phone
-    });
-
-    return NextResponse.json({
+      return NextResponse.json({
       email: userData.email,
       name: userData.name || '사용자',
       phone: userData.phone || '',

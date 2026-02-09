@@ -12,13 +12,7 @@ export async function GET(request: NextRequest) {
     const transactionId = searchParams.get('transaction_id');
     const message = searchParams.get('message');
 
-    console.log('PayApp callback received:', {
-      orderId,
-      status,
-      amount,
-      transactionId,
-      message
-    });
+
 
     // TODO: 결제 결과 검증 및 DB 업데이트
     // await db.orders.update({
@@ -136,8 +130,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    
-    console.log('Payment result received:', body);
+
 
     // TODO: 데이터베이스에 결제 결과 저장
     // 예: await db.payments.create({ data: { ... } })

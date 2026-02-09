@@ -44,7 +44,6 @@ export default function PaymentPage() {
     if (urlParams.get('success') === 'true') {
       if (isPopup) {
         // 팝업인 경우: 부모 창을 리프레시하고 팝업 닫기
-        console.log('결제 완료 - 팝업 닫기');
         try {
           window.opener.location.href = '/mypage'; // 마이페이지로 이동
           window.close();
@@ -142,26 +141,10 @@ export default function PaymentPage() {
       window.PayApp.setParam('returnurl', `${baseUrl}/payment/success`);
       window.PayApp.setParam('var1', JSON.stringify(orderData));
       
-      console.log('Payment request:', {
-        userid: payappUserId,
-        shopname: shopName,
-        goodname: paymentData.goodname,
-        goodprice: paymentData.goodprice,
-        buyername: paymentData.buyername,
-        recvphone: paymentData.recvphone,
-        rebillCycleType: 'Month',
-        rebillCycleMonth,
-        rebillExpire,
-        baseUrl,
-        feedbackurl: `${baseUrl}/api/payments/webhook`,
-        returnurl: `${baseUrl}/payment?success=true`,
-        orderData
-      });
-      
       // 정기결제 호출
       window.PayApp.rebill();
     } catch (error) {
-      console.error('Payment error:', error);
+      
       alert('결제 요청 중 오류가 발생했습니다. 다시 시도해주세요.');
     }
   };
@@ -172,11 +155,9 @@ export default function PaymentPage() {
         src="https://lite.payapp.kr/public/api/v2/payapp-lite.js"
         strategy="afterInteractive"
         onLoad={() => {
-          console.log('PayApp SDK loaded');
           // PayApp 기본 설정
           if (window.PayApp) {
             const userId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
-            console.log('PayApp USER_ID:', userId ? 'Set' : 'Not Set');
             window.PayApp.setDefault('userid', userId);
             window.PayApp.setDefault('shopname', process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || 'AllCare Shop');
             setIsPayAppLoaded(true);

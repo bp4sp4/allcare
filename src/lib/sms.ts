@@ -67,7 +67,6 @@ export async function sendSMS({ to, content }: SendSMSParams): Promise<boolean> 
     const result = await response.json();
 
     if (response.ok) {
-      console.log('SMS 발송 성공:', result);
       return true;
     } else {
       console.error('SMS 발송 실패:', result);

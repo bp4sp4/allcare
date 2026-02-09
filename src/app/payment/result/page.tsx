@@ -14,7 +14,6 @@ function PaymentResultContent() {
 
     if (isPopup) {
       // 팝업인 경우: 부모 창을 결제완료 페이지로 이동시키고 팝업 닫기
-      console.log('결제 팝업 완료 - 부모 창을 결제완료 페이지로 이동');
       try {
         window.opener.location.href = '/payment/success';
         window.close();
@@ -31,8 +30,6 @@ function PaymentResultContent() {
     searchParams.forEach((value, key) => {
       params[key] = value;
     });
-    
-    console.log('Payment result params:', params);
     
     const hasParams = Object.keys(params).length > 0;
     
@@ -53,7 +50,6 @@ function PaymentResultContent() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(params)
         }).then(res => res.json())
-          .then(data => console.log('Result saved:', data))
           .catch(err => console.error('Failed to save result:', err));
       }
     }

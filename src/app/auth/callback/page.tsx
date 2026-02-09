@@ -50,7 +50,6 @@ export default function AuthCallbackPage() {
             }
           } else if (!profileError && profile) {
             // 이미 프로필이 있으면 로그인 성공
-            console.log('기존 사용자 로그인:', profile);
           }
 
           // 세션 정보를 토큰으로 변환

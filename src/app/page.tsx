@@ -87,7 +87,7 @@ export default function Home() {
     const urlToken = params.get('token');
     
     if (urlToken) {
-      console.log('[메인 페이지] 토큰 받음, localStorage에 저장');
+      
       localStorage.setItem('token', urlToken);
       // Header에 로그인 상태 변경 알림
       window.dispatchEvent(new Event('authChange'));
@@ -97,7 +97,7 @@ export default function Home() {
     
     // 로그인 상태 확인 (쿠키 또는 로컬스토리지)
     const token = localStorage.getItem('token');
-    console.log('[메인 페이지] localStorage 토큰:', token ? '있음' : '없음');
+   
     setIsLoggedIn(!!token);
 
     // Sticky button observer
@@ -514,19 +514,7 @@ export default function Home() {
                   window.PayApp.setParam('returnurl', `${baseUrl}/payment/success`);
                   window.PayApp.setParam('var1', JSON.stringify(orderData));
                   
-                  console.log('Payment request:', {
-                    userid: payappUserId,
-                    shopname: shopName,
-                    goodname: '올케어구독상품',
-                    goodprice: '20000',
-                    buyername: name,
-                    recvphone: phone,
-                    rebillCycleType: 'Month',
-                    rebillCycleMonth,
-                    rebillExpire,
-                    baseUrl,
-                    orderData
-                  });
+              
                   
                   // 정기결제 호출
                   window.PayApp.rebill();

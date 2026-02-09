@@ -18,8 +18,6 @@ export async function POST(request: NextRequest) {
         body[key] = value;
       });
     }
-    
-    console.log('PayApp webhook received:', body);
 
     // 페이앱 응답 파라미터 (실제 PayApp이 보내는 형식)
     const {
@@ -39,25 +37,13 @@ export async function POST(request: NextRequest) {
 
     // 결제 성공 시 (pay_state === '4'는 결제완료)
     if (pay_state === '4') {
-      console.log('Payment success:', {
-        tradeId: mul_no,
-        amount: price,
-        goodName: goodname,
-        approvedAt: pay_date,
-        billKey: rebill_no,
-        payType: pay_type,
-        cardName: card_name,
-        naverpay: naverpay,
-        vbank: vbank,
-        var1
-      });
 
       // 결제수단 이름 변환
       const getPaymentMethodName = (payType: string, cardName?: string, naverpay?: string, vbank?: string) => {
         const type = parseInt(payType);
         switch (type) {
           case 1:
-            if (cardName) return `${cardName}`; // 예: "삼성카드"
+            if (cardName) return `${cardName}`;
             return '신용카드';
           case 2:
             return '휴대전화';
@@ -95,57 +81,35 @@ export async function POST(request: NextRequest) {
       let userId = null;
       let orderData: any = {};
 
-      console.log('=== var1 파싱 시작 ===');
-      console.log('var1 원본:', var1);
-      console.log('var1 타입:', typeof var1);
-
       try {
-        // var1이 JSON 형태인 경우 파싱
         if (var1) {
           try {
             orderData = JSON.parse(var1);
             userId = orderData.userId;
-            console.log('var1 파싱 성공:', orderData);
-            console.log('추출된 userId:', userId);
           } catch (e) {
-            // JSON이 아닌 경우 orderId로만 사용
-            console.log('var1 JSON 파싱 실패, 문자열로 처리:', e);
             orderData = { orderId: var1 };
           }
         }
       } catch (err) {
-        console.error('var1 parse error:', err);
+        // var1 parse failed
       }
-
-      console.log('최종 userId:', userId);
-      console.log('최종 orderData:', orderData);
 
       // userId가 없으면 전화번호로 찾기
       if (!userId && recvphone) {
-        console.log('userId 없음, 전화번호로 찾기:', recvphone);
-        const { data: userData, error: userFindError } = await supabaseAdmin
+        const { data: userData } = await supabaseAdmin
           .from('users')
           .select('id')
           .eq('phone', recvphone)
           .maybeSingle();
 
-        console.log('전화번호로 찾은 사용자:', userData);
-        console.log('사용자 조회 에러:', userFindError);
-
         if (userData) {
           userId = userData.id;
-          console.log('전화번호로 찾은 userId:', userId);
         }
       }
 
-      // userId가 있으면 구독 정보 저장
-      console.log('구독 저장 시작, userId:', userId);
-      console.log('orderData:', orderData);
-      
       if (userId) {
         // 결제 수단 변경 모드인지 확인
         const isChangeMode = orderData.mode === 'change-payment';
-        console.log('결제 수단 변경 모드:', isChangeMode);
 
         // 구독 정보 생성 또는 업데이트
         const nextBillingDate = new Date();
@@ -166,8 +130,6 @@ export async function POST(request: NextRequest) {
           payment_method_name: paymentMethodName
         };
 
-        console.log('구독 데이터:', subscriptionData);
-
         // 기존 활성 구독이 있는지 확인 (active 또는 cancel_scheduled)
         const { data: existingSub } = await supabaseAdmin
           .from('subscriptions')
@@ -177,11 +139,9 @@ export async function POST(request: NextRequest) {
           .maybeSingle();
 
         if (existingSub) {
-          // 기존 구독이 있으면 업데이트
           if (isChangeMode) {
             // 결제 수단 변경: bill_key, trade_id, 결제 정보만 업데이트
-            console.log('결제 수단만 업데이트:', existingSub.id);
-            const { data: subscriptionResult, error: subscriptionError } = await supabaseAdmin
+            const { error: subscriptionError } = await supabaseAdmin
               .from('subscriptions')
               .update({
                 payapp_bill_key: rebill_no,
@@ -194,46 +154,34 @@ export async function POST(request: NextRequest) {
               .select();
 
             if (subscriptionError) {
-              console.error('❌ Payment method update error:', subscriptionError);
-            } else {
-              console.log('✅ Payment method updated for user:', userId);
-              console.log('업데이트된 구독 데이터:', subscriptionResult);
+              console.error('Payment method update error:', subscriptionError);
             }
           } else {
             // 일반 업데이트: 전체 구독 정보 업데이트
-            console.log('전체 구독 정보 업데이트:', existingSub.id);
-            const { data: subscriptionResult, error: subscriptionError } = await supabaseAdmin
+            const { error: subscriptionError } = await supabaseAdmin
               .from('subscriptions')
               .update(subscriptionData)
               .eq('id', existingSub.id)
               .select();
 
             if (subscriptionError) {
-              console.error('❌ Subscription update error:', subscriptionError);
-            } else {
-              console.log('✅ Subscription updated for user:', userId);
-              console.log('업데이트된 구독 데이터:', subscriptionResult);
+              console.error('Subscription update error:', subscriptionError);
             }
           }
         } else {
           // 새 구독 생성
-          const { data: subscriptionResult, error: subscriptionError } = await supabaseAdmin
+          const { error: subscriptionError } = await supabaseAdmin
             .from('subscriptions')
             .insert(subscriptionData)
             .select();
 
           if (subscriptionError) {
-            console.error('❌ Subscription creation error:', subscriptionError);
-            console.error('에러 상세:', JSON.stringify(subscriptionError, null, 2));
-          } else {
-            console.log('✅ Subscription created for user:', userId);
-            console.log('저장된 구독 데이터:', subscriptionResult);
+            console.error('Subscription creation error:', subscriptionError);
           }
         }
 
-        // users 테이블에 이름/전화번호 업데이트 (결제 폼에서 입력한 데이터)
+        // users 테이블에 이름/전화번호 업데이트
         if (orderData.name || orderData.phone) {
-          // 기존 사용자 정보 먼저 조회 (email 유지를 위해)
           const { data: existingUser } = await supabaseAdmin
             .from('users')
             .select('email')
@@ -241,18 +189,15 @@ export async function POST(request: NextRequest) {
             .maybeSingle();
 
           const updateData: any = { id: userId };
-          
-          // 기존 email 유지 (없으면 빈 문자열)
           updateData.email = existingUser?.email || '';
-          
+
           if (orderData.name) {
             updateData.name = orderData.name;
           }
-          
           if (orderData.phone) {
             updateData.phone = orderData.phone;
           }
-          
+
           const { error: userUpdateError } = await supabaseAdmin
             .from('users')
             .upsert(updateData, {
@@ -261,12 +206,8 @@ export async function POST(request: NextRequest) {
 
           if (userUpdateError) {
             console.error('Users table update error:', userUpdateError);
-          } else {
-            console.log('Users table updated:', updateData);
           }
         }
-      } else {
-        console.warn('User not found for payment. recvphone:', recvphone, 'var1:', var1);
       }
 
       // 결제 내역 저장
@@ -285,14 +226,7 @@ export async function POST(request: NextRequest) {
         });
 
     } else {
-      // 결제 실패
-      console.log('Payment failed:', {
-        orderId: var1,
-        errorCode: pay_state,
-        errorMessage: '결제 상태: ' + pay_state
-      });
-
-      // 실패 내역 저장
+      // 결제 실패 내역 저장
       await supabaseAdmin
         .from('payments')
         .insert({
@@ -326,13 +260,10 @@ export async function GET(request: NextRequest) {
       body[key] = value;
     });
 
-    console.log('PayApp webhook GET received:', body);
+    const { RETURNCODE } = body;
 
-    const { RETURNCODE, var1: orderId } = body;
-
-    // POST와 동일한 로직 수행
     if (RETURNCODE === '0000') {
-      console.log('Payment success via GET:', body);
+      // Payment success via GET
     }
 
     return new NextResponse('SUCCESS', { status: 200 });

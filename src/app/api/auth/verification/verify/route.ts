@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`Phone verified: ${phone}`);
+
 
     return NextResponse.json({
       success: true,

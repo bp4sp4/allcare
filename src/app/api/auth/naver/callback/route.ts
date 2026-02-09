@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     if (existingAuthUser) {
       // 기존 사용자 - 로그인만 처리
       userId = existingAuthUser.id;
-      console.log('기존 사용자 로그인:', userId);
+     
     } else {
       // 새 사용자 생성
       const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest) {
       }
 
       userId = authData.user.id;
-      console.log('새 사용자 생성:', userId);
+      
     }
 
     // JWT 토큰 생성 (제대로 서명된 토큰)
@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
       { expiresIn: '7d' }
     );
 
-    console.log('JWT 토큰 생성 완료:', userId);
+    
 
     // 메인 페이지로 리다이렉트 (토큰을 쿼리 파라미터로 전달)
     const redirectUrl = new URL('/', process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000');

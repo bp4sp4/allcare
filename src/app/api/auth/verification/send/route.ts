@@ -52,7 +52,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    console.log(`Verification code for ${phone}: ${code}`);
 
     return NextResponse.json({
       success: true,

@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     //   status: 'pending'
     // });
 
-    console.log('Payment request created:', {
+    ('Payment request created:', {
       orderId: finalOrderId,
       amount,
       orderName: finalOrderName,

@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
     //   data: { used: true }
     // });
 
-    console.log(`Password reset confirmed with token: ${token}`);
 
     return NextResponse.json({
       success: true,
