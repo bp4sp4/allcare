@@ -4,9 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import FilterBarCustom from './FilterBarCustom';
+import AlertModal from '../../components/AlertModal';
 export default function MatchingPage() {
     const router = useRouter();
     const [isChecking, setIsChecking] = useState(true);
+    const [alertOpen, setAlertOpen] = useState(false);
+    const [alertMessage, setAlertMessage] = useState('');
 
     const [openIdx, setOpenIdx] = useState<number | null>(null);
     const accordionList = [
@@ -37,8 +40,8 @@ export default function MatchingPage() {
                 // 로그인 체크
                 if (!token) {
                     if (mounted) {
-                        alert('로그인이 필요한 서비스입니다.');
-                        router.push('/auth/login');
+                        setAlertMessage('로그인이 필요한 서비스입니다.\n확인 버튼을 눌러 로그인 페이지로 이동합니다.');
+                        setAlertOpen(true);
                     }
                     return;
                 }
@@ -59,8 +62,8 @@ export default function MatchingPage() {
                     if (response.status === 401) {
                         console.log('[매칭 시스템] 토큰 만료, 로그인 필요');
                         localStorage.removeItem('token');
-                        alert('로그인이 만료되었습니다. 다시 로그인해주세요.');
-                        router.push('/auth/login');
+                        setAlertMessage('로그인이 만료되었습니다. 다시 로그인해주세요.\n확인 버튼을 눌러 로그인 페이지로 이동합니다.');
+                        setAlertOpen(true);
                         return;
                     }
 
@@ -76,8 +79,8 @@ export default function MatchingPage() {
 
                     // 비구독자는 차단
                     if (!data.isActive) {
-                        alert('올케어 구독자만 이용할 수 있는 서비스입니다.');
-                        router.push('/');
+                        setAlertMessage('구독자만 이용할 수 있는 서비스입니다.\n확인 버튼을 눌러 홈으로 이동합니다.');
+                        setAlertOpen(true);
                         return;
                     }
 
@@ -165,8 +168,23 @@ export default function MatchingPage() {
             });
         }, [filters, mode, hasSearched]);
 
-        // 접근 권한 체크 중일 때는 로딩 화면 표시
+        // 접근 권한 체크 중일 때
         if (isChecking) {
+            // 팝업이 열려있으면 팝업만 보여줌
+            if (alertOpen) {
+                return (
+                    <AlertModal 
+                        message={alertMessage} 
+                        onClose={() => {
+                            setAlertOpen(false);
+                            if (alertMessage.includes('로그인이 필요한')) router.push('/auth/login');
+                            else if (alertMessage.includes('만료')) router.push('/auth/login');
+                            else if (alertMessage.includes('구독자만')) router.push('/');
+                        }}
+                    />
+                );
+            }
+            // 팝업이 없으면 로딩
             return (
                 <main className={styles.main_wrapper}>
                     <div style={{ padding: '40px', textAlign: 'center' }}>
@@ -177,6 +195,18 @@ export default function MatchingPage() {
         }
 
         return (
+            <>
+                {alertOpen && (
+                    <AlertModal 
+                        message={alertMessage} 
+                        onClose={() => {
+                            setAlertOpen(false);
+                            if (alertMessage.includes('로그인이 필요한')) router.push('/auth/login');
+                            else if (alertMessage.includes('만료')) router.push('/auth/login');
+                            else if (alertMessage.includes('구독자만')) router.push('/');
+                        }}
+                    />
+                )}
                 <main className={styles.main_wrapper}>
                 <div className={styles.topLayout}>
                         <div className={styles.title}>실습 매칭 시스템</div>
@@ -486,5 +516,6 @@ export default function MatchingPage() {
                                     </div>
                                 )}
                 </main>
+            </>
         );
 }

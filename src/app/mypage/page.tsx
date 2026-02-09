@@ -1069,7 +1069,7 @@ export default function MyPage() {
 
             <div className={styles.sheetAgreeRow}>
               <span>
-                <span className={styles.sheetAgreeUnderline}>멤버십 제3자 개인정보 제공</span>
+              
                 <span
                   className={styles.sheetAgreeUnderline}
                   role="button"

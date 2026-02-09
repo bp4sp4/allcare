@@ -662,6 +662,8 @@ background: var(--Blue-500, #0051FF);
   border-radius: 8px;
   padding: 12px 10px;
   margin-top: 4px;
+  overflow-y: auto;
+  max-height: 320px;
 }
 
 .modalForm {
@@ -897,7 +899,7 @@ line-height: normal;
   left: 50%;
   bottom: 0;
   transform: translateX(-50%);
-  z-index: 10000;
+  z-index: 10021;
   max-width: 360px;
   width: 100%;
   min-height: 220px;
