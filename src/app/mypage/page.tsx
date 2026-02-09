@@ -750,11 +750,14 @@ export default function MyPage() {
 
         {/* 결제 내역 섹션 */}
         <section className={styles.section}>
-            <div className={styles.paymentHeader}>
+           
           <h2 className={styles.sectionTitle}>결제 내역</h2>
-          <button className={styles.moreBtn} onClick={() => router.push('/payment/history')}>더보기</button>
-</div>
+          
+
           <div className={styles.paymentHistoryCard}>
+            <div className={styles.paymentHistoryHeader}>
+            <button className={styles.moreBtn} onClick={() => router.push('/payment/history')}>더보기</button>
+            </div>
             {paymentHistory.length > 0 ? (
               <div className={styles.paymentTable}>
                 <table className={styles.table}>

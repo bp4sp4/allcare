@@ -5,7 +5,7 @@
 }
 
 .termsHeader {
-  max-width: 360px;
+  max-width: 500px;
   margin: 0 auto 2rem;
 }
 
@@ -32,7 +32,7 @@
 }
 
 .termsContent {
-  max-width: 360px;
+  max-width: 500px;
   margin: 0 auto;
   line-height: 1.8;
 }

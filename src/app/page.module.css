@@ -10,7 +10,7 @@ html.no-scroll, body.no-scroll {
 }
 
 .main_wrapper{
-  max-width: 360px;
+  max-width: 500px;
   margin: 0 auto;
   padding-top: 61px;
   padding-bottom: 110px;
@@ -155,12 +155,21 @@ html.no-scroll, body.no-scroll {
   
 }
 
-.pointImage {
+.pointImageContainer{
   width: 328px;
   height: 240px;
-  object-fit: contain;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--Gray-50, #FFF);
+  
+}
 
-  border-radius: 16px;
+.pointImage {
+  object-fit: cover;
+  height: 100%;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;

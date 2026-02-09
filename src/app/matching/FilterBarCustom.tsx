@@ -3,7 +3,7 @@ import REGIONS from "./region";
 
 const LAWS = [
   { label: "구법/신법", value: "" },
-  
+  { label: "구법", value: "구법" },
   { label: "신법", value: "신법" },
   { label: "구법+신법", value: "구법+신법" },
 ];

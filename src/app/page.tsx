@@ -293,7 +293,9 @@ export default function Home() {
         <div className={styles.pointCard}>
           <div className={styles.pointBadge}>POINT 1</div>
           <div className={styles.pointTitle}>미이수 전액환급 보장</div>
-            <img src="/images/main_img_002.png" alt="환급 아이콘"  className={styles.pointImage}/>
+          <div className={styles.pointImageContainer}>
+          <img src="/images/main_img_002.png" alt="환급 아이콘"  className={styles.pointImage}/>
+          </div>
           <div className={styles.pointDesc}>
             수강을 다 했는데도 이수하지 못했다면<br/>해당 과목은 전액환급을 보장합니다.
           </div>
@@ -307,9 +309,9 @@ export default function Home() {
         <div className={styles.pointCard}>
           <div className={styles.pointBadge}>POINT 2</div>
           <div className={styles.pointTitle}>직업훈련과정 무료수강권</div>
-          
+           <div className={styles.pointImageContainer}>
             <img src="/images/main_img_003.png" alt="맞춤 관리 아이콘" className={styles.pointImage} />
-          
+          </div>
           <div className={styles.pointDesc}>
             한평생 직업훈련원의 모든과정을<br/>무료로 자유롭게 수강하실수 있습니다.
           </div>
@@ -323,9 +325,9 @@ export default function Home() {
         <div className={styles.pointCard}>
           <div className={styles.pointBadge}>POINT 3</div>
           <div className={styles.pointTitle}>취업 연계 지원</div>
-          
+          <div className={styles.pointImageContainer}>
             <img src="/images/main_img_004.png" alt="취업 지원 아이콘" className={styles.pointImage} />
-          
+          </div>
           <div className={styles.pointDesc}>
           내 거주지 근처 실습처를 쉽게 검색할 수 있는<br/>실습매칭 시스템을 무료로 이용할 수 있습니다.
           </div>

@@ -312,6 +312,7 @@
 	width: 360px;
 	padding: 16px;
 	margin-top: 38px;
+	margin: 0 auto;
 }
 .searchButtonWrapper{
 	display: flex;
@@ -342,7 +343,7 @@
 	font-size: 16px;
 	font-weight: 600;
 	border: none;
-	border-radius: 8px 0;
+	border-radius: 8px;
 	margin-right: 2px;
 	cursor: pointer;
 	transition: background 0.2s, color 0.2s;
@@ -423,6 +424,7 @@ line-height: normal;
 	font-style: normal;
 	font-weight: 600;
 	line-height: normal;
+	margin: 0 auto;
 }
 .accordionImage2 {
 	height: 197.333px;
@@ -564,6 +566,7 @@ margin-top: 6px;
 .checkSection {
 	display: flex;
 	width: 360px;
+	margin: 0 auto;
 	padding: 40px 16px;
 	flex-direction: column;
 	align-items: flex-start;
@@ -598,7 +601,7 @@ margin-top: 6px;
 	line-height: 140%;
 }
 .main_wrapper{
-    max-width: 360px;
+    max-width: 500px;
     margin: 61px auto;
 }
 
@@ -613,6 +616,7 @@ margin-top: 6px;
 	align-items: center;
 	gap: 10px;
     background: var(--Blue-50, #E5EDFF);
+	margin: 0 auto;
 }
 
 .title {

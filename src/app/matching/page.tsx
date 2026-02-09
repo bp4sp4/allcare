@@ -40,7 +40,7 @@ export default function MatchingPage() {
                 // 로그인 체크
                 if (!token) {
                     if (mounted) {
-                        setAlertMessage('로그인이 필요한 서비스입니다.\n확인 버튼을 눌러 로그인 페이지로 이동합니다.');
+                        setAlertMessage('로그인이 필요한 서비스입니다');
                         setAlertOpen(true);
                     }
                     return;
@@ -300,7 +300,9 @@ export default function MatchingPage() {
              
             </div>
                        <div className={styles.guideBox}>
-                            앞으로 실습 하실 지역을 기준으로 검색해보세요!
+                            {mode === '현장실습기관'
+                                ? '잠깐! 교육원에 실습 과목 신청하셨나요?'
+                                : '앞으로 실습 하실 지역을 기준으로 검색해보세요!'}
                         </div>
                         <div className={styles.filterSection}>
                                <div className={styles.tabWrapper}>
