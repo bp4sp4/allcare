@@ -5,7 +5,6 @@ import "../../styles/base.css"
 import "../../styles/components.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { headers } from 'next/headers';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -39,32 +38,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
-  const headersList = await headers();
-  const pathname = headersList.get('x-pathname') || '';
-  const isAdminPage = pathname.startsWith('/admin');
-  // 로그인 관련 경로만 배열로 관리
-  const authHideFooterPaths = [
-    '/auth/login',
-    '/auth/email-login',
-    '/auth/find-email',
-    '/auth/reset-password',
-    '/auth/signup',
-    '/auth/signup/email',
-  ];
-  const isAuthHideFooterPage = authHideFooterPaths.some((path) => pathname === path);
-
   return (
     <html lang="en">
       <body style={{ fontFamily: "Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif" }}>
-        <Header />  
+        <Header />
         {children}
-        {!isAdminPage && !isAuthHideFooterPage && pathname && pathname !== '/' && <Footer />}
+        <Footer />
       </body>
     </html>
   );
