@@ -40,7 +40,6 @@ html.no-scroll, body.no-scroll {
   gap: 10px;
   background: var(--Blue-500, #0051FF);
   
-  margin-bottom:10px;
 }
 
 .heroTitle {
