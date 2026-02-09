@@ -324,9 +324,9 @@ export default function Home() {
         <div className={styles.pointCardSection}>
         <div className={styles.pointCard}>
           <div className={styles.pointBadge}>POINT 3</div>
-          <div className={styles.pointTitle}>취업 연계 지원</div>
+          <div className={styles.pointTitle}>실습매칭시스템</div>
           <div className={styles.pointImageContainer}>
-            <img src="/images/main_img_004.png" alt="취업 지원 아이콘" className={styles.pointImage} />
+            <img src="/images/main_img_004.png" alt="실습매칭 시스템 아이콘" className={styles.pointImage} />
           </div>
           <div className={styles.pointDesc}>
           내 거주지 근처 실습처를 쉽게 검색할 수 있는<br/>실습매칭 시스템을 무료로 이용할 수 있습니다.
