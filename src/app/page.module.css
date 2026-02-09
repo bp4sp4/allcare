@@ -110,6 +110,10 @@ html.no-scroll, body.no-scroll {
   align-self: stretch;
   background: var(--Grayscale-50, #FAFAFA);
   padding: 30px 16px;
+  
+box-shadow: 0 -1px 6px 0 rgba(0, 0, 0, 0.10);
+  
+  
 }
 
 .pointCard {
@@ -347,7 +351,7 @@ html.no-scroll, body.no-scroll {
   bottom: 0;
   transform: translateX(-50%);
   z-index: 10000;
-  max-width: 360px;
+  max-width: 500px;
   width: 100%;
   min-height: 220px;
   animation: bottomSheetUp 0.28s cubic-bezier(0.4, 0, 0.2, 1);

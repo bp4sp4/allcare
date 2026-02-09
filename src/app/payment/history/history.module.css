@@ -3,7 +3,7 @@
   max-width: 500px;
   margin: 0 auto;
   min-height: 100vh;
-  padding-top: 81px;
+  padding: 81px 16px 0 16px;
 }
 
 .card {

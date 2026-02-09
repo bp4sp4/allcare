@@ -25,7 +25,7 @@ export default function FilterBarCustom({
   const subregionList = region ? REGIONS[region] : [];
 
   return (
-    <div style={{ display: "flex", gap: 6, width: mode === '교육원' ? 328 : "100%" }}>
+    <div style={{ display: "flex", gap: 6, width: mode === '교육원' ? "100%" : "100%" }}>
       <CustomDropdown
         options={regionList}
         value={region}
