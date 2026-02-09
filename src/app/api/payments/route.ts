@@ -30,15 +30,6 @@ export async function POST(request: NextRequest) {
     //   status: 'pending'
     // });
 
-    ('Payment request created:', {
-      orderId: finalOrderId,
-      amount,
-      orderName: finalOrderName,
-      productType,
-      billingCycle,
-      customerName,
-      customerPhone
-    });
 
     // PayApp 결제 URL 생성
     const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || 'korhrdcorp';
