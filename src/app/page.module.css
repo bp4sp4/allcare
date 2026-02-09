@@ -110,10 +110,6 @@ html.no-scroll, body.no-scroll {
   align-self: stretch;
   background: var(--Grayscale-50, #FAFAFA);
   padding: 30px 16px;
-  
-box-shadow: 0 -1px 6px 0 rgba(0, 0, 0, 0.10);
-  
-  
 }
 
 .pointCard {
