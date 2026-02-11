@@ -77,22 +77,38 @@ export async function POST(request: NextRequest) {
 
       const paymentMethodName = getPaymentMethodName(pay_type, card_name, naverpay, vbank);
 
-      // var1에서 user_id 추출
+      // var1에서 user_id, plan 등 주문 정보 추출
       let userId = null;
       let orderData: any = {};
+      let planType = 'standard'; // 기본값
 
       try {
         if (var1) {
           try {
             orderData = JSON.parse(var1);
             userId = orderData.userId;
+            planType = orderData.plan || 'standard'; // plan이 있으면 사용
+            console.log('Order data parsed:', { orderData, planType });
           } catch (e) {
+            console.log('var1 parse error:', e, 'var1:', var1);
             orderData = { orderId: var1 };
           }
         }
       } catch (err) {
         // var1 parse failed
+        console.log('var1 parse catch error:', err);
       }
+
+      // planType을 플랜명으로 변환 (ID -> 한글명)
+      let planName = 'standard'; // 기본값
+      if (planType === 'basic') {
+        planName = '베이직';
+      } else if (planType === 'standard') {
+        planName = '스탠다드';
+      } else if (planType === 'premium') {
+        planName = '프리미엄';
+      }
+      console.log('Plan conversion:', { planType, planName });
 
       // userId가 없으면 전화번호로 찾기
       if (!userId && recvphone) {
@@ -117,7 +133,7 @@ export async function POST(request: NextRequest) {
 
         const subscriptionData = {
           user_id: userId,
-          plan: 'premium',
+          plan: planName,
           status: 'active',
           amount: parseInt(price),
           billing_cycle: 'monthly',
