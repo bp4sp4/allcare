@@ -250,7 +250,7 @@ export default function Home() {
     }
   };
 
-  const handleSheetOpen = (plan?: 'basic' | 'standard' | 'premium') => {
+  const handleSheetOpen = (plan?: "basic" | "standard" | "premium") => {
     if (plan) {
       setSelectedPlan(plan);
     }
@@ -421,7 +421,7 @@ export default function Home() {
             <button
               className={styles.planInfoButton}
               onClick={() => {
-                setSelectedPlan('premium');
+                setSelectedPlan("premium");
                 handleSheetOpen();
               }}
             >
@@ -532,7 +532,7 @@ export default function Home() {
             <button
               className={styles.planInfoButtonGray}
               onClick={() => {
-                setSelectedPlan('standard');
+                setSelectedPlan("standard");
                 handleSheetOpen();
               }}
             >
@@ -643,7 +643,7 @@ export default function Home() {
             <button
               className={styles.planInfoButtonGray}
               onClick={() => {
-                setSelectedPlan('basic');
+                setSelectedPlan("basic");
                 handleSheetOpen();
               }}
             >
@@ -746,7 +746,7 @@ export default function Home() {
             <div className={styles.stickyButtonInner}>
               <button
                 className={styles.subscribeButton}
-                onClick={() => handleSheetOpen('premium')}
+                onClick={() => handleSheetOpen("premium")}
               >
                 한평생올케어 구독하기
               </button>
@@ -787,31 +787,34 @@ export default function Home() {
                   선택된 요금제
                 </div>
                 <div style={{ display: "flex", gap: "8px", width: "100%" }}>
-                  {PLANS.map((plan) => (
-                    selectedPlan === plan.id && (
-                      <div
-                        key={plan.id}
-                        style={{
-                          flex: 1,
-                          padding: "10px 8px",
-                          borderRadius: "8px",
-                          border: "2px solid #0051ff",
-                          background: "#f0f6ff",
-                          fontSize: "12px",
-                          fontWeight: "700",
-                          color: "#0051ff",
-                          transition: "all 0.2s",
-                        }}
-                      >
-                        <div style={{ fontSize: "10px", marginBottom: "2px" }}>
-                          {plan.name}
+                  {PLANS.map(
+                    (plan) =>
+                      selectedPlan === plan.id && (
+                        <div
+                          key={plan.id}
+                          style={{
+                            flex: 1,
+                            padding: "10px 12px",
+                            borderRadius: "8px",
+                            border: "1px solid #4C85FF",
+                            background: "#f0f6ff",
+                            fontSize: "12px",
+                            fontWeight: "700",
+                            color: "#0051ff",
+                            transition: "all 0.2s",
+                          }}
+                        >
+                          <div
+                            style={{ fontSize: "10px", marginBottom: "2px" }}
+                          >
+                            {plan.name}
+                          </div>
+                          <div style={{ fontSize: "11px" }}>
+                            ₩{plan.price.toLocaleString()}
+                          </div>
                         </div>
-                        <div style={{ fontSize: "11px" }}>
-                          ₩{plan.price.toLocaleString()}
-                        </div>
-                      </div>
-                    )
-                  ))}
+                      ),
+                  )}
                 </div>
               </div>
               <div className={styles.sheetSub}>
