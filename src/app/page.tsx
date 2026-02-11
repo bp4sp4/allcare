@@ -331,9 +331,7 @@ export default function Home() {
           <span className={styles.descriptionText}>
             학습은 안전히 학습자 올케어 서비스
           </span>
-          <span className={styles.priceText}>
-            {PLANS.find((p) => p.id === selectedPlan)?.displayPrice}
-          </span>
+          <span className={styles.priceText}>월 2만원대</span>
         </div>
         <div className={styles.pointCardSection}>
           <div className={styles.pointCard}>
