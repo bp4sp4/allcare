@@ -1,15 +1,15 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import Head from 'next/head';
-import { useState, useEffect, useRef } from 'react';
-import AlertModal from '@/components/AlertModal';
-import Footer from '@/components/Footer';
-import { loadPayAppSDK } from '@/lib/payapp';
-import { supabase } from '@/lib/supabase';
-import styles from './page.module.css';
-import BottomSheetHandle from '@/components/BottomSheetHandle';
-import Portal from '@/components/Portal';
+import { useRouter } from "next/navigation";
+import Head from "next/head";
+import { useState, useEffect, useRef } from "react";
+import AlertModal from "@/components/AlertModal";
+import Footer from "@/components/Footer";
+import { loadPayAppSDK } from "@/lib/payapp";
+import { supabase } from "@/lib/supabase";
+import styles from "./page.module.css";
+import BottomSheetHandle from "@/components/BottomSheetHandle";
+import Portal from "@/components/Portal";
 
 // PayApp SDK 타입 정의
 declare global {
@@ -24,6 +24,38 @@ declare global {
   }
 }
 
+// 플랜 데이터
+interface Plan {
+  id: "basic" | "standard" | "premium";
+  name: string;
+  price: number;
+  displayPrice: string;
+  image: string;
+}
+
+const PLANS: Plan[] = [
+  {
+    id: "basic",
+    name: "베이직",
+    price: 9900,
+    displayPrice: "월 9,900원",
+    image: "/images/plan_basic.png",
+  },
+  {
+    id: "standard",
+    name: "스탠다드",
+    price: 19900,
+    displayPrice: "월 19,900원",
+    image: "/images/plan_standard.png",
+  },
+  {
+    id: "premium",
+    name: "프리미엄",
+    price: 29900,
+    displayPrice: "월 29,900원",
+    image: "/images/plan_premium.png",
+  },
+];
 
 export default function Home() {
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -34,12 +66,13 @@ export default function Home() {
   const [openAccordion, setOpenAccordion] = useState<number | null>(null);
   const accordionList = [
     {
-      title: '상품 정보 고시',
-      content: '<b>상품명</b><br/> 한평생 올케어 구독 서비스<br/><br/> <b>상품 유형</b><br/> 디지털 콘텐츠 및 교육·매칭 지원이 결합된 구독형 서비스<br/><br/> <b>구독 요금</b><br/>월 20,000원 (부가세 포함)<br/><br/><b> 구독 기간</b><br/>결제일로부터 1개월 단위 자동 갱신<br/><br/><b> 제공 서비스 내용</b><br/> 1. 미이수 환급 보장 서비스<br/> 2. 한평생 직업훈련원 온라인 과정 무료수강권<br/> 3.실습매칭 프로그램 열람권<br/> <br/><b>서비스 개시 시점</b><br/>결제 즉시 자동 제공'
+      title: "상품 정보 고시",
+      content:
+        "<b>상품명</b><br/> 한평생 올케어 구독 서비스<br/><br/> <b>상품 유형</b><br/> 디지털 콘텐츠 및 교육·매칭 지원이 결합된 구독형 서비스<br/><br/> <b>구독 요금</b><br/>월 20,000원 (부가세 포함)<br/><br/><b> 구독 기간</b><br/>결제일로부터 1개월 단위 자동 갱신<br/><br/><b> 제공 서비스 내용</b><br/> 1. 미이수 환급 보장 서비스<br/> 2. 한평생 직업훈련원 온라인 과정 무료수강권<br/> 3.실습매칭 프로그램 열람권<br/> <br/><b>서비스 개시 시점</b><br/>결제 즉시 자동 제공",
     },
     {
-      title: '결제/변경/해지/환불 안내',
-    content: `
+      title: "결제/변경/해지/환불 안내",
+      content: `
   <strong>1. 청약철회 및 이용 간주 기준</strong><br/>
   본 상품은 결제 즉시 제공되는 디지털 콘텐츠(열람권, 자료 등)가 포함된 상품으로, <strong>이용 여부와 관계없이 제공 사실만으로 서비스를 이용한 것으로 간주</strong>합니다. 이에 따라 전자상거래법 제17조 제2항에 의거, 상세 내용을 확인하거나 7일이 경과한 경우 단순 변심에 의한 청약철회가 제한됩니다.<br/><br/>
 
@@ -56,16 +89,18 @@ export default function Home() {
 
   <strong>4. 환불 불가 항목</strong><br/>
   무료 제공된 수강권, 열람권, 콘텐츠 이용 내역은 환불 및 현금 환산이 불가합니다. 이는 디지털 콘텐츠의 특성상 복제 및 정보 획득이 즉시 가능하기 때문입니다.
-`
+`,
     },
     {
-      title: '상품 이용 안내',
-      content: '<strong>1. 미이수 환급 보장 서비스</strong><br/>본 서비스는 회사가 지정한 교육기관 및 과정에 한해 적용됩니다.<br/>환급 보장은 아래 모든 조건을 충족한 경우에만 적용됩니다.<br/><strong>[환급 조건]</strong><br/>- 출석률 100% 달성<br/>- 중간고사 및 기말고사 모두 응시<br/>- 회사가 안내한 학습 가이드 및 절차를 성실히 이행할 것<br/>위 조건 중 단 하나라도 미충족 시 환급 대상에서 제외됩니다.<br/>개인 사정, 단순 미응시, 시스템 미확인, 안내 미숙지 등은 환급 사유로 인정되지 않습니다.<br/><br/><strong>2. 직업훈련원 무료수강권</strong><br/>무료수강권은 수강료에 한해 제공됩니다.<br/>자격증 발급비, 응시료, 재발급 비용 등은 수강생 본인 부담입니다.<br/>무료수강권은 구독 기간 내 1회에 한해 사용 가능하며, 미사용 시 소급 적용 또는 환불되지 않습니다.<br/><br/><strong>3. 실습매칭 프로그램 열람권</strong><br/>본 서비스는 실습기관 자동 매칭 정보 열람 서비스입니다.<br/>회사는 실습기관 섭외, 배정, 실습 성사 여부에 대해 보장하지 않습니다.<br/>실습기관과의 연락, 일정 조율, 실습 진행은 전적으로 이용자 책임입니다.<br/>열람권은 구독 기간 동안만 제공되며, 종료 후 접근이 제한됩니다.'
+      title: "상품 이용 안내",
+      content:
+        "<strong>1. 미이수 환급 보장 서비스</strong><br/>본 서비스는 회사가 지정한 교육기관 및 과정에 한해 적용됩니다.<br/>환급 보장은 아래 모든 조건을 충족한 경우에만 적용됩니다.<br/><strong>[환급 조건]</strong><br/>- 출석률 100% 달성<br/>- 중간고사 및 기말고사 모두 응시<br/>- 회사가 안내한 학습 가이드 및 절차를 성실히 이행할 것<br/>위 조건 중 단 하나라도 미충족 시 환급 대상에서 제외됩니다.<br/>개인 사정, 단순 미응시, 시스템 미확인, 안내 미숙지 등은 환급 사유로 인정되지 않습니다.<br/><br/><strong>2. 직업훈련원 무료수강권</strong><br/>무료수강권은 수강료에 한해 제공됩니다.<br/>자격증 발급비, 응시료, 재발급 비용 등은 수강생 본인 부담입니다.<br/>무료수강권은 구독 기간 내 1회에 한해 사용 가능하며, 미사용 시 소급 적용 또는 환불되지 않습니다.<br/><br/><strong>3. 실습매칭 프로그램 열람권</strong><br/>본 서비스는 실습기관 자동 매칭 정보 열람 서비스입니다.<br/>회사는 실습기관 섭외, 배정, 실습 성사 여부에 대해 보장하지 않습니다.<br/>실습기관과의 연락, 일정 조율, 실습 진행은 전적으로 이용자 책임입니다.<br/>열람권은 구독 기간 동안만 제공되며, 종료 후 접근이 제한됩니다.",
     },
     {
-      title: '판매자 정보',
-      content: '상호명: 한평생 올케어<br/>운영사: ㈜한평생그룹<br/>대표자: 양병웅<br/>사업자등록번호: 392-88-03618<br/>주소: 서울특별시 도봉구 도봉로150다길 61, 601호<br/>고객센터 이메일: korhrdpartners@gmail.com'
-    }
+      title: "판매자 정보",
+      content:
+        "상호명: 한평생 올케어<br/>운영사: ㈜한평생그룹<br/>대표자: 양병웅<br/>사업자등록번호: 392-88-03618<br/>주소: 서울특별시 도봉구 도봉로150다길 61, 601호<br/>고객센터 이메일: korhrdpartners@gmail.com",
+    },
   ];
   const [showSheet, setShowSheet] = useState(false);
   const [dragY, setDragY] = useState(0);
@@ -80,24 +115,26 @@ export default function Home() {
   const [isPayAppLoaded, setIsPayAppLoaded] = useState(false);
   const [isPayAppLoading, setIsPayAppLoading] = useState(false);
   const [payappLoadError, setPayappLoadError] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<
+    "basic" | "standard" | "premium"
+  >("standard");
 
   useEffect(() => {
     // URL에서 토큰 확인 (OAuth 리다이렉트)
     const params = new URLSearchParams(window.location.search);
-    const urlToken = params.get('token');
-    
+    const urlToken = params.get("token");
+
     if (urlToken) {
-      
-      localStorage.setItem('token', urlToken);
+      localStorage.setItem("token", urlToken);
       // Header에 로그인 상태 변경 알림
-      window.dispatchEvent(new Event('authChange'));
+      window.dispatchEvent(new Event("authChange"));
       // URL 정리
-      window.history.replaceState({}, '', '/');
+      window.history.replaceState({}, "", "/");
     }
-    
+
     // 로그인 상태 확인 (쿠키 또는 로컬스토리지)
-    const token = localStorage.getItem('token');
-   
+    const token = localStorage.getItem("token");
+
     setIsLoggedIn(!!token);
 
     // Sticky button observer
@@ -107,35 +144,35 @@ export default function Home() {
       // 버튼 섹션이 화면에 보이면 스티키 버튼 숨김
       setShowSticky(!(rect.top < window.innerHeight && rect.bottom > 0));
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
     handleScroll();
 
     // 결제 결과 수신 (팝업 창으로부터)
     const handlePaymentResult = (event: MessageEvent) => {
-      if (event.data.type === 'paymentResult') {
+      if (event.data.type === "paymentResult") {
         const { status, orderId, amount, message } = event.data.data;
-        
-        if (status === 'success') {
+
+        if (status === "success") {
           // Navigate main UI to success page so user sees result on main window
           try {
-            router.push('/payment/success');
+            router.push("/payment/success");
           } catch (e) {
-            window.location.href = '/payment/success';
+            window.location.href = "/payment/success";
           }
         } else {
-          alert(`결제에 실패했습니다.\n${message || '다시 시도해 주세요.'}`);
+          alert(`결제에 실패했습니다.\n${message || "다시 시도해 주세요."}`);
         }
-        
+
         // 시트 닫기
         setShowSheet(false);
       }
     };
-    
-    window.addEventListener('message', handlePaymentResult);
-    
+
+    window.addEventListener("message", handlePaymentResult);
+
     return () => {
-      window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('message', handlePaymentResult);
+      window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("message", handlePaymentResult);
     };
   }, []);
 
@@ -148,17 +185,20 @@ export default function Home() {
         setIsPayAppLoaded(true);
         setIsPayAppLoading(false);
         if ((window as any).PayApp) {
-          const userId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
+          const userId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || "";
           try {
-            window.PayApp.setDefault('userid', userId);
-            window.PayApp.setDefault('shopname', process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어');
+            window.PayApp.setDefault("userid", userId);
+            window.PayApp.setDefault(
+              "shopname",
+              process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || "한평생올케어",
+            );
           } catch (e) {
-            console.warn('PayApp setDefault failed', e);
+            console.warn("PayApp setDefault failed", e);
           }
         }
       })
       .catch((err) => {
-        console.error('PayApp load failed:', err);
+        console.error("PayApp load failed:", err);
         if (!mounted) return;
         setIsPayAppLoading(false);
         setPayappLoadError(String(err?.message || err));
@@ -172,15 +212,15 @@ export default function Home() {
   // Prevent background scroll when subscribeSheet is open
   useEffect(() => {
     if (showSheet || showThirdPartyProvision) {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.classList.add('no-scroll');
+      document.body.style.overflow = "hidden";
+      document.documentElement.classList.add("no-scroll");
     } else {
-      document.body.style.overflow = '';
-      document.documentElement.classList.remove('no-scroll');
+      document.body.style.overflow = "";
+      document.documentElement.classList.remove("no-scroll");
     }
     return () => {
-      document.body.style.overflow = '';
-      document.documentElement.classList.remove('no-scroll');
+      document.body.style.overflow = "";
+      document.documentElement.classList.remove("no-scroll");
     };
   }, [showSheet]);
 
@@ -188,29 +228,34 @@ export default function Home() {
     try {
       // Supabase 로그아웃 (카카오)
       await supabase.auth.signOut();
-      
+
       // 서버 로그아웃 API 호출 (네이버 쿠키 삭제)
-      await fetch('/api/auth/logout', {
-        method: 'POST',
+      await fetch("/api/auth/logout", {
+        method: "POST",
       });
-      
+
       // 로컬 스토리지 토큰 삭제
-      localStorage.removeItem('token');
-      
+      localStorage.removeItem("token");
+
       // Header에 로그아웃 상태 변경 알림
-      window.dispatchEvent(new Event('authChange'));
-      
+      window.dispatchEvent(new Event("authChange"));
+
       // 상태 업데이트
       setIsLoggedIn(false);
-      
-      alert('로그아웃 되었습니다.');
-      router.push('/');
+
+      alert("로그아웃 되었습니다.");
+      router.push("/");
     } catch (error) {
-      console.error('로그아웃 실패:', error);
+      console.error("로그아웃 실패:", error);
     }
   };
 
-  const handleSheetOpen = () => setShowSheet(true);
+  const handleSheetOpen = (plan?: 'basic' | 'standard' | 'premium') => {
+    if (plan) {
+      setSelectedPlan(plan);
+    }
+    setShowSheet(true);
+  };
   const handleSheetClose = () => setShowSheet(false);
 
   // Drag handlers for bottom sheet (pull down to close)
@@ -270,86 +315,451 @@ export default function Home() {
           onClose={() => {
             setShowLoginModal(false);
             setShowSheet(false);
-            router.push('/auth/login');
+            router.push("/auth/login");
           }}
         />
       )}
       {/* PayApp SDK is loaded via loadPayAppSDK util */}
       <main className={styles.main_wrapper}>
-      <div className={styles.mobileWrapper}>
-        <p className={styles.heroSubtitle}>시작부터 끝까지 안전하게</p>
-        <div className={styles.heroBadge}>
-          
-          <span className={styles.heroTitle}>한평생 올케어</span>
-        </div>
-        
-        
-      </div>
-      <div className={styles.descriptionSection}>
-        <span className={styles.descriptionText}>학습은 안전히 학습자 올케어 서비스</span>
-        <span className={styles.priceText}>월 2만원</span>
-      </div>
-      <div className={styles.pointCardSection}>
-        <div className={styles.pointCard}>
-          <div className={styles.pointBadge}>POINT 1</div>
-          <div className={styles.pointTitle}>미이수 전액환급 보장</div>
-          <div className={styles.pointImageContainer}>
-          <img src="/images/main_img_002.png" alt="환급 아이콘"  className={styles.pointImage}/>
-          </div>
-          <div className={styles.pointDesc}>
-            수강을 다 했는데도 이수하지 못했다면<br/>해당 과목은 전액환급을 보장합니다.
-          </div>
-          <div className={styles.pointNote}>
-            출석 100%, 기말고사, 중간고사 응시 기준*<br/>
-미이수 환급대상이 아니라면 30~60만원 추가발생**
+        <div className={styles.mobileWrapper}>
+          <p className={styles.heroSubtitle}>시작부터 끝까지 안전하게</p>
+          <div className={styles.heroBadge}>
+            <span className={styles.heroTitle}>한평생 올케어</span>
           </div>
         </div>
-         </div>
-            <div className={styles.pointCardSection}>
-        <div className={styles.pointCard}>
-          <div className={styles.pointBadge}>POINT 2</div>
-          <div className={styles.pointTitle}>직업훈련과정 무료수강권</div>
-           <div className={styles.pointImageContainer}>
-            <img src="/images/main_img_003.png" alt="맞춤 관리 아이콘" className={styles.pointImage} />
-          </div>
-          <div className={styles.pointDesc}>
-            한평생 직업훈련원의 모든과정을<br/>무료로 자유롭게 수강하실수 있습니다.
-          </div>
-   <div className={styles.pointNote}>
-           올케어 미구독시 1과정당 수강료 40만원*<br/>
-자격증 발급비 별도**
-          </div>
-        </div>
+        <div className={styles.descriptionSection}>
+          <span className={styles.descriptionText}>
+            학습은 안전히 학습자 올케어 서비스
+          </span>
+          <span className={styles.priceText}>
+            {PLANS.find((p) => p.id === selectedPlan)?.displayPrice}
+          </span>
         </div>
         <div className={styles.pointCardSection}>
-        <div className={styles.pointCard}>
-          <div className={styles.pointBadge}>POINT 3</div>
-          <div className={styles.pointTitle}>실습매칭시스템</div>
-          <div className={styles.pointImageContainer}>
-            <img src="/images/main_img_004.png" alt="실습매칭 시스템 아이콘" className={styles.pointImage} />
-          </div>
-          <div className={styles.pointDesc}>
-          내 거주지 근처 실습처를 쉽게 검색할 수 있는<br/>실습매칭 시스템을 무료로 이용할 수 있습니다.
-          </div>
-          <div className={styles.pointNote}>
-            미구독자 열람 시 150,000원 발생*
+          <div className={styles.pointCard}>
+            <div className={styles.pointBadge}>POINT 1</div>
+            <div className={styles.pointTitle}>미이수 전액환급 보장</div>
+            <div className={styles.pointImageContainer}>
+              <img
+                src="/images/main_img_002.png"
+                alt="환급 아이콘"
+                className={styles.pointImage}
+              />
+            </div>
+            <div className={styles.pointDesc}>
+              수강을 다 했는데도 이수하지 못했다면
+              <br />
+              해당 과목은 전액환급을 보장합니다.
+            </div>
+            <div className={styles.pointNote}>
+              일정 기준 달성 시(출석 100%, 기말고사, 중간고사 응시 기준)*
+              <br />
+              미이수 환급대상이 아니라면 30~60만원 추가발생**
+            </div>
           </div>
         </div>
-        </div>
-      {showSticky && (
-        <div className={styles.stickyButton}>
-          <div className={styles.stickyButtonInner}>
-            <button className={styles.subscribeButton} onClick={handleSheetOpen}>한평생올케어 구독하기</button>
+        <div className={styles.pointCardSection}>
+          <div className={styles.pointCard}>
+            <div className={styles.pointBadge}>POINT 2</div>
+            <div className={styles.pointTitle}>직업훈련과정 무료수강권</div>
+            <div className={styles.pointImageContainer}>
+              <img
+                src="/images/main_img_003.png"
+                alt="맞춤 관리 아이콘"
+                className={styles.pointImage}
+              />
+            </div>
+            <div className={styles.pointDesc}>
+              한평생 직업훈련원의 모든과정을
+              <br />
+              무료로 자유롭게 수강하실수 있습니다.
+            </div>
+            <div className={styles.pointNote}>
+              올케어 미구독시 1과정당 수강료 40만원*
+              <br />
+              자격증 발급비 별도**
+            </div>
           </div>
         </div>
-      )}
-      {showSheet && (
-        <>
-          <div className={styles.modalOverlay} onClick={handleSheetClose} />
-          <div
-            className={`${styles.subscribeSheet} ${sheetTransitionEnabled ? styles.withTransition : styles.dragging}`}
-            style={{ transform: `translateX(-50%) translateY(${dragY}px)` }}
-          >
+        <div className={styles.pointCardSection}>
+          <div className={styles.pointCard}>
+            <div className={styles.pointBadge}>POINT 3</div>
+            <div className={styles.pointTitle}>실습매칭 프로그램 열람권</div>
+            <div className={styles.pointImageContainer}>
+              <img
+                src="/images/main_img_004.png"
+                alt="실습매칭 시스템 아이콘"
+                className={styles.pointImage}
+              />
+            </div>
+            <div className={styles.pointDesc}>
+              내 거주지 근처 실습처를 쉽게 검색할 수 있는
+              <br />
+              실습매칭 시스템을 무료로 이용할 수 있습니다.
+            </div>
+            <div className={styles.pointNote}>
+              미구독자 열람 시 150,000원 발생*
+            </div>
+          </div>
+        </div>
+
+        {/* 올케어 플랜 알아보기 영역 */}
+        <div className={styles.planInfoWrapper}>
+          <div className={styles.pointBadge}>올케어 플랜 알아보기</div>
+          <div className={styles.planInfoBox}>
+            <div className={styles.planInfoPopular}>인기 플랜</div>
+            {/* 여기에 플랜 설명 등 추가 가능 */}
+            <div className={styles.planInfoContentTop}>
+              <span className={styles.planInfoTitle}>프리미엄</span>
+              <span className={styles.planInfoPrice}>
+                월<span className={styles.planInfoPriceNumber}> 29,900</span>원
+              </span>
+              <span className={styles.planInfoDesc}>
+                올케어의 모든 서비스를 무제한 이용가능
+              </span>
+            </div>
+            <button
+              className={styles.planInfoButton}
+              onClick={() => {
+                setSelectedPlan('premium');
+                handleSheetOpen();
+              }}
+            >
+              프리미엄 구독하기
+            </button>
+            <div className={styles.planInfoContentBottom}>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    d="M7.05731 1.40016C7.2933 1.16448 7.60906 1.0258 7.94228 1.01148C8.27549 0.997168 8.60198 1.10826 8.85731 1.32283L8.94265 1.40083L10.2093 2.66683H12C12.3362 2.66689 12.6601 2.79401 12.9066 3.02272C13.1531 3.25143 13.3041 3.56484 13.3293 3.90016L13.3333 4.00016V5.79083L14.6 7.0575C14.8358 7.29352 14.9746 7.60941 14.989 7.94278C15.0033 8.27616 14.8921 8.60278 14.6773 8.85816L14.5993 8.94283L13.3326 10.2095V12.0002C13.3328 12.3365 13.2057 12.6605 12.977 12.9072C12.7483 13.1538 12.4347 13.3049 12.0993 13.3302L12 13.3335H10.21L8.94331 14.6002C8.70729 14.836 8.3914 14.9748 8.05802 14.9891C7.72465 15.0035 7.39803 14.8923 7.14265 14.6775L7.05798 14.6002L5.79131 13.3335H3.99998C3.6636 13.3336 3.3396 13.2066 3.09295 12.9778C2.84629 12.7491 2.69521 12.4356 2.66998 12.1002L2.66665 12.0002V10.2095L1.39998 8.94283C1.16411 8.7068 1.02531 8.39092 1.01099 8.05754C0.996677 7.72417 1.10788 7.39754 1.32265 7.14216L1.39998 7.0575L2.66665 5.79083V4.00016C2.66671 3.66389 2.79383 3.34007 3.02254 3.09355C3.25125 2.84704 3.56466 2.69605 3.89998 2.67083L3.99998 2.66683H5.79065L7.05731 1.40016ZM7.99998 2.34416L6.73331 3.61083C6.51187 3.83193 6.21971 3.9681 5.90798 3.9955L5.79065 4.00016H3.99998V5.79083C4.00006 6.10409 3.88984 6.40738 3.68865 6.6475L3.60931 6.73416L2.34265 8.00083L3.60931 9.26683C3.83066 9.48818 3.96707 9.78035 3.99465 10.0922L3.99998 10.2095V12.0002H5.79065C6.10391 12.0001 6.4072 12.1103 6.64731 12.3115L6.73398 12.3908L7.99998 13.6575L9.26665 12.3908C9.48799 12.1695 9.78016 12.0331 10.092 12.0055L10.2093 12.0002H12V10.2095C11.9999 9.89623 12.1101 9.59295 12.3113 9.35283L12.3906 9.26616L13.6573 8.00016L12.3906 6.7335C12.1693 6.51215 12.0329 6.21998 12.0053 5.90816L12 5.79083V4.00016H10.2093C9.89605 4.00024 9.59276 3.89002 9.35265 3.68883L9.26598 3.6095L7.99931 2.34283L7.99998 2.34416ZM10.0533 5.9895C10.1733 5.86993 10.3343 5.80051 10.5036 5.79534C10.6729 5.79018 10.8378 5.84964 10.9648 5.96166C11.0919 6.07369 11.1715 6.22986 11.1876 6.39848C11.2036 6.56709 11.1549 6.7355 11.0513 6.8695L10.9953 6.93216L7.74198 10.1855C7.61496 10.3127 7.44566 10.3888 7.26622 10.3994C7.08679 10.4099 6.90972 10.3542 6.76865 10.2428L6.70465 10.1862L5.10198 8.5835C4.98114 8.4638 4.91062 8.30245 4.90486 8.13246C4.89909 7.96248 4.95851 7.79672 5.07096 7.66911C5.1834 7.5415 5.34037 7.4617 5.50973 7.44603C5.67909 7.43036 5.84803 7.48002 5.98198 7.58483L6.04465 7.64016L7.22331 8.81883L10.0533 5.9895Z"
+                    fill="#0051FF"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextBlue}>
+                  이수 보장반
+                </span>
+              </div>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    d="M12.6666 2.6665C13.1768 2.66648 13.6677 2.86139 14.0388 3.21136C14.41 3.56133 14.6334 4.03991 14.6633 4.54917L14.6666 4.6665V5.87784C14.6651 6.05789 14.6166 6.23443 14.5259 6.38996C14.4351 6.54548 14.3053 6.6746 14.1493 6.7645L14.078 6.80317C13.8623 6.90904 13.6792 7.07122 13.5481 7.27257C13.417 7.47392 13.3428 7.70695 13.3332 7.94703C13.3236 8.18711 13.3791 8.42531 13.4938 8.63645C13.6085 8.84759 13.7781 9.02382 13.9846 9.1465L14.078 9.1965C14.3666 9.33917 14.6246 9.63384 14.662 10.0232L14.6666 10.1218V11.3332C14.6667 11.8433 14.4718 12.3342 14.1218 12.7053C13.7718 13.0765 13.2932 13.2999 12.784 13.3298L12.6666 13.3332H3.33331C2.82317 13.3332 2.3323 13.1383 1.96114 12.7883C1.58998 12.4383 1.36657 11.9598 1.33665 11.4505L1.33331 11.3332V10.1218C1.33331 9.71784 1.56798 9.40317 1.85065 9.23517L1.92198 9.1965C2.13767 9.09064 2.32074 8.92845 2.45184 8.72711C2.58294 8.52576 2.6572 8.29272 2.66676 8.05264C2.67633 7.81256 2.62084 7.57436 2.50616 7.36322C2.39149 7.15209 2.2219 6.97586 2.01531 6.85317L1.92198 6.80317C1.63331 6.6605 1.37531 6.36584 1.33798 5.9765L1.33331 5.8785V4.6665C1.33328 4.15636 1.5282 3.66549 1.87817 3.29433C2.22814 2.92317 2.70672 2.69977 3.21598 2.66984L3.33331 2.6665H12.6666ZM12.6666 3.99984H3.33331C3.17002 3.99986 3.01242 4.05981 2.8904 4.16831C2.76838 4.27682 2.69042 4.42634 2.67131 4.5885L2.66665 4.6665V5.68984C3.06162 5.9177 3.39156 6.24303 3.62495 6.63476C3.85834 7.02648 3.98739 7.47151 3.99976 7.92733C4.01213 8.38314 3.90742 8.83452 3.69562 9.23833C3.48382 9.64213 3.17201 9.98489 2.78998 10.2338L2.66665 10.3098V11.3332C2.66667 11.4965 2.72662 11.6541 2.83512 11.7761C2.94363 11.8981 3.09315 11.9761 3.25531 11.9952L3.33331 11.9998H12.6666C12.8299 11.9998 12.9875 11.9399 13.1096 11.8314C13.2316 11.7229 13.3095 11.5733 13.3286 11.4112L13.3333 11.3332V10.3098C12.9383 10.082 12.6084 9.75664 12.375 9.36492C12.1416 8.97319 12.0126 8.52816 12.0002 8.07235C11.9878 7.61653 12.0925 7.16516 12.3043 6.76135C12.5161 6.35754 12.828 6.01479 13.21 5.76584L13.3333 5.68984V4.6665C13.3333 4.50322 13.2733 4.34561 13.1648 4.22359C13.0563 4.10157 12.9068 4.02361 12.7446 4.0045L12.6666 3.99984ZM6.66665 5.99984C6.82994 5.99986 6.98754 6.05981 7.10956 6.16831C7.23158 6.27682 7.30954 6.42634 7.32865 6.5885L7.33331 6.6665V9.33317C7.33312 9.50309 7.26806 9.66653 7.15141 9.79008C7.03477 9.91364 6.87534 9.98799 6.70572 9.99795C6.53609 10.0079 6.36906 9.95272 6.23876 9.84366C6.10846 9.7346 6.02472 9.5799 6.00465 9.41117L5.99998 9.33317V6.6665C5.99998 6.48969 6.07022 6.32012 6.19524 6.1951C6.32027 6.07008 6.48984 5.99984 6.66665 5.99984Z"
+                    fill="#0051FF"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextBlue}>
+                  직업훈련과정 무료 수강권
+                </span>
+              </div>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    d="M4.19532 11.1951C4.45567 10.9347 4.87768 10.9347 5.13803 11.1951C5.39838 11.4554 5.39838 11.8775 5.13803 12.1378L3.13803 14.1378C2.87768 14.3982 2.45567 14.3982 2.19532 14.1378L1.19532 13.1378C0.934974 12.8775 0.934974 12.4554 1.19532 12.1951C1.45567 11.9347 1.87768 11.9347 2.13803 12.1951L2.66668 12.7237L4.19532 11.1951ZM14.3333 11.9998C14.7015 11.9998 15 12.2983 15 12.6665C15 13.0346 14.7015 13.3331 14.3333 13.3331H7.00001C6.63182 13.3331 6.33334 13.0346 6.33334 12.6665C6.33334 12.2983 6.63182 11.9998 7.00001 11.9998H14.3333ZM4.19532 6.52843C4.45567 6.26808 4.87768 6.26808 5.13803 6.52843C5.39838 6.78878 5.39838 7.21079 5.13803 7.47114L3.13803 9.47114C2.87768 9.73149 2.45567 9.73149 2.19532 9.47114L1.19532 8.47114C0.934974 8.21079 0.934974 7.78878 1.19532 7.52843C1.45567 7.26808 1.87768 7.26808 2.13803 7.52843L2.66668 8.05708L4.19532 6.52843ZM14.3333 7.33312C14.7015 7.33312 15 7.6316 15 7.99979C15 8.36798 14.7015 8.66645 14.3333 8.66645H7.00001C6.63182 8.66645 6.33334 8.36798 6.33334 7.99979C6.33334 7.6316 6.63182 7.33312 7.00001 7.33312H14.3333ZM4.19532 1.86177C4.45567 1.60142 4.87768 1.60142 5.13803 1.86177C5.39838 2.12212 5.39838 2.54412 5.13803 2.80447L3.13803 4.80447C2.87768 5.06482 2.45567 5.06482 2.19532 4.80447L1.19532 3.80447C0.934974 3.54412 0.934974 3.12212 1.19532 2.86177C1.45567 2.60142 1.87768 2.60142 2.13803 2.86177L2.66668 3.39041L4.19532 1.86177ZM14.3333 2.66645C14.7015 2.66645 15 2.96493 15 3.33312C15 3.70131 14.7015 3.99979 14.3333 3.99979H7.00001C6.63182 3.99979 6.33334 3.70131 6.33334 3.33312C6.33334 2.96493 6.63182 2.66645 7.00001 2.66645H14.3333Z"
+                    fill="#0051FF"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextBlue}>
+                  실습 매칭 프로그램 열람권
+                </span>
+              </div>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    d="M13.76 10.5146C14.1274 10.0953 14.331 9.55743 14.3334 8.99995C14.3334 8.38111 14.0875 7.78762 13.6499 7.35003C13.2124 6.91245 12.6189 6.66661 12 6.66661C11.3812 6.66661 10.7877 6.91245 10.3501 7.35003C9.91252 7.78762 9.66669 8.38111 9.66669 8.99995C9.66905 9.55743 9.87265 10.0953 10.24 10.5146C9.76008 10.8123 9.36382 11.2272 9.08856 11.7203C8.81331 12.2135 8.66812 12.7685 8.66669 13.3333C8.66669 13.5101 8.73693 13.6797 8.86195 13.8047C8.98698 13.9297 9.15654 13.9999 9.33336 13.9999C9.51017 13.9999 9.67974 13.9297 9.80476 13.8047C9.92978 13.6797 10 13.5101 10 13.3333C10 12.8028 10.2107 12.2941 10.5858 11.9191C10.9609 11.544 11.4696 11.3333 12 11.3333C12.5305 11.3333 13.0392 11.544 13.4142 11.9191C13.7893 12.2941 14 12.8028 14 13.3333C14 13.5101 14.0703 13.6797 14.1953 13.8047C14.3203 13.9297 14.4899 13.9999 14.6667 13.9999C14.8435 13.9999 15.0131 13.9297 15.1381 13.8047C15.2631 13.6797 15.3334 13.5101 15.3334 13.3333C15.3319 12.7685 15.1867 12.2135 14.9115 11.7203C14.6362 11.2272 14.24 10.8123 13.76 10.5146ZM12 9.99995C11.8022 9.99995 11.6089 9.9413 11.4445 9.83142C11.28 9.72153 11.1518 9.56536 11.0761 9.38263C11.0005 9.1999 10.9807 8.99884 11.0192 8.80486C11.0578 8.61087 11.1531 8.43269 11.2929 8.29284C11.4328 8.15299 11.611 8.05775 11.8049 8.01916C11.9989 7.98058 12.2 8.00038 12.3827 8.07607C12.5654 8.15175 12.7216 8.27993 12.8315 8.44438C12.9414 8.60883 13 8.80217 13 8.99995C13 9.26516 12.8947 9.51952 12.7071 9.70705C12.5196 9.89459 12.2652 9.99995 12 9.99995ZM4.52869 5.13795L5.86202 6.47128C5.98776 6.59272 6.15616 6.65991 6.33096 6.6584C6.50575 6.65688 6.67296 6.58676 6.79657 6.46316C6.92017 6.33955 6.99029 6.17234 6.9918 5.99755C6.99332 5.82275 6.92613 5.65435 6.80469 5.52861L6.60935 5.33328H9.39069L9.19536 5.52861C9.13168 5.59011 9.08089 5.66367 9.04595 5.74501C9.01101 5.82635 8.99262 5.91383 8.99185 6.00235C8.99109 6.09087 9.00795 6.17865 9.04147 6.26058C9.075 6.34251 9.1245 6.41695 9.18709 6.47954C9.24969 6.54214 9.32412 6.59164 9.40605 6.62516C9.48798 6.65868 9.57577 6.67555 9.66429 6.67478C9.75281 6.67401 9.84029 6.65562 9.92163 6.62068C10.003 6.58574 10.0765 6.53495 10.138 6.47128L11.4714 5.13795C11.5957 5.01258 11.6655 4.84317 11.6655 4.66661C11.6655 4.49005 11.5957 4.32064 11.4714 4.19528L10.138 2.86195C10.0123 2.74051 9.84389 2.67331 9.66909 2.67483C9.49429 2.67635 9.32708 2.74646 9.20348 2.87007C9.07987 2.99367 9.00976 3.16088 9.00824 3.33568C9.00672 3.51048 9.07392 3.67888 9.19536 3.80461L9.39069 3.99995H6.60935L6.80469 3.80461C6.92613 3.67888 6.99332 3.51048 6.9918 3.33568C6.99029 3.16088 6.92017 2.99367 6.79657 2.87007C6.67296 2.74646 6.50575 2.67635 6.33096 2.67483C6.15616 2.67331 5.98776 2.74051 5.86202 2.86195L4.52869 4.19528C4.40436 4.32064 4.33459 4.49005 4.33459 4.66661C4.33459 4.84317 4.40436 5.01258 4.52869 5.13795ZM5.76002 10.5146C6.1274 10.0953 6.33099 9.55743 6.33335 8.99995C6.33335 8.38111 6.08752 7.78762 5.64994 7.35003C5.21235 6.91245 4.61886 6.66661 4.00002 6.66661C3.38118 6.66661 2.78769 6.91245 2.3501 7.35003C1.91252 7.78762 1.66669 8.38111 1.66669 8.99995C1.66905 9.55743 1.87264 10.0953 2.24002 10.5146C1.76008 10.8123 1.36381 11.2272 1.08856 11.7203C0.813305 12.2135 0.668121 12.7685 0.666687 13.3333C0.666687 13.5101 0.736925 13.6797 0.861949 13.8047C0.986973 13.9297 1.15654 13.9999 1.33335 13.9999C1.51016 13.9999 1.67973 13.9297 1.80476 13.8047C1.92978 13.6797 2.00002 13.5101 2.00002 13.3333C2.00002 12.8028 2.21073 12.2941 2.58581 11.9191C2.96088 11.544 3.46959 11.3333 4.00002 11.3333C4.53045 11.3333 5.03916 11.544 5.41424 11.9191C5.78931 12.2941 6.00002 12.8028 6.00002 13.3333C6.00002 13.5101 6.07026 13.6797 6.19528 13.8047C6.32031 13.9297 6.48988 13.9999 6.66669 13.9999C6.8435 13.9999 7.01307 13.9297 7.13809 13.8047C7.26312 13.6797 7.33335 13.5101 7.33335 13.3333C7.33192 12.7685 7.18674 12.2135 6.91148 11.7203C6.63623 11.2272 6.23996 10.8123 5.76002 10.5146ZM4.00002 9.99995C3.80224 9.99995 3.6089 9.9413 3.44445 9.83142C3.28 9.72153 3.15183 9.56536 3.07614 9.38263C3.00045 9.1999 2.98065 8.99884 3.01924 8.80486C3.05782 8.61087 3.15306 8.43269 3.29291 8.29284C3.43277 8.15299 3.61095 8.05775 3.80493 8.01916C3.99891 7.98058 4.19998 8.00038 4.3827 8.07607C4.56543 8.15175 4.72161 8.27993 4.83149 8.44438C4.94137 8.60883 5.00002 8.80217 5.00002 8.99995C5.00002 9.26516 4.89466 9.51952 4.70713 9.70705C4.51959 9.89459 4.26524 9.99995 4.00002 9.99995Z"
+                    fill="#0051FF"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextBlue}>
+                  취업연계(취업 알선)
+                </span>
+              </div>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M11 13.5H5C4.60218 13.5 4.22064 13.342 3.93934 13.0607C3.65804 12.7794 3.5 12.3978 3.5 12V4C3.5 3.60218 3.65804 3.22064 3.93934 2.93934C4.22064 2.65804 4.60218 2.5 5 2.5H7.757C7.95409 2.50004 8.14923 2.53892 8.33128 2.61442C8.51334 2.68992 8.67873 2.80055 8.818 2.94L12.061 6.182C12.342 6.4632 12.4999 6.84445 12.5 7.242V12C12.5 12.3978 12.342 12.7794 12.0607 13.0607C11.7794 13.342 11.3978 13.5 11 13.5ZM13.121 5.121C13.3997 5.39963 13.6208 5.73045 13.7716 6.09455C13.9224 6.45865 14 6.8489 14 7.243V12C14 12.7956 13.6839 13.5587 13.1213 14.1213C12.5587 14.6839 11.7956 15 11 15H5C4.20435 15 3.44129 14.6839 2.87868 14.1213C2.31607 13.5587 2 12.7956 2 12V4C2 3.20435 2.31607 2.44129 2.87868 1.87868C3.44129 1.31607 4.20435 1 5 1H7.757C8.1511 0.999953 8.54135 1.07756 8.90545 1.22838C9.26955 1.3792 9.60037 1.60029 9.879 1.879L13.121 5.121ZM8.53066 6.729C8.38914 6.59245 8.19966 6.51694 8.00301 6.51874C7.80636 6.52054 7.61829 6.59951 7.4793 6.73863C7.34031 6.87775 7.26152 7.0659 7.2599 7.26255C7.25829 7.4592 7.33397 7.64861 7.47066 7.79L8.19066 8.51L6.00066 8.51C5.80175 8.51 5.61098 8.58902 5.47033 8.72967C5.32968 8.87032 5.25066 9.06109 5.25066 9.26C5.25066 9.45891 5.32968 9.64968 5.47033 9.79033C5.61098 9.93098 5.80175 10.01 6.00066 10.01H8.19066L7.47066 10.73C7.33818 10.8722 7.26606 11.0602 7.26948 11.2545C7.27291 11.4488 7.35163 11.6342 7.48904 11.7716C7.62645 11.909 7.81184 11.9877 8.00614 11.9912C8.20044 11.9946 8.38849 11.9225 8.53066 11.79L10.5307 9.79C10.6711 9.64937 10.75 9.45875 10.75 9.26C10.75 9.06125 10.6711 8.87063 10.5307 8.73L8.53066 6.729Z"
+                    fill="#0051FF"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextBlue}>
+                  행정대행서비스
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.planInfoBoxGray}>
+            {/* 여기에 플랜 설명 등 추가 가능 */}
+            <div className={styles.planInfoContentTop}>
+              <span className={styles.planInfoTitle}>스탠다드</span>
+              <span className={styles.planInfoPrice}>
+                월<span className={styles.planInfoPriceNumber}> 19,900</span>원
+              </span>
+              <span className={styles.planInfoDesc}>
+                올케어의 핵심서비스를 이용 가능
+              </span>
+            </div>
+            <button
+              className={styles.planInfoButtonGray}
+              onClick={() => {
+                setSelectedPlan('standard');
+                handleSheetOpen();
+              }}
+            >
+              스탠다드 구독하기
+            </button>
+            <div className={styles.planInfoContentBottom}>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    d="M7.05731 1.40016C7.2933 1.16448 7.60906 1.0258 7.94228 1.01148C8.27549 0.997168 8.60198 1.10826 8.85731 1.32283L8.94265 1.40083L10.2093 2.66683H12C12.3362 2.66689 12.6601 2.79401 12.9066 3.02272C13.1531 3.25143 13.3041 3.56484 13.3293 3.90016L13.3333 4.00016V5.79083L14.6 7.0575C14.8358 7.29352 14.9746 7.60941 14.989 7.94278C15.0033 8.27616 14.8921 8.60278 14.6773 8.85816L14.5993 8.94283L13.3326 10.2095V12.0002C13.3328 12.3365 13.2057 12.6605 12.977 12.9072C12.7483 13.1538 12.4347 13.3049 12.0993 13.3302L12 13.3335H10.21L8.94331 14.6002C8.70729 14.836 8.3914 14.9748 8.05802 14.9891C7.72465 15.0035 7.39803 14.8923 7.14265 14.6775L7.05798 14.6002L5.79131 13.3335H3.99998C3.6636 13.3336 3.3396 13.2066 3.09295 12.9778C2.84629 12.7491 2.69521 12.4356 2.66998 12.1002L2.66665 12.0002V10.2095L1.39998 8.94283C1.16411 8.7068 1.02531 8.39092 1.01099 8.05754C0.996677 7.72417 1.10788 7.39754 1.32265 7.14216L1.39998 7.0575L2.66665 5.79083V4.00016C2.66671 3.66389 2.79383 3.34007 3.02254 3.09355C3.25125 2.84704 3.56466 2.69605 3.89998 2.67083L3.99998 2.66683H5.79065L7.05731 1.40016ZM7.99998 2.34416L6.73331 3.61083C6.51187 3.83193 6.21971 3.9681 5.90798 3.9955L5.79065 4.00016H3.99998V5.79083C4.00006 6.10409 3.88984 6.40738 3.68865 6.6475L3.60931 6.73416L2.34265 8.00083L3.60931 9.26683C3.83066 9.48818 3.96707 9.78035 3.99465 10.0922L3.99998 10.2095V12.0002H5.79065C6.10391 12.0001 6.4072 12.1103 6.64731 12.3115L6.73398 12.3908L7.99998 13.6575L9.26665 12.3908C9.48799 12.1695 9.78016 12.0331 10.092 12.0055L10.2093 12.0002H12V10.2095C11.9999 9.89623 12.1101 9.59295 12.3113 9.35283L12.3906 9.26616L13.6573 8.00016L12.3906 6.7335C12.1693 6.51215 12.0329 6.21998 12.0053 5.90816L12 5.79083V4.00016H10.2093C9.89605 4.00024 9.59276 3.89002 9.35265 3.68883L9.26598 3.6095L7.99931 2.34283L7.99998 2.34416ZM10.0533 5.9895C10.1733 5.86993 10.3343 5.80051 10.5036 5.79534C10.6729 5.79018 10.8378 5.84964 10.9648 5.96166C11.0919 6.07369 11.1715 6.22986 11.1876 6.39848C11.2036 6.56709 11.1549 6.7355 11.0513 6.8695L10.9953 6.93216L7.74198 10.1855C7.61496 10.3127 7.44566 10.3888 7.26622 10.3994C7.08679 10.4099 6.90972 10.3542 6.76865 10.2428L6.70465 10.1862L5.10198 8.5835C4.98114 8.4638 4.91062 8.30245 4.90486 8.13246C4.89909 7.96248 4.95851 7.79672 5.07096 7.66911C5.1834 7.5415 5.34037 7.4617 5.50973 7.44603C5.67909 7.43036 5.84803 7.48002 5.98198 7.58483L6.04465 7.64016L7.22331 8.81883L10.0533 5.9895Z"
+                    fill="#0051FF"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextBlue}>
+                  이수 보장반
+                </span>
+              </div>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    d="M12.6666 2.6665C13.1768 2.66648 13.6677 2.86139 14.0388 3.21136C14.41 3.56133 14.6334 4.03991 14.6633 4.54917L14.6666 4.6665V5.87784C14.6651 6.05789 14.6166 6.23443 14.5259 6.38996C14.4351 6.54548 14.3053 6.6746 14.1493 6.7645L14.078 6.80317C13.8623 6.90904 13.6792 7.07122 13.5481 7.27257C13.417 7.47392 13.3428 7.70695 13.3332 7.94703C13.3236 8.18711 13.3791 8.42531 13.4938 8.63645C13.6085 8.84759 13.7781 9.02382 13.9846 9.1465L14.078 9.1965C14.3666 9.33917 14.6246 9.63384 14.662 10.0232L14.6666 10.1218V11.3332C14.6667 11.8433 14.4718 12.3342 14.1218 12.7053C13.7718 13.0765 13.2932 13.2999 12.784 13.3298L12.6666 13.3332H3.33331C2.82317 13.3332 2.3323 13.1383 1.96114 12.7883C1.58998 12.4383 1.36657 11.9598 1.33665 11.4505L1.33331 11.3332V10.1218C1.33331 9.71784 1.56798 9.40317 1.85065 9.23517L1.92198 9.1965C2.13767 9.09064 2.32074 8.92845 2.45184 8.72711C2.58294 8.52576 2.6572 8.29272 2.66676 8.05264C2.67633 7.81256 2.62084 7.57436 2.50616 7.36322C2.39149 7.15209 2.2219 6.97586 2.01531 6.85317L1.92198 6.80317C1.63331 6.6605 1.37531 6.36584 1.33798 5.9765L1.33331 5.8785V4.6665C1.33328 4.15636 1.5282 3.66549 1.87817 3.29433C2.22814 2.92317 2.70672 2.69977 3.21598 2.66984L3.33331 2.6665H12.6666ZM12.6666 3.99984H3.33331C3.17002 3.99986 3.01242 4.05981 2.8904 4.16831C2.76838 4.27682 2.69042 4.42634 2.67131 4.5885L2.66665 4.6665V5.68984C3.06162 5.9177 3.39156 6.24303 3.62495 6.63476C3.85834 7.02648 3.98739 7.47151 3.99976 7.92733C4.01213 8.38314 3.90742 8.83452 3.69562 9.23833C3.48382 9.64213 3.17201 9.98489 2.78998 10.2338L2.66665 10.3098V11.3332C2.66667 11.4965 2.72662 11.6541 2.83512 11.7761C2.94363 11.8981 3.09315 11.9761 3.25531 11.9952L3.33331 11.9998H12.6666C12.8299 11.9998 12.9875 11.9399 13.1096 11.8314C13.2316 11.7229 13.3095 11.5733 13.3286 11.4112L13.3333 11.3332V10.3098C12.9383 10.082 12.6084 9.75664 12.375 9.36492C12.1416 8.97319 12.0126 8.52816 12.0002 8.07235C11.9878 7.61653 12.0925 7.16516 12.3043 6.76135C12.5161 6.35754 12.828 6.01479 13.21 5.76584L13.3333 5.68984V4.6665C13.3333 4.50322 13.2733 4.34561 13.1648 4.22359C13.0563 4.10157 12.9068 4.02361 12.7446 4.0045L12.6666 3.99984ZM6.66665 5.99984C6.82994 5.99986 6.98754 6.05981 7.10956 6.16831C7.23158 6.27682 7.30954 6.42634 7.32865 6.5885L7.33331 6.6665V9.33317C7.33312 9.50309 7.26806 9.66653 7.15141 9.79008C7.03477 9.91364 6.87534 9.98799 6.70572 9.99795C6.53609 10.0079 6.36906 9.95272 6.23876 9.84366C6.10846 9.7346 6.02472 9.5799 6.00465 9.41117L5.99998 9.33317V6.6665C5.99998 6.48969 6.07022 6.32012 6.19524 6.1951C6.32027 6.07008 6.48984 5.99984 6.66665 5.99984Z"
+                    fill="#0051FF"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextBlue}>
+                  직업훈련과정 무료 수강권
+                </span>
+              </div>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    d="M4.19532 11.1951C4.45567 10.9347 4.87768 10.9347 5.13803 11.1951C5.39838 11.4554 5.39838 11.8775 5.13803 12.1378L3.13803 14.1378C2.87768 14.3982 2.45567 14.3982 2.19532 14.1378L1.19532 13.1378C0.934974 12.8775 0.934974 12.4554 1.19532 12.1951C1.45567 11.9347 1.87768 11.9347 2.13803 12.1951L2.66668 12.7237L4.19532 11.1951ZM14.3333 11.9998C14.7015 11.9998 15 12.2983 15 12.6665C15 13.0346 14.7015 13.3331 14.3333 13.3331H7.00001C6.63182 13.3331 6.33334 13.0346 6.33334 12.6665C6.33334 12.2983 6.63182 11.9998 7.00001 11.9998H14.3333ZM4.19532 6.52843C4.45567 6.26808 4.87768 6.26808 5.13803 6.52843C5.39838 6.78878 5.39838 7.21079 5.13803 7.47114L3.13803 9.47114C2.87768 9.73149 2.45567 9.73149 2.19532 9.47114L1.19532 8.47114C0.934974 8.21079 0.934974 7.78878 1.19532 7.52843C1.45567 7.26808 1.87768 7.26808 2.13803 7.52843L2.66668 8.05708L4.19532 6.52843ZM14.3333 7.33312C14.7015 7.33312 15 7.6316 15 7.99979C15 8.36798 14.7015 8.66645 14.3333 8.66645H7.00001C6.63182 8.66645 6.33334 8.36798 6.33334 7.99979C6.33334 7.6316 6.63182 7.33312 7.00001 7.33312H14.3333ZM4.19532 1.86177C4.45567 1.60142 4.87768 1.60142 5.13803 1.86177C5.39838 2.12212 5.39838 2.54412 5.13803 2.80447L3.13803 4.80447C2.87768 5.06482 2.45567 5.06482 2.19532 4.80447L1.19532 3.80447C0.934974 3.54412 0.934974 3.12212 1.19532 2.86177C1.45567 2.60142 1.87768 2.60142 2.13803 2.86177L2.66668 3.39041L4.19532 1.86177ZM14.3333 2.66645C14.7015 2.66645 15 2.96493 15 3.33312C15 3.70131 14.7015 3.99979 14.3333 3.99979H7.00001C6.63182 3.99979 6.33334 3.70131 6.33334 3.33312C6.33334 2.96493 6.63182 2.66645 7.00001 2.66645H14.3333Z"
+                    fill="#0051FF"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextBlue}>
+                  실습 매칭 프로그램 열람권
+                </span>
+              </div>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    d="M13.76 10.5146C14.1274 10.0953 14.331 9.55743 14.3334 8.99995C14.3334 8.38111 14.0875 7.78762 13.6499 7.35003C13.2124 6.91245 12.6189 6.66661 12 6.66661C11.3812 6.66661 10.7877 6.91245 10.3501 7.35003C9.91252 7.78762 9.66669 8.38111 9.66669 8.99995C9.66905 9.55743 9.87265 10.0953 10.24 10.5146C9.76008 10.8123 9.36382 11.2272 9.08856 11.7203C8.81331 12.2135 8.66812 12.7685 8.66669 13.3333C8.66669 13.5101 8.73693 13.6797 8.86195 13.8047C8.98698 13.9297 9.15654 13.9999 9.33336 13.9999C9.51017 13.9999 9.67974 13.9297 9.80476 13.8047C9.92978 13.6797 10 13.5101 10 13.3333C10 12.8028 10.2107 12.2941 10.5858 11.9191C10.9609 11.544 11.4696 11.3333 12 11.3333C12.5305 11.3333 13.0392 11.544 13.4142 11.9191C13.7893 12.2941 14 12.8028 14 13.3333C14 13.5101 14.0703 13.6797 14.1953 13.8047C14.3203 13.9297 14.4899 13.9999 14.6667 13.9999C14.8435 13.9999 15.0131 13.9297 15.1381 13.8047C15.2631 13.6797 15.3334 13.5101 15.3334 13.3333C15.3319 12.7685 15.1867 12.2135 14.9115 11.7203C14.6362 11.2272 14.24 10.8123 13.76 10.5146ZM12 9.99995C11.8022 9.99995 11.6089 9.9413 11.4445 9.83142C11.28 9.72153 11.1518 9.56536 11.0761 9.38263C11.0005 9.1999 10.9807 8.99884 11.0192 8.80486C11.0578 8.61087 11.1531 8.43269 11.2929 8.29284C11.4328 8.15299 11.611 8.05775 11.8049 8.01916C11.9989 7.98058 12.2 8.00038 12.3827 8.07607C12.5654 8.15175 12.7216 8.27993 12.8315 8.44438C12.9414 8.60883 13 8.80217 13 8.99995C13 9.26516 12.8947 9.51952 12.7071 9.70705C12.5196 9.89459 12.2652 9.99995 12 9.99995ZM4.52869 5.13795L5.86202 6.47128C5.98776 6.59272 6.15616 6.65991 6.33096 6.6584C6.50575 6.65688 6.67296 6.58676 6.79657 6.46316C6.92017 6.33955 6.99029 6.17234 6.9918 5.99755C6.99332 5.82275 6.92613 5.65435 6.80469 5.52861L6.60935 5.33328H9.39069L9.19536 5.52861C9.13168 5.59011 9.08089 5.66367 9.04595 5.74501C9.01101 5.82635 8.99262 5.91383 8.99185 6.00235C8.99109 6.09087 9.00795 6.17865 9.04147 6.26058C9.075 6.34251 9.1245 6.41695 9.18709 6.47954C9.24969 6.54214 9.32412 6.59164 9.40605 6.62516C9.48798 6.65868 9.57577 6.67555 9.66429 6.67478C9.75281 6.67401 9.84029 6.65562 9.92163 6.62068C10.003 6.58574 10.0765 6.53495 10.138 6.47128L11.4714 5.13795C11.5957 5.01258 11.6655 4.84317 11.6655 4.66661C11.6655 4.49005 11.5957 4.32064 11.4714 4.19528L10.138 2.86195C10.0123 2.74051 9.84389 2.67331 9.66909 2.67483C9.49429 2.67635 9.32708 2.74646 9.20348 2.87007C9.07987 2.99367 9.00976 3.16088 9.00824 3.33568C9.00672 3.51048 9.07392 3.67888 9.19536 3.80461L9.39069 3.99995H6.60935L6.80469 3.80461C6.92613 3.67888 6.99332 3.51048 6.9918 3.33568C6.99029 3.16088 6.92017 2.99367 6.79657 2.87007C6.67296 2.74646 6.50575 2.67635 6.33096 2.67483C6.15616 2.67331 5.98776 2.74051 5.86202 2.86195L4.52869 4.19528C4.40436 4.32064 4.33459 4.49005 4.33459 4.66661C4.33459 4.84317 4.40436 5.01258 4.52869 5.13795ZM5.76002 10.5146C6.1274 10.0953 6.33099 9.55743 6.33335 8.99995C6.33335 8.38111 6.08752 7.78762 5.64994 7.35003C5.21235 6.91245 4.61886 6.66661 4.00002 6.66661C3.38118 6.66661 2.78769 6.91245 2.3501 7.35003C1.91252 7.78762 1.66669 8.38111 1.66669 8.99995C1.66905 9.55743 1.87264 10.0953 2.24002 10.5146C1.76008 10.8123 1.36381 11.2272 1.08856 11.7203C0.813305 12.2135 0.668121 12.7685 0.666687 13.3333C0.666687 13.5101 0.736925 13.6797 0.861949 13.8047C0.986973 13.9297 1.15654 13.9999 1.33335 13.9999C1.51016 13.9999 1.67973 13.9297 1.80476 13.8047C1.92978 13.6797 2.00002 13.5101 2.00002 13.3333C2.00002 12.8028 2.21073 12.2941 2.58581 11.9191C2.96088 11.544 3.46959 11.3333 4.00002 11.3333C4.53045 11.3333 5.03916 11.544 5.41424 11.9191C5.78931 12.2941 6.00002 12.8028 6.00002 13.3333C6.00002 13.5101 6.07026 13.6797 6.19528 13.8047C6.32031 13.9297 6.48988 13.9999 6.66669 13.9999C6.8435 13.9999 7.01307 13.9297 7.13809 13.8047C7.26312 13.6797 7.33335 13.5101 7.33335 13.3333C7.33192 12.7685 7.18674 12.2135 6.91148 11.7203C6.63623 11.2272 6.23996 10.8123 5.76002 10.5146ZM4.00002 9.99995C3.80224 9.99995 3.6089 9.9413 3.44445 9.83142C3.28 9.72153 3.15183 9.56536 3.07614 9.38263C3.00045 9.1999 2.98065 8.99884 3.01924 8.80486C3.05782 8.61087 3.15306 8.43269 3.29291 8.29284C3.43277 8.15299 3.61095 8.05775 3.80493 8.01916C3.99891 7.98058 4.19998 8.00038 4.3827 8.07607C4.56543 8.15175 4.72161 8.27993 4.83149 8.44438C4.94137 8.60883 5.00002 8.80217 5.00002 8.99995C5.00002 9.26516 4.89466 9.51952 4.70713 9.70705C4.51959 9.89459 4.26524 9.99995 4.00002 9.99995Z"
+                    fill="#0051FF"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextBlue}>
+                  취업연계(취업 알선)
+                </span>
+              </div>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M11 13.5H5C4.60218 13.5 4.22064 13.342 3.93934 13.0607C3.65804 12.7794 3.5 12.3978 3.5 12V4C3.5 3.60218 3.65804 3.22064 3.93934 2.93934C4.22064 2.65804 4.60218 2.5 5 2.5H7.757C7.95409 2.50004 8.14923 2.53892 8.33128 2.61442C8.51334 2.68992 8.67873 2.80055 8.818 2.94L12.061 6.182C12.342 6.4632 12.4999 6.84445 12.5 7.242V12C12.5 12.3978 12.342 12.7794 12.0607 13.0607C11.7794 13.342 11.3978 13.5 11 13.5ZM13.121 5.121C13.3997 5.39963 13.6208 5.73045 13.7716 6.09455C13.9224 6.45865 14 6.8489 14 7.243V12C14 12.7956 13.6839 13.5587 13.1213 14.1213C12.5587 14.6839 11.7956 15 11 15H5C4.20435 15 3.44129 14.6839 2.87868 14.1213C2.31607 13.5587 2 12.7956 2 12V4C2 3.20435 2.31607 2.44129 2.87868 1.87868C3.44129 1.31607 4.20435 1 5 1H7.757C8.1511 0.999953 8.54135 1.07756 8.90545 1.22838C9.26955 1.3792 9.60037 1.60029 9.879 1.879L13.121 5.121ZM8.53066 6.729C8.38914 6.59245 8.19966 6.51694 8.00301 6.51874C7.80636 6.52054 7.61829 6.59951 7.4793 6.73863C7.34031 6.87775 7.26152 7.0659 7.2599 7.26255C7.25829 7.4592 7.33397 7.64861 7.47066 7.79L8.19066 8.51L6.00066 8.51C5.80175 8.51 5.61098 8.58902 5.47033 8.72967C5.32968 8.87032 5.25066 9.06109 5.25066 9.26C5.25066 9.45891 5.32968 9.64968 5.47033 9.79033C5.61098 9.93098 5.80175 10.01 6.00066 10.01H8.19066L7.47066 10.73C7.33818 10.8722 7.26606 11.0602 7.26948 11.2545C7.27291 11.4488 7.35163 11.6342 7.48904 11.7716C7.62645 11.909 7.81184 11.9877 8.00614 11.9912C8.20044 11.9946 8.38849 11.9225 8.53066 11.79L10.5307 9.79C10.6711 9.64937 10.75 9.45875 10.75 9.26C10.75 9.06125 10.6711 8.87063 10.5307 8.73L8.53066 6.729Z"
+                    fill="#D0D0D0"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextGray}>
+                  행정대행서비스
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.planInfoBoxGray}>
+            {/* 여기에 플랜 설명 등 추가 가능 */}
+            <div className={styles.planInfoContentTop}>
+              <span className={styles.planInfoTitle}>베이직</span>
+              <span className={styles.planInfoPrice}>
+                월<span className={styles.planInfoPriceNumber}> 9,900</span>원
+              </span>
+              <span className={styles.planInfoDesc}>
+                올케어의 기본 서비스를 이용 가능
+              </span>
+            </div>
+            <button
+              className={styles.planInfoButtonGray}
+              onClick={() => {
+                setSelectedPlan('basic');
+                handleSheetOpen();
+              }}
+            >
+              베이직 구독하기
+            </button>
+            <div className={styles.planInfoContentBottom}>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    d="M7.05731 1.40016C7.2933 1.16448 7.60906 1.0258 7.94228 1.01148C8.27549 0.997168 8.60198 1.10826 8.85731 1.32283L8.94265 1.40083L10.2093 2.66683H12C12.3362 2.66689 12.6601 2.79401 12.9066 3.02272C13.1531 3.25143 13.3041 3.56484 13.3293 3.90016L13.3333 4.00016V5.79083L14.6 7.0575C14.8358 7.29352 14.9746 7.60941 14.989 7.94278C15.0033 8.27616 14.8921 8.60278 14.6773 8.85816L14.5993 8.94283L13.3326 10.2095V12.0002C13.3328 12.3365 13.2057 12.6605 12.977 12.9072C12.7483 13.1538 12.4347 13.3049 12.0993 13.3302L12 13.3335H10.21L8.94331 14.6002C8.70729 14.836 8.3914 14.9748 8.05802 14.9891C7.72465 15.0035 7.39803 14.8923 7.14265 14.6775L7.05798 14.6002L5.79131 13.3335H3.99998C3.6636 13.3336 3.3396 13.2066 3.09295 12.9778C2.84629 12.7491 2.69521 12.4356 2.66998 12.1002L2.66665 12.0002V10.2095L1.39998 8.94283C1.16411 8.7068 1.02531 8.39092 1.01099 8.05754C0.996677 7.72417 1.10788 7.39754 1.32265 7.14216L1.39998 7.0575L2.66665 5.79083V4.00016C2.66671 3.66389 2.79383 3.34007 3.02254 3.09355C3.25125 2.84704 3.56466 2.69605 3.89998 2.67083L3.99998 2.66683H5.79065L7.05731 1.40016ZM7.99998 2.34416L6.73331 3.61083C6.51187 3.83193 6.21971 3.9681 5.90798 3.9955L5.79065 4.00016H3.99998V5.79083C4.00006 6.10409 3.88984 6.40738 3.68865 6.6475L3.60931 6.73416L2.34265 8.00083L3.60931 9.26683C3.83066 9.48818 3.96707 9.78035 3.99465 10.0922L3.99998 10.2095V12.0002H5.79065C6.10391 12.0001 6.4072 12.1103 6.64731 12.3115L6.73398 12.3908L7.99998 13.6575L9.26665 12.3908C9.48799 12.1695 9.78016 12.0331 10.092 12.0055L10.2093 12.0002H12V10.2095C11.9999 9.89623 12.1101 9.59295 12.3113 9.35283L12.3906 9.26616L13.6573 8.00016L12.3906 6.7335C12.1693 6.51215 12.0329 6.21998 12.0053 5.90816L12 5.79083V4.00016H10.2093C9.89605 4.00024 9.59276 3.89002 9.35265 3.68883L9.26598 3.6095L7.99931 2.34283L7.99998 2.34416ZM10.0533 5.9895C10.1733 5.86993 10.3343 5.80051 10.5036 5.79534C10.6729 5.79018 10.8378 5.84964 10.9648 5.96166C11.0919 6.07369 11.1715 6.22986 11.1876 6.39848C11.2036 6.56709 11.1549 6.7355 11.0513 6.8695L10.9953 6.93216L7.74198 10.1855C7.61496 10.3127 7.44566 10.3888 7.26622 10.3994C7.08679 10.4099 6.90972 10.3542 6.76865 10.2428L6.70465 10.1862L5.10198 8.5835C4.98114 8.4638 4.91062 8.30245 4.90486 8.13246C4.89909 7.96248 4.95851 7.79672 5.07096 7.66911C5.1834 7.5415 5.34037 7.4617 5.50973 7.44603C5.67909 7.43036 5.84803 7.48002 5.98198 7.58483L6.04465 7.64016L7.22331 8.81883L10.0533 5.9895Z"
+                    fill="#0051FF"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextBlue}>
+                  이수 보장반
+                </span>
+              </div>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    d="M12.6666 2.6665C13.1768 2.66648 13.6677 2.86139 14.0388 3.21136C14.41 3.56133 14.6334 4.03991 14.6633 4.54917L14.6666 4.6665V5.87784C14.6651 6.05789 14.6166 6.23443 14.5259 6.38996C14.4351 6.54548 14.3053 6.6746 14.1493 6.7645L14.078 6.80317C13.8623 6.90904 13.6792 7.07122 13.5481 7.27257C13.417 7.47392 13.3428 7.70695 13.3332 7.94703C13.3236 8.18711 13.3791 8.42531 13.4938 8.63645C13.6085 8.84759 13.7781 9.02382 13.9846 9.1465L14.078 9.1965C14.3666 9.33917 14.6246 9.63384 14.662 10.0232L14.6666 10.1218V11.3332C14.6667 11.8433 14.4718 12.3342 14.1218 12.7053C13.7718 13.0765 13.2932 13.2999 12.784 13.3298L12.6666 13.3332H3.33331C2.82317 13.3332 2.3323 13.1383 1.96114 12.7883C1.58998 12.4383 1.36657 11.9598 1.33665 11.4505L1.33331 11.3332V10.1218C1.33331 9.71784 1.56798 9.40317 1.85065 9.23517L1.92198 9.1965C2.13767 9.09064 2.32074 8.92845 2.45184 8.72711C2.58294 8.52576 2.6572 8.29272 2.66676 8.05264C2.67633 7.81256 2.62084 7.57436 2.50616 7.36322C2.39149 7.15209 2.2219 6.97586 2.01531 6.85317L1.92198 6.80317C1.63331 6.6605 1.37531 6.36584 1.33798 5.9765L1.33331 5.8785V4.6665C1.33328 4.15636 1.5282 3.66549 1.87817 3.29433C2.22814 2.92317 2.70672 2.69977 3.21598 2.66984L3.33331 2.6665H12.6666ZM12.6666 3.99984H3.33331C3.17002 3.99986 3.01242 4.05981 2.8904 4.16831C2.76838 4.27682 2.69042 4.42634 2.67131 4.5885L2.66665 4.6665V5.68984C3.06162 5.9177 3.39156 6.24303 3.62495 6.63476C3.85834 7.02648 3.98739 7.47151 3.99976 7.92733C4.01213 8.38314 3.90742 8.83452 3.69562 9.23833C3.48382 9.64213 3.17201 9.98489 2.78998 10.2338L2.66665 10.3098V11.3332C2.66667 11.4965 2.72662 11.6541 2.83512 11.7761C2.94363 11.8981 3.09315 11.9761 3.25531 11.9952L3.33331 11.9998H12.6666C12.8299 11.9998 12.9875 11.9399 13.1096 11.8314C13.2316 11.7229 13.3095 11.5733 13.3286 11.4112L13.3333 11.3332V10.3098C12.9383 10.082 12.6084 9.75664 12.375 9.36492C12.1416 8.97319 12.0126 8.52816 12.0002 8.07235C11.9878 7.61653 12.0925 7.16516 12.3043 6.76135C12.5161 6.35754 12.828 6.01479 13.21 5.76584L13.3333 5.68984V4.6665C13.3333 4.50322 13.2733 4.34561 13.1648 4.22359C13.0563 4.10157 12.9068 4.02361 12.7446 4.0045L12.6666 3.99984ZM6.66665 5.99984C6.82994 5.99986 6.98754 6.05981 7.10956 6.16831C7.23158 6.27682 7.30954 6.42634 7.32865 6.5885L7.33331 6.6665V9.33317C7.33312 9.50309 7.26806 9.66653 7.15141 9.79008C7.03477 9.91364 6.87534 9.98799 6.70572 9.99795C6.53609 10.0079 6.36906 9.95272 6.23876 9.84366C6.10846 9.7346 6.02472 9.5799 6.00465 9.41117L5.99998 9.33317V6.6665C5.99998 6.48969 6.07022 6.32012 6.19524 6.1951C6.32027 6.07008 6.48984 5.99984 6.66665 5.99984Z"
+                    fill="#0051FF"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextBlue}>
+                  직업훈련과정 무료 수강권
+                </span>
+              </div>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    d="M4.19532 11.1951C4.45567 10.9347 4.87768 10.9347 5.13803 11.1951C5.39838 11.4554 5.39838 11.8775 5.13803 12.1378L3.13803 14.1378C2.87768 14.3982 2.45567 14.3982 2.19532 14.1378L1.19532 13.1378C0.934974 12.8775 0.934974 12.4554 1.19532 12.1951C1.45567 11.9347 1.87768 11.9347 2.13803 12.1951L2.66668 12.7237L4.19532 11.1951ZM14.3333 11.9998C14.7015 11.9998 15 12.2983 15 12.6665C15 13.0346 14.7015 13.3331 14.3333 13.3331H7.00001C6.63182 13.3331 6.33334 13.0346 6.33334 12.6665C6.33334 12.2983 6.63182 11.9998 7.00001 11.9998H14.3333ZM4.19532 6.52843C4.45567 6.26808 4.87768 6.26808 5.13803 6.52843C5.39838 6.78878 5.39838 7.21079 5.13803 7.47114L3.13803 9.47114C2.87768 9.73149 2.45567 9.73149 2.19532 9.47114L1.19532 8.47114C0.934974 8.21079 0.934974 7.78878 1.19532 7.52843C1.45567 7.26808 1.87768 7.26808 2.13803 7.52843L2.66668 8.05708L4.19532 6.52843ZM14.3333 7.33312C14.7015 7.33312 15 7.6316 15 7.99979C15 8.36798 14.7015 8.66645 14.3333 8.66645H7.00001C6.63182 8.66645 6.33334 8.36798 6.33334 7.99979C6.33334 7.6316 6.63182 7.33312 7.00001 7.33312H14.3333ZM4.19532 1.86177C4.45567 1.60142 4.87768 1.60142 5.13803 1.86177C5.39838 2.12212 5.39838 2.54412 5.13803 2.80447L3.13803 4.80447C2.87768 5.06482 2.45567 5.06482 2.19532 4.80447L1.19532 3.80447C0.934974 3.54412 0.934974 3.12212 1.19532 2.86177C1.45567 2.60142 1.87768 2.60142 2.13803 2.86177L2.66668 3.39041L4.19532 1.86177ZM14.3333 2.66645C14.7015 2.66645 15 2.96493 15 3.33312C15 3.70131 14.7015 3.99979 14.3333 3.99979H7.00001C6.63182 3.99979 6.33334 3.70131 6.33334 3.33312C6.33334 2.96493 6.63182 2.66645 7.00001 2.66645H14.3333Z"
+                    fill="#0051FF"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextBlue}>
+                  실습 매칭 프로그램 열람권
+                </span>
+              </div>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    d="M13.76 10.5146C14.1274 10.0953 14.331 9.55743 14.3334 8.99995C14.3334 8.38111 14.0875 7.78762 13.6499 7.35003C13.2124 6.91245 12.6189 6.66661 12 6.66661C11.3812 6.66661 10.7877 6.91245 10.3501 7.35003C9.91252 7.78762 9.66669 8.38111 9.66669 8.99995C9.66905 9.55743 9.87265 10.0953 10.24 10.5146C9.76008 10.8123 9.36382 11.2272 9.08856 11.7203C8.81331 12.2135 8.66812 12.7685 8.66669 13.3333C8.66669 13.5101 8.73693 13.6797 8.86195 13.8047C8.98698 13.9297 9.15654 13.9999 9.33336 13.9999C9.51017 13.9999 9.67974 13.9297 9.80476 13.8047C9.92978 13.6797 10 13.5101 10 13.3333C10 12.8028 10.2107 12.2941 10.5858 11.9191C10.9609 11.544 11.4696 11.3333 12 11.3333C12.5305 11.3333 13.0392 11.544 13.4142 11.9191C13.7893 12.2941 14 12.8028 14 13.3333C14 13.5101 14.0703 13.6797 14.1953 13.8047C14.3203 13.9297 14.4899 13.9999 14.6667 13.9999C14.8435 13.9999 15.0131 13.9297 15.1381 13.8047C15.2631 13.6797 15.3334 13.5101 15.3334 13.3333C15.3319 12.7685 15.1867 12.2135 14.9115 11.7203C14.6362 11.2272 14.24 10.8123 13.76 10.5146ZM12 9.99995C11.8022 9.99995 11.6089 9.9413 11.4445 9.83142C11.28 9.72153 11.1518 9.56536 11.0761 9.38263C11.0005 9.1999 10.9807 8.99884 11.0192 8.80486C11.0578 8.61087 11.1531 8.43269 11.2929 8.29284C11.4328 8.15299 11.611 8.05775 11.8049 8.01916C11.9989 7.98058 12.2 8.00038 12.3827 8.07607C12.5654 8.15175 12.7216 8.27993 12.8315 8.44438C12.9414 8.60883 13 8.80217 13 8.99995C13 9.26516 12.8947 9.51952 12.7071 9.70705C12.5196 9.89459 12.2652 9.99995 12 9.99995ZM4.52869 5.13795L5.86202 6.47128C5.98776 6.59272 6.15616 6.65991 6.33096 6.6584C6.50575 6.65688 6.67296 6.58676 6.79657 6.46316C6.92017 6.33955 6.99029 6.17234 6.9918 5.99755C6.99332 5.82275 6.92613 5.65435 6.80469 5.52861L6.60935 5.33328H9.39069L9.19536 5.52861C9.13168 5.59011 9.08089 5.66367 9.04595 5.74501C9.01101 5.82635 8.99262 5.91383 8.99185 6.00235C8.99109 6.09087 9.00795 6.17865 9.04147 6.26058C9.075 6.34251 9.1245 6.41695 9.18709 6.47954C9.24969 6.54214 9.32412 6.59164 9.40605 6.62516C9.48798 6.65868 9.57577 6.67555 9.66429 6.67478C9.75281 6.67401 9.84029 6.65562 9.92163 6.62068C10.003 6.58574 10.0765 6.53495 10.138 6.47128L11.4714 5.13795C11.5957 5.01258 11.6655 4.84317 11.6655 4.66661C11.6655 4.49005 11.5957 4.32064 11.4714 4.19528L10.138 2.86195C10.0123 2.74051 9.84389 2.67331 9.66909 2.67483C9.49429 2.67635 9.32708 2.74646 9.20348 2.87007C9.07987 2.99367 9.00976 3.16088 9.00824 3.33568C9.00672 3.51048 9.07392 3.67888 9.19536 3.80461L9.39069 3.99995H6.60935L6.80469 3.80461C6.92613 3.67888 6.99332 3.51048 6.9918 3.33568C6.99029 3.16088 6.92017 2.99367 6.79657 2.87007C6.67296 2.74646 6.50575 2.67635 6.33096 2.67483C6.15616 2.67331 5.98776 2.74051 5.86202 2.86195L4.52869 4.19528C4.40436 4.32064 4.33459 4.49005 4.33459 4.66661C4.33459 4.84317 4.40436 5.01258 4.52869 5.13795ZM5.76002 10.5146C6.1274 10.0953 6.33099 9.55743 6.33335 8.99995C6.33335 8.38111 6.08752 7.78762 5.64994 7.35003C5.21235 6.91245 4.61886 6.66661 4.00002 6.66661C3.38118 6.66661 2.78769 6.91245 2.3501 7.35003C1.91252 7.78762 1.66669 8.38111 1.66669 8.99995C1.66905 9.55743 1.87264 10.0953 2.24002 10.5146C1.76008 10.8123 1.36381 11.2272 1.08856 11.7203C0.813305 12.2135 0.668121 12.7685 0.666687 13.3333C0.666687 13.5101 0.736925 13.6797 0.861949 13.8047C0.986973 13.9297 1.15654 13.9999 1.33335 13.9999C1.51016 13.9999 1.67973 13.9297 1.80476 13.8047C1.92978 13.6797 2.00002 13.5101 2.00002 13.3333C2.00002 12.8028 2.21073 12.2941 2.58581 11.9191C2.96088 11.544 3.46959 11.3333 4.00002 11.3333C4.53045 11.3333 5.03916 11.544 5.41424 11.9191C5.78931 12.2941 6.00002 12.8028 6.00002 13.3333C6.00002 13.5101 6.07026 13.6797 6.19528 13.8047C6.32031 13.9297 6.48988 13.9999 6.66669 13.9999C6.8435 13.9999 7.01307 13.9297 7.13809 13.8047C7.26312 13.6797 7.33335 13.5101 7.33335 13.3333C7.33192 12.7685 7.18674 12.2135 6.91148 11.7203C6.63623 11.2272 6.23996 10.8123 5.76002 10.5146ZM4.00002 9.99995C3.80224 9.99995 3.6089 9.9413 3.44445 9.83142C3.28 9.72153 3.15183 9.56536 3.07614 9.38263C3.00045 9.1999 2.98065 8.99884 3.01924 8.80486C3.05782 8.61087 3.15306 8.43269 3.29291 8.29284C3.43277 8.15299 3.61095 8.05775 3.80493 8.01916C3.99891 7.98058 4.19998 8.00038 4.3827 8.07607C4.56543 8.15175 4.72161 8.27993 4.83149 8.44438C4.94137 8.60883 5.00002 8.80217 5.00002 8.99995C5.00002 9.26516 4.89466 9.51952 4.70713 9.70705C4.51959 9.89459 4.26524 9.99995 4.00002 9.99995Z"
+                    fill="#D0D0D0"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextGray}>
+                  취업연계(취업 알선)
+                </span>
+              </div>
+              <div className={styles.planInfoFeature}>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                >
+                  <path
+                    fillRule="evenodd"
+                    clipRule="evenodd"
+                    d="M11 13.5H5C4.60218 13.5 4.22064 13.342 3.93934 13.0607C3.65804 12.7794 3.5 12.3978 3.5 12V4C3.5 3.60218 3.65804 3.22064 3.93934 2.93934C4.22064 2.65804 4.60218 2.5 5 2.5H7.757C7.95409 2.50004 8.14923 2.53892 8.33128 2.61442C8.51334 2.68992 8.67873 2.80055 8.818 2.94L12.061 6.182C12.342 6.4632 12.4999 6.84445 12.5 7.242V12C12.5 12.3978 12.342 12.7794 12.0607 13.0607C11.7794 13.342 11.3978 13.5 11 13.5ZM13.121 5.121C13.3997 5.39963 13.6208 5.73045 13.7716 6.09455C13.9224 6.45865 14 6.8489 14 7.243V12C14 12.7956 13.6839 13.5587 13.1213 14.1213C12.5587 14.6839 11.7956 15 11 15H5C4.20435 15 3.44129 14.6839 2.87868 14.1213C2.31607 13.5587 2 12.7956 2 12V4C2 3.20435 2.31607 2.44129 2.87868 1.87868C3.44129 1.31607 4.20435 1 5 1H7.757C8.1511 0.999953 8.54135 1.07756 8.90545 1.22838C9.26955 1.3792 9.60037 1.60029 9.879 1.879L13.121 5.121ZM8.53066 6.729C8.38914 6.59245 8.19966 6.51694 8.00301 6.51874C7.80636 6.52054 7.61829 6.59951 7.4793 6.73863C7.34031 6.87775 7.26152 7.0659 7.2599 7.26255C7.25829 7.4592 7.33397 7.64861 7.47066 7.79L8.19066 8.51L6.00066 8.51C5.80175 8.51 5.61098 8.58902 5.47033 8.72967C5.32968 8.87032 5.25066 9.06109 5.25066 9.26C5.25066 9.45891 5.32968 9.64968 5.47033 9.79033C5.61098 9.93098 5.80175 10.01 6.00066 10.01H8.19066L7.47066 10.73C7.33818 10.8722 7.26606 11.0602 7.26948 11.2545C7.27291 11.4488 7.35163 11.6342 7.48904 11.7716C7.62645 11.909 7.81184 11.9877 8.00614 11.9912C8.20044 11.9946 8.38849 11.9225 8.53066 11.79L10.5307 9.79C10.6711 9.64937 10.75 9.45875 10.75 9.26C10.75 9.06125 10.6711 8.87063 10.5307 8.73L8.53066 6.729Z"
+                    fill="#D0D0D0"
+                  />
+                </svg>
+                <span className={styles.planInfoFeatureTextGray}>
+                  행정대행서비스
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {showSticky && (
+          <div className={styles.stickyButton}>
+            <div className={styles.stickyButtonInner}>
+              <button
+                className={styles.subscribeButton}
+                onClick={() => handleSheetOpen('premium')}
+              >
+                한평생올케어 구독하기
+              </button>
+            </div>
+          </div>
+        )}
+        {showSheet && (
+          <>
+            <div className={styles.modalOverlay} onClick={handleSheetClose} />
+            <div
+              className={`${styles.subscribeSheet} ${sheetTransitionEnabled ? styles.withTransition : styles.dragging}`}
+              style={{ transform: `translateX(-50%) translateY(${dragY}px)` }}
+            >
               <div className={styles.sheetHandleContainer}>
                 <BottomSheetHandle
                   onClick={handleSheetClose}
@@ -360,314 +770,574 @@ export default function Home() {
                 />
               </div>
               <div className={styles.sheetTitle}>한평생 올케어 월간 이용권</div>
-            <div className={styles.sheetSub}>월 <span className={styles.sheetPrice}>20,000원</span> 결제</div>
-            <hr className={styles.sheetDivider} />
-            <div className={styles.sheetAgreeRow}>
-              <span className={styles.sheetAgreeAll}>모두 동의합니다.</span>
-              <span
-                className={`${styles.sheetCheckbox} ${agreeAll ? styles.sheetCheckboxChecked : ''}`}
-                onClick={handleAgreeAll}
+              <div
+                style={{
+                  width: "100%",
+                  marginTop: "12px",
+                  marginBottom: "12px",
+                }}
               >
-                {agreeAll && (
-                  <svg className={styles.sheetCheckIcon} xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 9 9" fill="none">
-                    <path fillRule="evenodd" clipRule="evenodd" d="M8.07976 1.91662C8.18521 2.0221 8.24445 2.16515 8.24445 2.31431C8.24445 2.46346 8.18521 2.60651 8.07976 2.71199L3.86364 6.92812C3.80792 6.98385 3.74177 7.02806 3.66896 7.05822C3.59616 7.08838 3.51813 7.1039 3.43932 7.1039C3.36052 7.1039 3.28249 7.08838 3.20968 7.05822C3.13688 7.02806 3.07073 6.98385 3.01501 6.92812L0.92026 4.83374C0.866535 4.78186 0.823683 4.71979 0.794203 4.65116C0.764723 4.58253 0.749205 4.50872 0.748556 4.43403C0.747907 4.35934 0.76214 4.28527 0.790423 4.21615C0.818706 4.14702 0.860473 4.08421 0.913288 4.0314C0.966102 3.97858 1.02891 3.93682 1.09804 3.90853C1.16716 3.88025 1.24123 3.86602 1.31592 3.86667C1.39061 3.86731 1.46442 3.88283 1.53305 3.91231C1.60168 3.94179 1.66375 3.98464 1.71563 4.03837L3.43914 5.76187L7.28401 1.91662C7.33625 1.86435 7.39827 1.82288 7.46654 1.79459C7.53481 1.7663 7.60799 1.75174 7.68189 1.75174C7.75579 1.75174 7.82896 1.7663 7.89723 1.79459C7.9655 1.82288 8.02752 1.86435 8.07976 1.91662Z" fill="#fff"/>
-                  </svg>
-                )}
-              </span>
-            </div>
-            {[
-              <span className={styles.sheetAgreeSub}>이용권 정기결제 동의 <span className={styles.sheetAgreeRequired}>(필수)</span></span>,
-              <span>
-                <span className={styles.sheetAgreeUnderline} onClick={() => setShowTerms(true)}>이용약관</span>
-                <span className={styles.sheetAgreeAnd}> 및 </span>
-                <span className={styles.sheetAgreeUnderline} onClick={() => setShowSubscriptionTerms(true)}>결제 및 구독 유의사항</span>
-                <span className={styles.sheetAgreeRequired}> (필수)</span>
-              </span>,
-              <span>
-                <span
-                  className={styles.sheetAgreeUnderline}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => setShowThirdPartyProvision(true)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowThirdPartyProvision(true); }}
-                >멤버십 제3자 개인정보 제공</span>
-                <span className={styles.sheetAgreeRequired}> (필수)</span>
-              </span>
-            ].map((txt, idx: number) => (
-              <div className={styles.sheetAgreeRow} key={idx}>
-                {txt}
-                <span
-                  className={`${styles.sheetCheckbox} ${agreements[idx] ? styles.sheetCheckboxChecked : ''}`}
-                  onClick={() => handleAgreement(idx)}
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#656565",
+                    marginBottom: "8px",
+                  }}
                 >
-                  {agreements[idx] && (
-                    <svg className={styles.sheetCheckIcon} xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 9 9" fill="none">
-                      <path fillRule="evenodd" clipRule="evenodd" d="M8.07976 1.91662C8.18521 2.0221 8.24445 2.16515 8.24445 2.31431C8.24445 2.46346 8.18521 2.60651 8.07976 2.71199L3.86364 6.92812C3.80792 6.98385 3.74177 7.02806 3.66896 7.05822C3.59616 7.08838 3.51813 7.1039 3.43932 7.1039C3.36052 7.1039 3.28249 7.08838 3.20968 7.05822C3.13688 7.02806 3.07073 6.98385 3.01501 6.92812L0.92026 4.83374C0.866535 4.78186 0.823683 4.71979 0.794203 4.65116C0.764723 4.58253 0.749205 4.50872 0.748556 4.43403C0.747907 4.35934 0.76214 4.28527 0.790423 4.21615C0.818706 4.14702 0.860473 4.08421 0.913288 4.0314C0.966102 3.97858 1.02891 3.93682 1.09804 3.90853C1.16716 3.88025 1.24123 3.86602 1.31592 3.86667C1.39061 3.86731 1.46442 3.88283 1.53305 3.91231C1.60168 3.94179 1.66375 3.98464 1.71563 4.03837L3.43914 5.76187L7.28401 1.91662C7.33625 1.86435 7.39827 1.82288 7.46654 1.79459C7.53481 1.7663 7.60799 1.75174 7.68189 1.75174C7.75579 1.75174 7.82896 1.7663 7.89723 1.79459C7.9655 1.82288 8.02752 1.86435 8.07976 1.91662Z" fill="#fff"/>
+                  선택된 요금제
+                </div>
+                <div style={{ display: "flex", gap: "8px", width: "100%" }}>
+                  {PLANS.map((plan) => (
+                    selectedPlan === plan.id && (
+                      <div
+                        key={plan.id}
+                        style={{
+                          flex: 1,
+                          padding: "10px 8px",
+                          borderRadius: "8px",
+                          border: "2px solid #0051ff",
+                          background: "#f0f6ff",
+                          fontSize: "12px",
+                          fontWeight: "700",
+                          color: "#0051ff",
+                          transition: "all 0.2s",
+                        }}
+                      >
+                        <div style={{ fontSize: "10px", marginBottom: "2px" }}>
+                          {plan.name}
+                        </div>
+                        <div style={{ fontSize: "11px" }}>
+                          ₩{plan.price.toLocaleString()}
+                        </div>
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
+              <div className={styles.sheetSub}>
+                월{" "}
+                <span className={styles.sheetPrice}>
+                  {PLANS.find(
+                    (p) => p.id === selectedPlan,
+                  )?.price.toLocaleString()}
+                  원
+                </span>{" "}
+                결제
+              </div>
+              <hr className={styles.sheetDivider} />
+              <div className={styles.sheetAgreeRow}>
+                <span className={styles.sheetAgreeAll}>모두 동의합니다.</span>
+                <span
+                  className={`${styles.sheetCheckbox} ${agreeAll ? styles.sheetCheckboxChecked : ""}`}
+                  onClick={handleAgreeAll}
+                >
+                  {agreeAll && (
+                    <svg
+                      className={styles.sheetCheckIcon}
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="9"
+                      height="9"
+                      viewBox="0 0 9 9"
+                      fill="none"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M8.07976 1.91662C8.18521 2.0221 8.24445 2.16515 8.24445 2.31431C8.24445 2.46346 8.18521 2.60651 8.07976 2.71199L3.86364 6.92812C3.80792 6.98385 3.74177 7.02806 3.66896 7.05822C3.59616 7.08838 3.51813 7.1039 3.43932 7.1039C3.36052 7.1039 3.28249 7.08838 3.20968 7.05822C3.13688 7.02806 3.07073 6.98385 3.01501 6.92812L0.92026 4.83374C0.866535 4.78186 0.823683 4.71979 0.794203 4.65116C0.764723 4.58253 0.749205 4.50872 0.748556 4.43403C0.747907 4.35934 0.76214 4.28527 0.790423 4.21615C0.818706 4.14702 0.860473 4.08421 0.913288 4.0314C0.966102 3.97858 1.02891 3.93682 1.09804 3.90853C1.16716 3.88025 1.24123 3.86602 1.31592 3.86667C1.39061 3.86731 1.46442 3.88283 1.53305 3.91231C1.60168 3.94179 1.66375 3.98464 1.71563 4.03837L3.43914 5.76187L7.28401 1.91662C7.33625 1.86435 7.39827 1.82288 7.46654 1.79459C7.53481 1.7663 7.60799 1.75174 7.68189 1.75174C7.75579 1.75174 7.82896 1.7663 7.89723 1.79459C7.9655 1.82288 8.02752 1.86435 8.07976 1.91662Z"
+                        fill="#fff"
+                      />
                     </svg>
                   )}
                 </span>
               </div>
-            ))}
-            <button 
-              className={`${styles.sheetButton} ${!agreeAll ? styles.sheetButtonDisabled : ''}`} 
-              onClick={async () => {
-                if (!agreeAll) return;
-                
-                if (!isPayAppLoaded || !window.PayApp) {
-                  alert('결제 시스템을 로딩 중입니다. 잠시 후 다시 시도해주세요.');
-                  return;
-                }
+              {[
+                <span className={styles.sheetAgreeSub}>
+                  이용권 정기결제 동의{" "}
+                  <span className={styles.sheetAgreeRequired}>(필수)</span>
+                </span>,
+                <span>
+                  <span
+                    className={styles.sheetAgreeUnderline}
+                    onClick={() => setShowTerms(true)}
+                  >
+                    이용약관
+                  </span>
+                  <span className={styles.sheetAgreeAnd}> 및 </span>
+                  <span
+                    className={styles.sheetAgreeUnderline}
+                    onClick={() => setShowSubscriptionTerms(true)}
+                  >
+                    결제 및 구독 유의사항
+                  </span>
+                  <span className={styles.sheetAgreeRequired}> (필수)</span>
+                </span>,
+                <span>
+                  <span
+                    className={styles.sheetAgreeUnderline}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setShowThirdPartyProvision(true)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ")
+                        setShowThirdPartyProvision(true);
+                    }}
+                  >
+                    멤버십 제3자 개인정보 제공
+                  </span>
+                  <span className={styles.sheetAgreeRequired}> (필수)</span>
+                </span>,
+              ].map((txt, idx: number) => (
+                <div className={styles.sheetAgreeRow} key={idx}>
+                  {txt}
+                  <span
+                    className={`${styles.sheetCheckbox} ${agreements[idx] ? styles.sheetCheckboxChecked : ""}`}
+                    onClick={() => handleAgreement(idx)}
+                  >
+                    {agreements[idx] && (
+                      <svg
+                        className={styles.sheetCheckIcon}
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="9"
+                        height="9"
+                        viewBox="0 0 9 9"
+                        fill="none"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          clipRule="evenodd"
+                          d="M8.07976 1.91662C8.18521 2.0221 8.24445 2.16515 8.24445 2.31431C8.24445 2.46346 8.18521 2.60651 8.07976 2.71199L3.86364 6.92812C3.80792 6.98385 3.74177 7.02806 3.66896 7.05822C3.59616 7.08838 3.51813 7.1039 3.43932 7.1039C3.36052 7.1039 3.28249 7.08838 3.20968 7.05822C3.13688 7.02806 3.07073 6.98385 3.01501 6.92812L0.92026 4.83374C0.866535 4.78186 0.823683 4.71979 0.794203 4.65116C0.764723 4.58253 0.749205 4.50872 0.748556 4.43403C0.747907 4.35934 0.76214 4.28527 0.790423 4.21615C0.818706 4.14702 0.860473 4.08421 0.913288 4.0314C0.966102 3.97858 1.02891 3.93682 1.09804 3.90853C1.16716 3.88025 1.24123 3.86602 1.31592 3.86667C1.39061 3.86731 1.46442 3.88283 1.53305 3.91231C1.60168 3.94179 1.66375 3.98464 1.71563 4.03837L3.43914 5.76187L7.28401 1.91662C7.33625 1.86435 7.39827 1.82288 7.46654 1.79459C7.53481 1.7663 7.60799 1.75174 7.68189 1.75174C7.75579 1.75174 7.82896 1.7663 7.89723 1.79459C7.9655 1.82288 8.02752 1.86435 8.07976 1.91662Z"
+                          fill="#fff"
+                        />
+                      </svg>
+                    )}
+                  </span>
+                </div>
+              ))}
+              <button
+                className={`${styles.sheetButton} ${!agreeAll ? styles.sheetButtonDisabled : ""}`}
+                onClick={async () => {
+                  if (!agreeAll) return;
 
-                try {
-                  // 로그인 체크
-                  const token = localStorage.getItem('token');
-                  if (!token) {
-                    setShowLoginModal(true);
+                  if (!isPayAppLoaded || !window.PayApp) {
+                    alert(
+                      "결제 시스템을 로딩 중입니다. 잠시 후 다시 시도해주세요.",
+                    );
                     return;
                   }
-      {showLoginModal && (
-        <AlertModal
-          message="로그인이 필요합니다."
-          onClose={() => {
-            setShowLoginModal(false);
-            setShowSheet(false);
-            router.push('/auth/login');
-          }}
-        />
-      )}
 
-                  // API를 통해 사용자 정보 가져오기
-                  const userResponse = await fetch('/api/user/profile', {
-                    headers: {
-                      'Authorization': `Bearer ${token}`
-                    }
-                  });
-
-                  if (!userResponse.ok) {
-                    alert('사용자 정보를 가져올 수 없습니다. 다시 로그인해주세요.');
-                    localStorage.removeItem('token');
-                    router.push('/auth/login');
-                    return;
-                  }
-
-                  const { name, phone } = await userResponse.json();
-
-                  if (!name || !phone) {
-                    alert('사용자 정보(이름, 연락처)가 없습니다. 회원정보를 먼저 입력해주세요.');
-                    return;
-                  }
-
-                  // localStorage에서 토큰 가져와서 user_id 추출
-                  let userId = '';
                   try {
-                    const payload = JSON.parse(atob(token.split('.')[1]));
-                    userId = payload.userId || '';
-                  } catch (e) {
-                    console.error('Token parse error:', e);
+                    // 로그인 체크
+                    const token = localStorage.getItem("token");
+                    if (!token) {
+                      setShowLoginModal(true);
+                      return;
+                    }
+                    {
+                      showLoginModal && (
+                        <AlertModal
+                          message="로그인이 필요합니다."
+                          onClose={() => {
+                            setShowLoginModal(false);
+                            setShowSheet(false);
+                            router.push("/auth/login");
+                          }}
+                        />
+                      );
+                    }
+
+                    // API를 통해 사용자 정보 가져오기
+                    const userResponse = await fetch("/api/user/profile", {
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                      },
+                    });
+
+                    if (!userResponse.ok) {
+                      alert(
+                        "사용자 정보를 가져올 수 없습니다. 다시 로그인해주세요.",
+                      );
+                      localStorage.removeItem("token");
+                      router.push("/auth/login");
+                      return;
+                    }
+
+                    const { name, phone } = await userResponse.json();
+
+                    if (!name || !phone) {
+                      alert(
+                        "사용자 정보(이름, 연락처)가 없습니다. 회원정보를 먼저 입력해주세요.",
+                      );
+                      return;
+                    }
+
+                    // localStorage에서 토큰 가져와서 user_id 추출
+                    let userId = "";
+                    try {
+                      const payload = JSON.parse(atob(token.split(".")[1]));
+                      userId = payload.userId || "";
+                    } catch (e) {
+                      console.error("Token parse error:", e);
+                    }
+
+                    // 현재 도메인 가져오기 (배포 환경 대응)
+                    const baseUrl = window.location.origin;
+                    const shopName =
+                      process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME ||
+                      "한평생올케어";
+                    const payappUserId =
+                      process.env.NEXT_PUBLIC_PAYAPP_USER_ID || "";
+
+                    if (!payappUserId) {
+                      alert(
+                        "결제 시스템 설정 오류입니다. 관리자에게 문의하세요.",
+                      );
+                      console.error("PAYAPP_USER_ID is not set");
+                      return;
+                    }
+
+                    // PayApp 초기화
+                    window.PayApp.setDefault("userid", payappUserId);
+                    window.PayApp.setDefault("shopname", shopName);
+
+                    // 현재 날짜 기준으로 설정
+                    const now = new Date();
+
+                    // 구독 만료일 계산 (1년 후)
+                    const expireDate = new Date(now);
+                    expireDate.setFullYear(expireDate.getFullYear() + 1);
+                    const rebillExpire = expireDate.toISOString().split("T")[0]; // YYYY-MM-DD 형식
+
+                    // 결제일: 오늘 날짜 (1~31)
+                    const rebillCycleMonth = now.getDate().toString();
+
+                    // 선택된 플랜 정보 가져오기
+                    const selectedPlanInfo = PLANS.find(
+                      (p) => p.id === selectedPlan,
+                    );
+                    if (!selectedPlanInfo) {
+                      alert("선택된 요금제가 없습니다.");
+                      return;
+                    }
+
+                    // user_id를 var1에 포함
+                    const orderData = {
+                      orderId: `ORDER-${Date.now()}`,
+                      userId: userId,
+                      phone: phone,
+                      name: name,
+                      mode: "new",
+                      plan: selectedPlan,
+                      price: selectedPlanInfo.price,
+                    };
+
+                    // 정기결제 정보 설정
+                    const planDisplayName = `올케어구독상품-${selectedPlanInfo.name}`;
+                    window.PayApp.setParam("goodname", planDisplayName);
+                    window.PayApp.setParam(
+                      "goodprice",
+                      selectedPlanInfo.price.toString(),
+                    );
+                    window.PayApp.setParam("recvphone", phone);
+                    window.PayApp.setParam("buyername", name);
+                    window.PayApp.setParam("smsuse", "n");
+                    window.PayApp.setParam("rebillCycleType", "Month");
+                    window.PayApp.setParam(
+                      "rebillCycleMonth",
+                      rebillCycleMonth,
+                    );
+                    window.PayApp.setParam("rebillExpire", rebillExpire);
+                    window.PayApp.setParam(
+                      "feedbackurl",
+                      `${baseUrl}/api/payments/webhook`,
+                    );
+                    window.PayApp.setParam(
+                      "returnurl",
+                      `${baseUrl}/payment/success`,
+                    );
+                    window.PayApp.setParam("var1", JSON.stringify(orderData));
+
+                    // 정기결제 호출
+                    window.PayApp.rebill();
+
+                    // 시트 닫기
+                    setShowSheet(false);
+                  } catch (error) {
+                    console.error("Payment error:", error);
+                    alert("결제 처리 중 오류가 발생했습니다.");
                   }
-
-                  // 현재 도메인 가져오기 (배포 환경 대응)
-                  const baseUrl = window.location.origin;
-                  const shopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어';
-                  const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
-
-                  if (!payappUserId) {
-                    alert('결제 시스템 설정 오류입니다. 관리자에게 문의하세요.');
-                    console.error('PAYAPP_USER_ID is not set');
-                    return;
-                  }
-
-                  // PayApp 초기화
-                  window.PayApp.setDefault('userid', payappUserId);
-                  window.PayApp.setDefault('shopname', shopName);
-                  
-                  // 현재 날짜 기준으로 설정
-                  const now = new Date();
-                  
-                  // 구독 만료일 계산 (1년 후)
-                  const expireDate = new Date(now);
-                  expireDate.setFullYear(expireDate.getFullYear() + 1);
-                  const rebillExpire = expireDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
-                  
-                  // 결제일: 오늘 날짜 (1~31)
-                  const rebillCycleMonth = now.getDate().toString();
-                  
-                  // user_id를 var1에 포함
-                  const orderData = {
-                    orderId: `ORDER-${Date.now()}`,
-                    userId: userId,
-                    phone: phone,
-                    name: name,
-                    mode: 'new'
-                  };
-                  
-                  // 정기결제 정보 설정
-                  window.PayApp.setParam('goodname', '올케어구독상품');
-                  window.PayApp.setParam('goodprice', '20000');
-                  window.PayApp.setParam('recvphone', phone);
-                  window.PayApp.setParam('buyername', name);
-                  window.PayApp.setParam('smsuse', 'n');
-                  window.PayApp.setParam('rebillCycleType', 'Month');
-                  window.PayApp.setParam('rebillCycleMonth', rebillCycleMonth);
-                  window.PayApp.setParam('rebillExpire', rebillExpire);
-                  window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
-                  window.PayApp.setParam('returnurl', `${baseUrl}/payment/success`);
-                  window.PayApp.setParam('var1', JSON.stringify(orderData));
-                  
-              
-                  
-                  // 정기결제 호출
-                  window.PayApp.rebill();
-                  
-                  // 시트 닫기
-                  setShowSheet(false);
-                } catch (error) {
-                  console.error('Payment error:', error);
-                  alert('결제 처리 중 오류가 발생했습니다.');
-                }
-              }}
-              disabled={!agreeAll || !isPayAppLoaded}
-            >
-              {!isPayAppLoaded ? (isPayAppLoading ? '결제 시스템 로딩중...' : '결제 시스템 로딩 실패') : '한평생올케어 시작하기'}
-            </button>
-          </div>
-        </>
-      )}
-      {showThirdPartyProvision && (
-        <Portal>
-          <div className={styles.modalOverlay} onClick={() => setShowThirdPartyProvision(false)} />
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <button className={styles.modalCloseBtn} onClick={() => setShowThirdPartyProvision(false)}>&times;</button>
-            <div className={styles.modalTitle}>멤버십 제3자 개인정보 제공 안내</div>
-            <div className={styles.modalBody}>
-              <div>
-                본인은 한평생올케어 멤버십 서비스 이용에 동의함에 따라,
-한평생교육이 멤버십 서비스 제공 및 운영을 목적으로 아래와 같이 개인정보를 제3자에게 제공하는 것에 동의합니다.
-              </div>
-              <div style={{ height: 8 }} />
-              <div>
-                <strong>1. 제공받는 자</strong><br/>
-                한평생그룹 계열사<br/>
-                한평생실습 멤버십 운영 및 실습 연계 기관
-              </div>
-              <div style={{ height: 8 }} />
-              <div>
-                <strong>2. 제공 목적</strong><br/>
-                한평생실습 멤버십 서비스 제공<br/>
-                실습 과정 운영 및 관리<br/>
-                관련 행정 처리 및 고객 지원
-              </div>
-              <div style={{ height: 8 }} />
-              <div>
-                <strong>3. 제공하는 개인정보 항목</strong><br/>
-                이름, 연락처(휴대전화번호), 이메일<br/>
-                ※ 서비스 제공에 필요한 최소한의 정보만 제공됩니다.
-              </div>
-              <div style={{ height: 8 }} />
-              <div>
-                <strong>4. 보유 및 이용 기간</strong><br/>
-                멤버십 서비스 이용 기간 동안 보유·이용<br/>
-                관련 법령에 따라 보존이 필요한 경우 해당 기간까지 보관
-              </div>
-              <div style={{ height: 8 }} />
-              <div>
-                <strong>5. 동의 거부 권리 및 불이익 안내</strong><br/>
-                개인정보 제3자 제공에 대한 동의를 거부할 수 있습니다.<br/>
-                다만, 동의를 거부할 경우 한평생실습 멤버십 서비스 및 실습 연계 제공이 제한될 수 있습니다.
-              </div>
+                }}
+                disabled={!agreeAll || !isPayAppLoaded}
+              >
+                {!isPayAppLoaded
+                  ? isPayAppLoading
+                    ? "결제 시스템 로딩중..."
+                    : "결제 시스템 로딩 실패"
+                  : "한평생올케어 시작하기"}
+              </button>
             </div>
-            
-          </div>
-        </Portal>
-      )}
-      {showTerms && (
-        <>
-          <div className={styles.modalOverlay} onClick={() => setShowTerms(false)} />
-          <div className={styles.modalContent}>
-            <button className={styles.modalCloseBtn} onClick={() => setShowTerms(false)}>&times;</button>
-            <div className={styles.modalTitle}>이용약관</div>
-            <div className={styles.modalBody}>
-제1조 (서비스의 정의)<br/>
-본 서비스는 학습자의 원활한 학위 취득 및 자격증 취득을 돕기 위해 다음의 항목을 제공하는 1년 정기 구독형 서비스입니다.<br/>
-- 학점은행제 수강료 할인 및 미이수 전액환급 보장<br/>
-- 한평생 직업훈련 무료수강 이용권<br/>
-- 올케어 실습 매칭 시스템 이용권<br/>
-<br/>
-제2조 (혜택별 이행 조건 및 면책)<br/>
-- 학점은행제 수강료 할인 및 미이수 전액환급 보장: 본 혜택은 한평생교육에서 지정한 학점은행제 교육기관에서 수강하는 경우에만 적용됩니다. 회사가 지정하지 않은 타 교육기관에서 개별적으로 수강한 경우에는 할인 및 환급 보장 대상에서 제외됩니다. 출석률 100% 달성 및 모든 시험(중간·기말) 응시 조건을 충족했음에도 미이수(F학점 등)가 발생한 경우에 한해 보장됩니다.<br/>
-- 한평생 직업훈련 무료수강 이용권: 한평생교육은 한평생직업훈련 무료수강 이용권을 제공하며, 학습자는 직접 외부 사이트에 가입 후 이를 등록해야 합니다. 수강료 외 자격증 발급비 등 행정 수수료는 본인 부담입니다.<br/>
-- 실습 매칭 시스템 이용권: 한평생교육은 전국의 실습처 정보를 분류하여 제공하는 '정보 제공자'의 역할을 수행합니다.<br/>
-학습자는 시스템 내 게시된 실습처별 상세 설명 및 주의사항을 숙지해야 하며, 이를 확인하지 않아 발생한 불이익은 회사가 책임지지 않습니다.<br/>
-실습 신청 및 서류(신청서, 증명서 등) 제출은 학습자 본인이 직접 수행해야 하며, 본인 부주의로 인한 누락은 한평생교육의 면책 사유입니다.<br/>
-실습 가능 여부 및 수강 신청 결과는 해당 기관의 내부 사정에 따라 변동될 수 있습니다.<br/>
-<br/>
-제3조 (환불 및 중도 해지)<br/>
-- 서비스 개시: 본 서비스는 결제 즉시 '수강료 할인 혜택' 및 '정보 열람 권한'이 부여되므로, 결제 완료 시 서비스 이용이 개시된 것으로 간주합니다.<br/>
-- 위약금: 중도 해지 시 총 결제 금액의 **[ ]%**를 행정 서비스 유지 및 해지 위약금으로 차감합니다.<br/>
-- 할인 회수: 1년 구독을 조건으로 제공된 혜택이므로, 중도 해지 시 이미 적용받은 수강료 할인 차액(정상가 - 할인가)을 공제한 후 잔여 금액을 환불합니다.<br/>
-            </div>
-          </div>
-        </>
-      )}
-      {showSubscriptionTerms && (
-        <>
-          <div className={styles.modalOverlay} onClick={() => setShowSubscriptionTerms(false)} />
-          <div className={styles.modalContent}>
-            <button className={styles.modalCloseBtn} onClick={() => setShowSubscriptionTerms(false)}>&times;</button>
-            <div className={styles.modalTitle}>구독 및 결제 안내</div>
-            <div className={styles.modalBody}>
-  <strong>[구독 및 결제 안내]</strong><br/>
-  • 본 상품은 <strong>1년 정기 구독 상품</strong>으로, 최초 가입일 기준 1년마다 자동 정기 결제가 발생합니다.<br/>
-  • 결제 완료 즉시 '수강료 할인 혜택'과 '올케어 매칭 시스템 접속 권한'이 활성화됩니다.<br/>
-  <br/>
-
-  <strong>[환불 및 해지 유의사항 - 필독]</strong><br/>
-  <strong>※ 본 상품은 디지털 콘텐츠 및 열람권이 포함된 상품으로, 아래 서비스 중 하나라도 이용(진입)한 경우 전자상거래법에 따라 청약철회 및 환불이 불가능합니다.</strong><br/>
-  <br/>
-  • <strong>환불 불가 기준 (서비스 이용 간주):</strong><br/>
-  &nbsp;&nbsp;- 학점은행제 수강신청 시 본 구독 할인 혜택을 적용받은 경우<br/>
-  &nbsp;&nbsp;- <strong>실습 매칭 시스템에 접속하여 정보를 열람(클릭)한 경우</strong><br/>
-  &nbsp;&nbsp;- 직업훈련 수강권(쿠폰 번호 등)을 확인하거나 발급받은 경우<br/>
-  <br/>
-  • <strong>중도 해지 시 정산:</strong><br/>
-  &nbsp;&nbsp;- 환불 가능 대상(미이용자)이라 하더라도, 중도 해지 시에는 [제공된 서비스의 정가 환산 금액] 및 결제 수수료를 차감한 후 정산됩니다. 차감액이 결제 대금을 초과할 경우 환불액은 발생하지 않습니다.<br/>
-  <br/>
-
-  <strong>[학습자 주의 의무 및 면책]</strong><br/>
-  • <strong>학습자 귀책:</strong> 실습기관 및 교육원별 공지 미숙지, 서류(선이수 증명서 등) 제출 누락, 기한 초과 등 학습자 본인의 과실로 발생한 실습 미이수 및 신청 거절에 대해 회사는 책임지지 않으며, 이를 이유로 환불을 요구할 수 없습니다.<br/>
-  <br/>
-  • <strong>손해배상 제한:</strong> 회사는 서비스 이용 과정에서 발생한 자격증 취득 지연, 취업 결과, 임금 손실 등 일체의 간접적·결과적 손해에 대해 배상 책임을 지지 않습니다.<br/>
-  <br/>
-  • <strong>별도 비용 안내:</strong> 직업훈련 수강권 이용 시 발생하는 자격증 발급 비용 등 행정 비용은 서비스 금액에 포함되어 있지 않으며, 본인 별도 부담입니다.<br/>
-</div>
-          </div>
-        </>
-      )}
-      <div className={styles.productNoticeSection}>
-        <div className={styles.productNoticeTitle}>상품고시</div>
-        {accordionList.map((item, idx) => (
-          <div className={styles.accordionItem} key={idx}>
+          </>
+        )}
+        {showThirdPartyProvision && (
+          <Portal>
             <div
-              className={styles.accordionHeader}
-              onClick={() => setOpenAccordion(openAccordion === idx ? null : idx)}
-            >
-              <span>{item.title}</span>
-              <span className={openAccordion === idx ? styles.accordionIcon + ' ' + styles.accordionIconOpen : styles.accordionIcon}>
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M17.9475 5.58042C17.7131 5.34608 17.3952 5.21444 17.0637 5.21444C16.7323 5.21444 16.4144 5.34608 16.18 5.58042L9.99249 11.7679L3.80499 5.58042C3.56924 5.35272 3.25349 5.22673 2.92574 5.22958C2.598 5.23243 2.28448 5.36389 2.05272 5.59565C1.82096 5.82741 1.6895 6.14092 1.68665 6.46867C1.6838 6.79642 1.8098 7.11217 2.0375 7.34792L9.10874 14.4192C9.34315 14.6535 9.66104 14.7852 9.99249 14.7852C10.3239 14.7852 10.6418 14.6535 10.8762 14.4192L17.9475 7.34792C18.1818 7.11351 18.3135 6.79563 18.3135 6.46417C18.3135 6.13272 18.1818 5.81483 17.9475 5.58042Z" fill="#919191"/>
-                </svg>
-              </span>
-            </div>
-            <div
-              className={openAccordion === idx ? styles.accordionContent + ' ' + styles.accordionContentOpen : styles.accordionContent}
-              dangerouslySetInnerHTML={{ __html: item.content }}
+              className={styles.modalOverlay}
+              onClick={() => setShowThirdPartyProvision(false)}
             />
-          </div>
-        ))}
-      </div>
-      <Footer force />
-    </main>
-    
+            <div
+              className={styles.modalContent}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                className={styles.modalCloseBtn}
+                onClick={() => setShowThirdPartyProvision(false)}
+              >
+                &times;
+              </button>
+              <div className={styles.modalTitle}>
+                멤버십 제3자 개인정보 제공 안내
+              </div>
+              <div className={styles.modalBody}>
+                <div>
+                  본인은 한평생올케어 멤버십 서비스 이용에 동의함에 따라,
+                  한평생교육이 멤버십 서비스 제공 및 운영을 목적으로 아래와 같이
+                  개인정보를 제3자에게 제공하는 것에 동의합니다.
+                </div>
+                <div style={{ height: 8 }} />
+                <div>
+                  <strong>1. 제공받는 자</strong>
+                  <br />
+                  한평생그룹 계열사
+                  <br />
+                  한평생실습 멤버십 운영 및 실습 연계 기관
+                </div>
+                <div style={{ height: 8 }} />
+                <div>
+                  <strong>2. 제공 목적</strong>
+                  <br />
+                  한평생실습 멤버십 서비스 제공
+                  <br />
+                  실습 과정 운영 및 관리
+                  <br />
+                  관련 행정 처리 및 고객 지원
+                </div>
+                <div style={{ height: 8 }} />
+                <div>
+                  <strong>3. 제공하는 개인정보 항목</strong>
+                  <br />
+                  이름, 연락처(휴대전화번호), 이메일
+                  <br />※ 서비스 제공에 필요한 최소한의 정보만 제공됩니다.
+                </div>
+                <div style={{ height: 8 }} />
+                <div>
+                  <strong>4. 보유 및 이용 기간</strong>
+                  <br />
+                  멤버십 서비스 이용 기간 동안 보유·이용
+                  <br />
+                  관련 법령에 따라 보존이 필요한 경우 해당 기간까지 보관
+                </div>
+                <div style={{ height: 8 }} />
+                <div>
+                  <strong>5. 동의 거부 권리 및 불이익 안내</strong>
+                  <br />
+                  개인정보 제3자 제공에 대한 동의를 거부할 수 있습니다.
+                  <br />
+                  다만, 동의를 거부할 경우 한평생실습 멤버십 서비스 및 실습 연계
+                  제공이 제한될 수 있습니다.
+                </div>
+              </div>
+            </div>
+          </Portal>
+        )}
+        {showTerms && (
+          <>
+            <div
+              className={styles.modalOverlay}
+              onClick={() => setShowTerms(false)}
+            />
+            <div className={styles.modalContent}>
+              <button
+                className={styles.modalCloseBtn}
+                onClick={() => setShowTerms(false)}
+              >
+                &times;
+              </button>
+              <div className={styles.modalTitle}>이용약관</div>
+              <div className={styles.modalBody}>
+                제1조 (서비스의 정의)
+                <br />
+                본 서비스는 학습자의 원활한 학위 취득 및 자격증 취득을 돕기 위해
+                다음의 항목을 제공하는 1년 정기 구독형 서비스입니다.
+                <br />
+                - 학점은행제 수강료 할인 및 미이수 전액환급 보장
+                <br />
+                - 한평생 직업훈련 무료수강 이용권
+                <br />
+                - 올케어 실습 매칭 시스템 이용권
+                <br />
+                <br />
+                제2조 (혜택별 이행 조건 및 면책)
+                <br />
+                - 학점은행제 수강료 할인 및 미이수 전액환급 보장: 본 혜택은
+                한평생교육에서 지정한 학점은행제 교육기관에서 수강하는 경우에만
+                적용됩니다. 회사가 지정하지 않은 타 교육기관에서 개별적으로
+                수강한 경우에는 할인 및 환급 보장 대상에서 제외됩니다. 출석률
+                100% 달성 및 모든 시험(중간·기말) 응시 조건을 충족했음에도
+                미이수(F학점 등)가 발생한 경우에 한해 보장됩니다.
+                <br />
+                - 한평생 직업훈련 무료수강 이용권: 한평생교육은 한평생직업훈련
+                무료수강 이용권을 제공하며, 학습자는 직접 외부 사이트에 가입 후
+                이를 등록해야 합니다. 수강료 외 자격증 발급비 등 행정 수수료는
+                본인 부담입니다.
+                <br />
+                - 실습 매칭 시스템 이용권: 한평생교육은 전국의 실습처 정보를
+                분류하여 제공하는 '정보 제공자'의 역할을 수행합니다.
+                <br />
+                학습자는 시스템 내 게시된 실습처별 상세 설명 및 주의사항을
+                숙지해야 하며, 이를 확인하지 않아 발생한 불이익은 회사가
+                책임지지 않습니다.
+                <br />
+                실습 신청 및 서류(신청서, 증명서 등) 제출은 학습자 본인이 직접
+                수행해야 하며, 본인 부주의로 인한 누락은 한평생교육의 면책
+                사유입니다.
+                <br />
+                실습 가능 여부 및 수강 신청 결과는 해당 기관의 내부 사정에 따라
+                변동될 수 있습니다.
+                <br />
+                <br />
+                제3조 (환불 및 중도 해지)
+                <br />
+                - 서비스 개시: 본 서비스는 결제 즉시 '수강료 할인 혜택' 및 '정보
+                열람 권한'이 부여되므로, 결제 완료 시 서비스 이용이 개시된
+                것으로 간주합니다.
+                <br />
+                - 위약금: 중도 해지 시 총 결제 금액의 **[ ]%**를 행정 서비스
+                유지 및 해지 위약금으로 차감합니다.
+                <br />
+                - 할인 회수: 1년 구독을 조건으로 제공된 혜택이므로, 중도 해지 시
+                이미 적용받은 수강료 할인 차액(정상가 - 할인가)을 공제한 후 잔여
+                금액을 환불합니다.
+                <br />
+              </div>
+            </div>
+          </>
+        )}
+        {showSubscriptionTerms && (
+          <>
+            <div
+              className={styles.modalOverlay}
+              onClick={() => setShowSubscriptionTerms(false)}
+            />
+            <div className={styles.modalContent}>
+              <button
+                className={styles.modalCloseBtn}
+                onClick={() => setShowSubscriptionTerms(false)}
+              >
+                &times;
+              </button>
+              <div className={styles.modalTitle}>구독 및 결제 안내</div>
+              <div className={styles.modalBody}>
+                <strong>[구독 및 결제 안내]</strong>
+                <br />• 본 상품은 <strong>1년 정기 구독 상품</strong>으로, 최초
+                가입일 기준 1년마다 자동 정기 결제가 발생합니다.
+                <br />
+                • 결제 완료 즉시 '수강료 할인 혜택'과 '올케어 매칭 시스템 접속
+                권한'이 활성화됩니다.
+                <br />
+                <br />
+                <strong>[환불 및 해지 유의사항 - 필독]</strong>
+                <br />
+                <strong>
+                  ※ 본 상품은 디지털 콘텐츠 및 열람권이 포함된 상품으로, 아래
+                  서비스 중 하나라도 이용(진입)한 경우 전자상거래법에 따라
+                  청약철회 및 환불이 불가능합니다.
+                </strong>
+                <br />
+                <br />• <strong>환불 불가 기준 (서비스 이용 간주):</strong>
+                <br />
+                &nbsp;&nbsp;- 학점은행제 수강신청 시 본 구독 할인 혜택을
+                적용받은 경우
+                <br />
+                &nbsp;&nbsp;-{" "}
+                <strong>
+                  실습 매칭 시스템에 접속하여 정보를 열람(클릭)한 경우
+                </strong>
+                <br />
+                &nbsp;&nbsp;- 직업훈련 수강권(쿠폰 번호 등)을 확인하거나
+                발급받은 경우
+                <br />
+                <br />• <strong>중도 해지 시 정산:</strong>
+                <br />
+                &nbsp;&nbsp;- 환불 가능 대상(미이용자)이라 하더라도, 중도 해지
+                시에는 [제공된 서비스의 정가 환산 금액] 및 결제 수수료를 차감한
+                후 정산됩니다. 차감액이 결제 대금을 초과할 경우 환불액은
+                발생하지 않습니다.
+                <br />
+                <br />
+                <strong>[학습자 주의 의무 및 면책]</strong>
+                <br />• <strong>학습자 귀책:</strong> 실습기관 및 교육원별 공지
+                미숙지, 서류(선이수 증명서 등) 제출 누락, 기한 초과 등 학습자
+                본인의 과실로 발생한 실습 미이수 및 신청 거절에 대해 회사는
+                책임지지 않으며, 이를 이유로 환불을 요구할 수 없습니다.
+                <br />
+                <br />• <strong>손해배상 제한:</strong> 회사는 서비스 이용
+                과정에서 발생한 자격증 취득 지연, 취업 결과, 임금 손실 등 일체의
+                간접적·결과적 손해에 대해 배상 책임을 지지 않습니다.
+                <br />
+                <br />• <strong>별도 비용 안내:</strong> 직업훈련 수강권 이용 시
+                발생하는 자격증 발급 비용 등 행정 비용은 서비스 금액에 포함되어
+                있지 않으며, 본인 별도 부담입니다.
+                <br />
+              </div>
+            </div>
+          </>
+        )}
+        <div className={styles.productNoticeSection}>
+          <div className={styles.productNoticeTitle}>상품고시</div>
+          {accordionList.map((item, idx) => (
+            <div className={styles.accordionItem} key={idx}>
+              <div
+                className={styles.accordionHeader}
+                onClick={() =>
+                  setOpenAccordion(openAccordion === idx ? null : idx)
+                }
+              >
+                <span>{item.title}</span>
+                <span
+                  className={
+                    openAccordion === idx
+                      ? styles.accordionIcon + " " + styles.accordionIconOpen
+                      : styles.accordionIcon
+                  }
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                  >
+                    <path
+                      d="M17.9475 5.58042C17.7131 5.34608 17.3952 5.21444 17.0637 5.21444C16.7323 5.21444 16.4144 5.34608 16.18 5.58042L9.99249 11.7679L3.80499 5.58042C3.56924 5.35272 3.25349 5.22673 2.92574 5.22958C2.598 5.23243 2.28448 5.36389 2.05272 5.59565C1.82096 5.82741 1.6895 6.14092 1.68665 6.46867C1.6838 6.79642 1.8098 7.11217 2.0375 7.34792L9.10874 14.4192C9.34315 14.6535 9.66104 14.7852 9.99249 14.7852C10.3239 14.7852 10.6418 14.6535 10.8762 14.4192L17.9475 7.34792C18.1818 7.11351 18.3135 6.79563 18.3135 6.46417C18.3135 6.13272 18.1818 5.81483 17.9475 5.58042Z"
+                      fill="#919191"
+                    />
+                  </svg>
+                </span>
+              </div>
+              <div
+                className={
+                  openAccordion === idx
+                    ? styles.accordionContent +
+                      " " +
+                      styles.accordionContentOpen
+                    : styles.accordionContent
+                }
+                dangerouslySetInnerHTML={{ __html: item.content }}
+              />
+            </div>
+          ))}
+        </div>
+        <Footer force />
+      </main>
     </>
   );
 }

@@ -1,6 +1,6 @@
 /* 구독중인 플랜 없음 - 작은 파란 버튼 */
 .startBtnSmall {
-  background: #0051FF;
+  background: #0051ff;
   color: #fff;
   font-size: 14px;
   font-family: Pretendard, sans-serif;
@@ -25,10 +25,11 @@
   width: 100%;
   justify-content: flex-end;
 }
-.cancelBtn, .refundBtn {
+.cancelBtn,
+.refundBtn {
   flex: none;
   background: none;
-  color: #9CA3AF;
+  color: #9ca3af;
   font-family: Pretendard, sans-serif;
   font-size: 16px;
   font-weight: 500;
@@ -42,17 +43,18 @@
   cursor: pointer;
 }
 
-.subscriptionMessages{
- color: var(--Grayscale-700, #3D3D3D);
-font-family: Pretendard;
-font-size: 16px;
-font-style: normal;
-font-weight: 600;
-line-height: 100%; /* 16px */
-margin-bottom: 10px;
+.subscriptionMessages {
+  color: var(--Grayscale-700, #3d3d3d);
+  font-family: Pretendard;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: 100%; /* 16px */
+  margin-bottom: 10px;
 }
 
-.cancelBtn:hover, .refundBtn:hover {
+.cancelBtn:hover,
+.refundBtn:hover {
   color: #656565;
   background: none;
 }
@@ -94,7 +96,7 @@ margin-bottom: 10px;
   font-family: Pretendard, sans-serif;
   font-style: normal;
   font-weight: 500;
-  color: var(--Grayscale-300, #D0D0D0);
+  color: var(--Grayscale-300, #d0d0d0);
   line-height: 100%;
   display: flex;
   align-items: center;
@@ -111,13 +113,13 @@ margin-bottom: 10px;
 }
 
 .detailRowCustom:nth-child(2) {
-  border-top: 1px solid #F2F2F2;
-  border-bottom: 1px solid #F2F2F2;
+  border-top: 1px solid #f2f2f2;
+  border-bottom: 1px solid #f2f2f2;
 }
 
 .detailRowCustom:nth-child(5) {
-  border-top: 1px solid #F2F2F2;
-  border-bottom: 1px solid #F2F2F2;
+  border-top: 1px solid #f2f2f2;
+  border-bottom: 1px solid #f2f2f2;
 }
 
 .detailLabelCustom {
@@ -146,35 +148,32 @@ margin-bottom: 10px;
   font-weight: 700;
   line-height: 100%;
 }
-.detailValueCustomBtn{
-    display: flex;
-padding: 6px 8px;
-justify-content: center;
-align-items: center;
-gap: 10px;
-border-radius: 999px;
-background: var(--Grayscale-200, #E4E4E4);
-color: var(--Grayscale-700, #3D3D3D);
-font-family: Pretendard;
-font-size: 12px;
-font-style: normal;
-font-weight: 600;
-line-height: normal;
+.detailValueCustomBtn {
+  display: flex;
+  padding: 6px 8px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 999px;
+  background: var(--Grayscale-200, #e4e4e4);
+  color: var(--Grayscale-700, #3d3d3d);
+  font-family: Pretendard;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 600;
+  line-height: normal;
 }
-
 
 .container {
   max-width: 500px;
   margin: 0 auto;
   min-height: calc(100vh - 200px);
-  padding : 61px 16px 0 16px; 
+  padding: 81px 16px;
 }
 
 .content {
-  
   border-radius: 12px;
-    padding: 40px 0px;
-  
+  padding: 40px 0px;
 }
 
 .header {
@@ -243,7 +242,7 @@ line-height: normal;
 
 .changePasswordBtn {
   padding: 8px 16px;
-  background-color: #0051FF;
+  background-color: #0051ff;
   color: white;
   border: none;
   border-radius: 6px;
@@ -254,7 +253,7 @@ line-height: normal;
 }
 
 .changePasswordBtn:hover {
-  background-color: #0041CC;
+  background-color: #0041cc;
 }
 
 /* 구독 정보 카드 */
@@ -271,22 +270,22 @@ line-height: normal;
   justify-content: space-between;
   align-items: center;
   border-radius: 8px;
-    background: var(--Blue-50, #E5EDFF);
-    padding: 20px 10px;
+  background: var(--Blue-50, #e5edff);
+  padding: 20px 10px;
 }
 
 .statusBadge {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  
+
   color: var(--Grayscale-900, #010101);
- font-family: Pretendard;
-font-size: 18px;
-font-style: normal;
-font-weight: 700;
-line-height: 100%; /* 18px */
-justify-content: space-between;
+  font-family: Pretendard;
+  font-size: 18px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 100%; /* 18px */
+  justify-content: space-between;
 }
 
 .statusBadgeWarning {
@@ -344,8 +343,8 @@ justify-content: space-between;
 .changePaymentBtn {
   padding: 6px 14px;
   background: white;
-  color: #0051FF;
-  border: 1px solid #0051FF;
+  color: #0051ff;
+  border: 1px solid #0051ff;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
@@ -354,7 +353,7 @@ justify-content: space-between;
 }
 
 .changePaymentBtn:hover {
-  background: #0051FF;
+  background: #0051ff;
   color: white;
 }
 
@@ -374,7 +373,7 @@ justify-content: space-between;
 .startBtn {
   flex: 1;
   padding: 14px 24px;
-  background: #0051FF;
+  background: #0051ff;
   color: white;
   border: none;
   border-radius: 8px;
@@ -388,42 +387,40 @@ justify-content: space-between;
   opacity: 0.9;
 }
 
-
 .cancelBtn,
 .renewBtn {
-color: var(--Grayscale-500, #919191);
-text-align: right;
-font-family: Pretendard;
-font-size: 14px;
-font-style: normal;
-font-weight: 500;
-line-height: 100%; /* 14px */
-text-decoration-line: underline;
-text-decoration-style: solid;
-text-decoration-skip-ink: auto;
-text-decoration-thickness: auto;
-text-underline-offset: auto;
-text-underline-position: from-font;
+  color: var(--Grayscale-500, #919191);
+  text-align: right;
+  font-family: Pretendard;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 100%; /* 14px */
+  text-decoration-line: underline;
+  text-decoration-style: solid;
+  text-decoration-skip-ink: auto;
+  text-decoration-thickness: auto;
+  text-underline-offset: auto;
+  text-underline-position: from-font;
 }
 
 .refundBtn {
-color: var(--Grayscale-500, #919191);
-text-align: right;
-font-family: Pretendard;
-font-size: 14px;
-font-style: normal;
-font-weight: 500;
-line-height: 100%; /* 14px */
-text-decoration-line: underline;
-text-decoration-style: solid;
-text-decoration-skip-ink: auto;
-text-decoration-thickness: auto;
-text-underline-offset: auto;
-text-underline-position: from-font;
+  color: var(--Grayscale-500, #919191);
+  text-align: right;
+  font-family: Pretendard;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: 100%; /* 14px */
+  text-decoration-line: underline;
+  text-decoration-style: solid;
+  text-decoration-skip-ink: auto;
+  text-decoration-thickness: auto;
+  text-underline-offset: auto;
+  text-underline-position: from-font;
 }
 
 .renewBtn {
-  
   color: #919191;
   border: none;
 }
@@ -562,7 +559,7 @@ text-underline-position: from-font;
   padding: 6px 12px;
   color: #fff; /* green */
   border-radius: 999px;
-background: var(--Blue-500, #0051FF);
+  background: var(--Blue-500, #0051ff);
   border-radius: 12px;
   font-size: 12px;
   font-weight: 700;
@@ -611,7 +608,7 @@ background: var(--Blue-500, #0051FF);
 }
 
 .backLink:hover {
-  color: #0051FF;
+  color: #0051ff;
 }
 
 /* 모달 스타일 */
@@ -638,7 +635,7 @@ background: var(--Blue-500, #0051FF);
   max-height: 80vh;
   padding: 24px 16px 16px 16px;
   z-index: 10021;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -706,7 +703,7 @@ background: var(--Blue-500, #0051FF);
 
 .input:focus {
   border-radius: 8px;
-  border-color: #0051FF;
+  border-color: #0051ff;
 }
 
 .errorBox {
@@ -737,8 +734,7 @@ background: var(--Blue-500, #0051FF);
   transition: opacity 0.2s;
 }
 
-
-.deleteConfirmBtn{
+.deleteConfirmBtn {
   flex: 1;
   padding: 14px 28px;
   background: #ef4444;
@@ -760,7 +756,7 @@ background: var(--Blue-500, #0051FF);
 }
 
 .submitBtn {
-  background-color: #0051FF;
+  background-color: #0051ff;
   color: white;
 }
 
@@ -804,17 +800,13 @@ background: var(--Blue-500, #0051FF);
 }
 
 .policySection {
-  
-  
-  
   border-radius: 8px;
-  
 }
 
 .policySection h4 {
   font-size: 15px;
   font-weight: 700;
-  
+
   margin: 0 0 12px 0;
 }
 
@@ -849,8 +841,6 @@ background: var(--Blue-500, #0051FF);
   font-size: 14px;
 }
 
-
-
 .policyWarning {
   margin-top: 20px;
   padding: 14px;
@@ -876,26 +866,26 @@ background: var(--Blue-500, #0051FF);
   transition: all 0.2s ease;
 }
 
-.paymentHeader{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.paymentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.moreBtn{
-    display: flex;
-padding: 8px 12px;
-justify-content: center;
-align-items: center;
-gap: 10px;
-border-radius: 999px;
-background: var(--Grayscale-200, #E4E4E4);
-color: var(--Grayscale-700, #3D3D3D);
-font-family: Pretendard;
-font-size: 14px;
-font-style: normal;
-font-weight: 700;
-line-height: normal;
+.moreBtn {
+  display: flex;
+  padding: 8px 12px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 999px;
+  background: var(--Grayscale-200, #e4e4e4);
+  color: var(--Grayscale-700, #3d3d3d);
+  font-family: Pretendard;
+  font-size: 14px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: normal;
 }
 
 /* 구독 시트 스타일 */
@@ -905,14 +895,14 @@ line-height: normal;
 
   padding: 30px 16px;
   border-radius: 16px 16px 0 0;
-  background: #FFF;
+  background: #fff;
   box-shadow: 0 -3px 24px 0 rgba(0, 0, 0, 0.18);
   position: fixed;
   left: 50%;
   bottom: 0;
   transform: translateX(-50%);
   z-index: 10021;
-  max-width: 360px;
+  max-width: 470px;
   width: 100%;
   min-height: 220px;
   animation: bottomSheetUp 0.28s cubic-bezier(0.4, 0, 0.2, 1);
@@ -939,7 +929,7 @@ line-height: normal;
 }
 
 .sheetSub {
-  color: var(--Grayscale-700, #3D3D3D);
+  color: var(--Grayscale-700, #3d3d3d);
   font-family: Pretendard, sans-serif;
   font-size: 14px;
   font-weight: 500;
@@ -947,7 +937,7 @@ line-height: normal;
 }
 
 .sheetPrice {
-  color: var(--Grayscale-700, #3D3D3D);
+  color: var(--Grayscale-700, #3d3d3d);
   font-family: Pretendard, sans-serif;
   font-size: 14px;
   font-weight: 700;
@@ -958,7 +948,7 @@ line-height: normal;
   width: 100%;
   height: 1px;
   border: none;
-  background: #F2F2F2;
+  background: #f2f2f2;
   margin: 8px 0;
 }
 
@@ -979,14 +969,14 @@ line-height: normal;
   justify-content: center;
   align-items: center;
   border-radius: 4px;
-  border: 1px solid var(--Gray-300, #D9D9D9);
-  background: var(--Gray-50, #FFF);
+  border: 1px solid var(--Gray-300, #d9d9d9);
+  background: var(--Gray-50, #fff);
   cursor: pointer;
 }
 
 .sheetCheckboxChecked {
-  background: var(--Blue-500, #0051FF);
-  border: 1px solid var(--Blue-500, #0051FF);
+  background: var(--Blue-500, #0051ff);
+  border: 1px solid var(--Blue-500, #0051ff);
 }
 
 .sheetCheckIcon {
@@ -1003,24 +993,26 @@ line-height: normal;
   align-items: center;
   height: 51px;
   border-radius: 999px;
-  background: var(--Blue-500, #0051FF);
+  background: var(--Blue-500, #0051ff);
   color: #fff;
   font-family: Pretendard, sans-serif;
   font-size: 16px;
   font-weight: 800;
   border: none;
   cursor: pointer;
-  transition: background 0.2s, opacity 0.2s;
+  transition:
+    background 0.2s,
+    opacity 0.2s;
 }
 
 .sheetButtonDisabled {
-  background: var(--Grayscale-300, #D9D9D9) !important;
+  background: var(--Grayscale-300, #d9d9d9) !important;
   cursor: not-allowed !important;
   opacity: 0.6;
 }
 
 .sheetAgreeLabel {
-  color: var(--Grayscale-800, #1D1D1D);
+  color: var(--Grayscale-800, #1d1d1d);
   font-family: Pretendard, sans-serif;
   font-size: 16px;
   font-style: normal;
@@ -1038,7 +1030,7 @@ line-height: normal;
 }
 
 .sheetAgreeUnderline {
-  color: var(--Grayscale-800, #1D1D1D);
+  color: var(--Grayscale-800, #1d1d1d);
   font-family: Pretendard, sans-serif;
   font-size: 14px;
   font-style: normal;
@@ -1067,7 +1059,7 @@ line-height: normal;
 }
 
 .sheetAgreeAll {
-  color: var(--Grayscale-800, #1D1D1D);
+  color: var(--Grayscale-800, #1d1d1d);
   font-family: Pretendard, sans-serif;
   font-size: 16px;
   font-style: normal;
@@ -1077,7 +1069,7 @@ line-height: normal;
 
 .sheetHandleContainer {
   position: absolute;
-    top: 5px;
+  top: 5px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10002;
@@ -1095,10 +1087,9 @@ line-height: normal;
   transition: transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-
-.paymentHistoryHeader{
- display: flex;
-justify-content: flex-end;
-align-items: center; 
-margin-bottom: 10px;
+.paymentHistoryHeader {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-bottom: 10px;
 }

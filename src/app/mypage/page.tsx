@@ -21,6 +21,39 @@ declare global {
   }
 }
 
+// 플랜 데이터
+interface Plan {
+  id: 'basic' | 'standard' | 'premium';
+  name: string;
+  price: number;
+  displayPrice: string;
+  image: string;
+}
+
+const PLANS: Plan[] = [
+  {
+    id: 'basic',
+    name: '베이직',
+    price: 9900,
+    displayPrice: '월 9,900원',
+    image: '/images/plan_basic.png',
+  },
+  {
+    id: 'standard',
+    name: '스탠다드',
+    price: 19900,
+    displayPrice: '월 19,900원',
+    image: '/images/plan_standard.png',
+  },
+  {
+    id: 'premium',
+    name: '프리미엄',
+    price: 29900,
+    displayPrice: '월 29,900원',
+    image: '/images/plan_premium.png',
+  },
+];
+
 interface UserInfo {
   email: string;
   name: string;
@@ -76,6 +109,10 @@ export default function MyPage() {
   const [showThirdPartyProvision, setShowThirdPartyProvision] = useState(false);
   const [isPayAppLoading, setIsPayAppLoading] = useState(false);
   const [payappLoadError, setPayappLoadError] = useState<string | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<'basic' | 'standard' | 'premium'>('standard');
+  const [showPlanChangeSheet, setShowPlanChangeSheet] = useState(false);
+  const [planChangeAgreeAll, setPlanChangeAgreeAll] = useState(false);
+  const [planChangeAgreements, setPlanChangeAgreements] = useState([false, false, false]);
 
   // Prevent background scroll when any modal or sheet is open
   useEffect(() => {
@@ -112,7 +149,7 @@ export default function MyPage() {
   }, []);
 
   useEffect(() => {
-    const modalOpen = showPasswordInline || showRefundModal || showSubscriptionSheet || showTerms || showSubscriptionTerms || showThirdPartyProvision;
+    const modalOpen = showPasswordInline || showRefundModal || showSubscriptionSheet || showTerms || showSubscriptionTerms || showThirdPartyProvision || showPlanChangeSheet;
     if (modalOpen) {
       document.body.style.overflow = 'hidden';
       document.documentElement.classList.add('no-scroll');
@@ -125,7 +162,7 @@ export default function MyPage() {
       document.body.style.overflow = '';
       document.documentElement.classList.remove('no-scroll');
     };
-  }, [showPasswordInline, showRefundModal, showSubscriptionSheet, showTerms, showSubscriptionTerms]);
+  }, [showPasswordInline, showRefundModal, showSubscriptionSheet, showTerms, showSubscriptionTerms, showPlanChangeSheet]);
 
   // Bottom sheet drag state (to match main page behavior)
   const [dragY, setDragY] = useState(0);
@@ -157,10 +194,30 @@ export default function MyPage() {
     setSheetTransitionEnabled(true);
     if (dy > THRESHOLD) {
       setShowSubscriptionSheet(false);
+      setShowPlanChangeSheet(false);
       setDragY(0);
     } else {
       setDragY(0);
     }
+  };
+
+  const handlePlanChangeSheetOpen = () => setShowPlanChangeSheet(true);
+  const handlePlanChangeSheetClose = () => setShowPlanChangeSheet(false);
+
+  const handlePlanChangeAgreeAll = () => {
+    setPlanChangeAgreeAll((prev) => {
+      const next = !prev;
+      setPlanChangeAgreements([next, next, next]);
+      return next;
+    });
+  };
+
+  const handlePlanChangeAgreement = (idx: number) => {
+    setPlanChangeAgreements((prev) => {
+      const next = prev.map((v, i) => (i === idx ? !v : v));
+      setPlanChangeAgreeAll(next.every(Boolean));
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -263,6 +320,14 @@ export default function MyPage() {
 
       const data = await response.json();
       setSubscription(data);
+
+      // 현재 구독 플랜 설정
+      if (data.plan) {
+        const currentPlan = PLANS.find(p => p.name === data.plan)?.id;
+        if (currentPlan) {
+          setSelectedPlan(currentPlan);
+        }
+      }
     } catch (err: any) {
       console.error('구독 정보 로드 실패:', err.message);
       // 구독 정보는 없을 수 있으므로 기본값 유지
@@ -398,6 +463,7 @@ export default function MyPage() {
       const token = localStorage.getItem('token');
 
       if (action === 'start') {
+        setSelectedPlan('standard'); // 구독 시작 시 스탠다드로 초기화
         setShowSubscriptionSheet(true);
       } else if (action === 'renew') {
         if (confirm('구독을 재갱신하시겠습니까? 다음 결제일부터 자동 결제가 재개됩니다.')) {
@@ -680,6 +746,36 @@ export default function MyPage() {
                     <span className={styles.statusBadgeActive}>구독중</span>
                   </div>
                   <div className={styles.subscriptionDetailsBox}>
+                    <div className={styles.detailRowCustom}>
+                      <span className={styles.detailLabelCustom}>요금제</span>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <span className={styles.detailValueCustom} style={{ fontWeight: 700, color: '#0051ff' }}>
+                            {subscription.plan || '플랜 정보 없음'}
+                          </span>
+                          {subscription.plan && (
+                            <span style={{ fontSize: '11px', color: '#999', fontWeight: 500 }}>
+                              ({PLANS.find(p => p.name === subscription.plan)?.displayPrice})
+                            </span>
+                          )}
+                        </div>
+                        <button
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            backgroundColor: '#0051ff',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontWeight: 500,
+                          }}
+                          onClick={handlePlanChangeSheetOpen}
+                        >
+                          플랜 변경
+                        </button>
+                      </div>
+                    </div>
                     <div className={styles.detailRowCustom}>
                       <span className={styles.detailLabelCustom}>이용기간</span>
                       <span className={styles.detailValueCustom}>{subscription.startDate} ~ {subscription.nextBillingDate}</span>
@@ -1009,7 +1105,33 @@ export default function MyPage() {
               />
             </div>
             <div className={styles.sheetTitle}>한평생 올케어 월간 이용권</div>
-            <div className={styles.sheetSub}>월 <span className={styles.sheetPrice}>20,000원</span> 결제</div>
+            <div style={{ width: '100%', marginTop: '12px', marginBottom: '12px', paddingLeft: '16px', paddingRight: '16px' }}>
+              <div style={{ fontSize: '12px', color: '#656565', marginBottom: '8px' }}>요금제를 선택하세요</div>
+              <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                {PLANS.map((plan) => (
+                  <button
+                    key={plan.id}
+                    onClick={() => setSelectedPlan(plan.id)}
+                    style={{
+                      flex: 1,
+                      padding: '10px 8px',
+                      borderRadius: '8px',
+                      border: selectedPlan === plan.id ? '2px solid #0051ff' : '1px solid #d9d9d9',
+                      background: selectedPlan === plan.id ? '#f0f6ff' : '#fff',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: selectedPlan === plan.id ? '700' : '500',
+                      color: selectedPlan === plan.id ? '#0051ff' : '#656565',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <div style={{ fontSize: '10px', marginBottom: '2px' }}>{plan.name}</div>
+                    <div style={{ fontSize: '11px' }}>₩{plan.price.toLocaleString()}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className={styles.sheetSub}>월 <span className={styles.sheetPrice}>{PLANS.find(p => p.id === selectedPlan)?.price.toLocaleString()}원</span> 결제</div>
             <hr className={styles.sheetDivider} />
             <div className={styles.sheetAgreeRow}>
               <span className={styles.sheetAgreeAll}>모두 동의합니다.</span>
@@ -1163,9 +1285,17 @@ export default function MyPage() {
                     .setParam('startpaytype', 'card')
                     .setParam('servicetype', 'BR');
 
+                  // 선택된 플랜 정보 가져오기
+                  const selectedPlanInfo = PLANS.find(p => p.id === selectedPlan);
+                  if (!selectedPlanInfo) {
+                    alert('선택된 요금제가 없습니다.');
+                    return;
+                  }
+
                   // 정기결제용 파라미터를 메인 페이지와 동일하게 설정하고 rebill() 호출
-                  window.PayApp.setParam('goodname', '한평생 올케어 월 정기구독');
-                  window.PayApp.setParam('goodprice', '20000');
+                  const planDisplayName = `올케어구독상품-${selectedPlanInfo.name}`;
+                  window.PayApp.setParam('goodname', planDisplayName);
+                  window.PayApp.setParam('goodprice', selectedPlanInfo.price.toString());
                   window.PayApp.setParam('recvphone', phone.replace(/-/g, ''));
                   window.PayApp.setParam('buyername', name);
                   window.PayApp.setParam('smsuse', 'n');
@@ -1174,7 +1304,7 @@ export default function MyPage() {
                   window.PayApp.setParam('rebillExpire', rebillExpire);
                   window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
                   window.PayApp.setParam('returnurl', `${baseUrl}/payment/success`);
-                  window.PayApp.setParam('var1', JSON.stringify({ orderId: `SUBS-${userId}-${Date.now()}`, userId, phone, name }));
+                  window.PayApp.setParam('var1', JSON.stringify({ orderId: `SUBS-${userId}-${Date.now()}`, userId, phone, name, plan: selectedPlan, price: selectedPlanInfo.price }));
 
                   try {
                     window.PayApp.rebill();
@@ -1249,6 +1379,300 @@ export default function MyPage() {
   <br/>
   • <strong>별도 비용 안내:</strong> 직업훈련 수강권 이용 시 발생하는 자격증 발급 비용 등 행정 비용은 서비스 금액에 포함되어 있지 않으며, 본인 별도 부담입니다.<br/>
 </div>
+          </div>
+        </>
+      )}
+
+      {showPlanChangeSheet && (
+        <>
+          <div className={styles.modalOverlay} onClick={handlePlanChangeSheetClose} />
+          <div
+            className={`${styles.subscribeSheet} ${sheetTransitionEnabled ? styles.withTransition : styles.dragging}`}
+            style={{ transform: `translateX(-50%) translateY(${dragY}px)` }}
+          >
+            <div className={styles.sheetHandleContainer}>
+              <BottomSheetHandle
+                onClick={handlePlanChangeSheetClose}
+                hint=""
+                onDragStart={handleDragStart}
+                onDrag={handleDrag}
+                onDragEnd={handleDragEnd}
+              />
+            </div>
+            <div className={styles.sheetTitle}>요금제 변경</div>
+            <div style={{ width: '100%', paddingLeft: '16px', paddingRight: '16px', marginTop: '12px', marginBottom: '8px' }}>
+              <div style={{ fontSize: '12px', color: '#656565', marginBottom: '8px' }}>
+                현재 플랜: <strong>{subscription.plan || '플랜 정보 없음'}</strong>
+              </div>
+              <div style={{ fontSize: '12px', color: '#656565', marginBottom: '12px' }}>
+                변경할 요금제를 선택하세요
+              </div>
+              <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                {PLANS.map((plan) => (
+                  <button
+                    key={plan.id}
+                    onClick={() => setSelectedPlan(plan.id)}
+                    style={{
+                      flex: 1,
+                      padding: '10px 8px',
+                      borderRadius: '8px',
+                      border: selectedPlan === plan.id ? '2px solid #0051ff' : '1px solid #d9d9d9',
+                      background: selectedPlan === plan.id ? '#f0f6ff' : '#fff',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: selectedPlan === plan.id ? '700' : '500',
+                      color: selectedPlan === plan.id ? '#0051ff' : '#656565',
+                      transition: 'all 0.2s',
+                      position: 'relative',
+                    }}
+                  >
+                    {subscription.plan === plan.name && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '4px',
+                        right: '4px',
+                        width: '16px',
+                        height: '16px',
+                        backgroundColor: '#0051ff',
+                        color: '#fff',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '10px',
+                        fontWeight: 'bold',
+                      }}>
+                        ✓
+                      </div>
+                    )}
+                    <div style={{ fontSize: '10px', marginBottom: '2px' }}>{plan.name}</div>
+                    <div style={{ fontSize: '11px' }}>₩{plan.price.toLocaleString()}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className={styles.sheetSub}>
+              월 <span className={styles.sheetPrice}>{PLANS.find(p => p.id === selectedPlan)?.price.toLocaleString()}원</span> 결제
+            </div>
+            <hr className={styles.sheetDivider} />
+            <div className={styles.sheetAgreeRow}>
+              <span className={styles.sheetAgreeAll}>모두 동의합니다.</span>
+              <span
+                className={`${styles.sheetCheckbox} ${planChangeAgreeAll ? styles.sheetCheckboxChecked : ""}`}
+                onClick={handlePlanChangeAgreeAll}
+              >
+                {planChangeAgreeAll && (
+                  <svg
+                    className={styles.sheetCheckIcon}
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="9"
+                    height="9"
+                    viewBox="0 0 9 9"
+                    fill="none"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                      d="M8.07976 1.91662C8.18521 2.0221 8.24445 2.16515 8.24445 2.31431C8.24445 2.46346 8.18521 2.60651 8.07976 2.71199L3.86364 6.92812C3.80792 6.98385 3.74177 7.02806 3.66896 7.05822C3.59616 7.08838 3.51813 7.1039 3.43932 7.1039C3.36052 7.1039 3.28249 7.08838 3.20968 7.05822C3.13688 7.02806 3.07073 6.98385 3.01501 6.92812L0.92026 4.83374C0.866535 4.78186 0.823683 4.71979 0.794203 4.65116C0.764723 4.58253 0.749205 4.50872 0.748556 4.43403C0.747907 4.35934 0.76214 4.28527 0.790423 4.21615C0.818706 4.14702 0.860473 4.08421 0.913288 4.0314C0.966102 3.97858 1.02891 3.93682 1.09804 3.90853C1.16716 3.88025 1.24123 3.86602 1.31592 3.86667C1.39061 3.86731 1.46442 3.88283 1.53305 3.91231C1.60168 3.94179 1.66375 3.98464 1.71563 4.03837L3.43914 5.76187L7.28401 1.91662C7.33625 1.86435 7.39827 1.82288 7.46654 1.79459C7.53481 1.7663 7.60799 1.75174 7.68189 1.75174C7.75579 1.75174 7.82896 1.7663 7.89723 1.79459C7.9655 1.82288 8.02752 1.86435 8.07976 1.91662Z"
+                      fill="#fff"
+                    />
+                  </svg>
+                )}
+              </span>
+            </div>
+            {[
+              <span className={styles.sheetAgreeSub}>
+                요금제 변경에 동의합니다{" "}
+                <span className={styles.sheetAgreeRequired}>(필수)</span>
+              </span>,
+              <span>
+                <span
+                  className={styles.sheetAgreeUnderline}
+                  onClick={() => setShowTerms(true)}
+                >
+                  이용약관
+                </span>
+                <span className={styles.sheetAgreeAnd}> 및 </span>
+                <span
+                  className={styles.sheetAgreeUnderline}
+                  onClick={() => setShowSubscriptionTerms(true)}
+                >
+                  결제 및 구독 유의사항
+                </span>
+                <span className={styles.sheetAgreeRequired}> (필수)</span>
+              </span>,
+              <span>
+                <span
+                  className={styles.sheetAgreeUnderline}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setShowThirdPartyProvision(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ")
+                      setShowThirdPartyProvision(true);
+                  }}
+                >
+                  제3자 개인정보 제공
+                </span>
+                <span className={styles.sheetAgreeRequired}> (필수)</span>
+              </span>,
+            ].map((txt, idx: number) => (
+              <div className={styles.sheetAgreeRow} key={idx}>
+                {txt}
+                <span
+                  className={`${styles.sheetCheckbox} ${planChangeAgreements[idx] ? styles.sheetCheckboxChecked : ""}`}
+                  onClick={() => handlePlanChangeAgreement(idx)}
+                >
+                  {planChangeAgreements[idx] && (
+                    <svg
+                      className={styles.sheetCheckIcon}
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="9"
+                      height="9"
+                      viewBox="0 0 9 9"
+                      fill="none"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M8.07976 1.91662C8.18521 2.0221 8.24445 2.16515 8.24445 2.31431C8.24445 2.46346 8.18521 2.60651 8.07976 2.71199L3.86364 6.92812C3.80792 6.98385 3.74177 7.02806 3.66896 7.05822C3.59616 7.08838 3.51813 7.1039 3.43932 7.1039C3.36052 7.1039 3.28249 7.08838 3.20968 7.05822C3.13688 7.02806 3.07073 6.98385 3.01501 6.92812L0.92026 4.83374C0.866535 4.78186 0.823683 4.71979 0.794203 4.65116C0.764723 4.58253 0.749205 4.50872 0.748556 4.43403C0.747907 4.35934 0.76214 4.28527 0.790423 4.21615C0.818706 4.14702 0.860473 4.08421 0.913288 4.0314C0.966102 3.97858 1.02891 3.93682 1.09804 3.90853C1.16716 3.88025 1.24123 3.86602 1.31592 3.86667C1.39061 3.86731 1.46442 3.88283 1.53305 3.91231C1.60168 3.94179 1.66375 3.98464 1.71563 4.03837L3.43914 5.76187L7.28401 1.91662C7.33625 1.86435 7.39827 1.82288 7.46654 1.79459C7.53481 1.7663 7.60799 1.75174 7.68189 1.75174C7.75579 1.75174 7.82896 1.7663 7.89723 1.79459C7.9655 1.82288 8.02752 1.86435 8.07976 1.91662Z"
+                        fill="#fff"
+                      />
+                    </svg>
+                  )}
+                </span>
+              </div>
+            ))}
+            <button
+              className={`${styles.sheetButton} ${!planChangeAgreeAll ? styles.sheetButtonDisabled : ""}`}
+              onClick={async () => {
+                if (!planChangeAgreeAll) return;
+
+                if (!isPayAppLoaded || !window.PayApp) {
+                  alert("결제 시스템을 로딩 중입니다. 잠시 후 다시 시도해주세요.");
+                  return;
+                }
+
+                try {
+                  const token = localStorage.getItem("token");
+                  if (!token) {
+                    alert("로그인이 필요합니다.");
+                    return;
+                  }
+
+                  const userResponse = await fetch("/api/user/profile", {
+                    headers: { Authorization: `Bearer ${token}` },
+                  });
+
+                  if (!userResponse.ok) {
+                    alert("사용자 정보를 가져올 수 없습니다.");
+                    return;
+                  }
+
+                  const { name, phone } = await userResponse.json();
+
+                  if (!name || !phone) {
+                    alert(
+                      "사용자 정보(이름, 연락처)가 없습니다. 회원정보를 먼저 입력해주세요."
+                    );
+                    return;
+                  }
+
+                  let userId = "";
+                  try {
+                    const payload = JSON.parse(atob(token.split(".")[1]));
+                    userId = payload.userId || "";
+                  } catch (e) {
+                    console.error("Token parse error:", e);
+                  }
+
+                  const baseUrl = window.location.origin;
+                  const shopName =
+                    process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME ||
+                    "한평생올케어";
+                  const payappUserId =
+                    process.env.NEXT_PUBLIC_PAYAPP_USER_ID || "";
+
+                  if (!payappUserId) {
+                    alert(
+                      "결제 시스템 설정 오류입니다. 관리자에게 문의하세요."
+                    );
+                    console.error("PAYAPP_USER_ID is not set");
+                    return;
+                  }
+
+                  window.PayApp.setDefault("userid", payappUserId);
+                  window.PayApp.setDefault("shopname", shopName);
+
+                  const now = new Date();
+                  const expireDate = new Date(now);
+                  expireDate.setFullYear(expireDate.getFullYear() + 1);
+                  const rebillExpire = expireDate
+                    .toISOString()
+                    .split("T")[0];
+                  const rebillCycleMonth = now.getDate().toString();
+
+                  const selectedPlanInfo = PLANS.find(
+                    (p) => p.id === selectedPlan
+                  );
+                  if (!selectedPlanInfo) {
+                    alert("선택된 요금제가 없습니다.");
+                    return;
+                  }
+
+                  const orderData = {
+                    orderId: `ORDER-${Date.now()}`,
+                    userId: userId,
+                    phone: phone,
+                    name: name,
+                    mode: "change",
+                    plan: selectedPlan,
+                    price: selectedPlanInfo.price,
+                  };
+
+                  const planDisplayName = `올케어구독상품-${selectedPlanInfo.name}`;
+                  window.PayApp.setParam(
+                    "goodname",
+                    planDisplayName
+                  );
+                  window.PayApp.setParam(
+                    "goodprice",
+                    selectedPlanInfo.price.toString()
+                  );
+                  window.PayApp.setParam("recvphone", phone);
+                  window.PayApp.setParam("buyername", name);
+                  window.PayApp.setParam("smsuse", "n");
+                  window.PayApp.setParam("rebillCycleType", "Month");
+                  window.PayApp.setParam(
+                    "rebillCycleMonth",
+                    rebillCycleMonth
+                  );
+                  window.PayApp.setParam("rebillExpire", rebillExpire);
+                  window.PayApp.setParam(
+                    "feedbackurl",
+                    `${baseUrl}/api/payments/webhook`
+                  );
+                  window.PayApp.setParam(
+                    "returnurl",
+                    `${baseUrl}/payment/success`
+                  );
+                  window.PayApp.setParam("var1", JSON.stringify(orderData));
+
+                  window.PayApp.rebill();
+                  handlePlanChangeSheetClose();
+                } catch (error) {
+                  console.error("Plan change error:", error);
+                  alert("요금제 변경 처리 중 오류가 발생했습니다.");
+                }
+              }}
+              disabled={!planChangeAgreeAll || !isPayAppLoaded}
+            >
+              {!isPayAppLoaded
+                ? isPayAppLoading
+                  ? "결제 시스템 로딩중..."
+                  : "결제 시스템 로딩 실패"
+                : "요금제 변경하기"}
+            </button>
           </div>
         </>
       )}
