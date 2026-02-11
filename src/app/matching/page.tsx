@@ -359,7 +359,13 @@ export default function MatchingPage() {
                                                         </div>
                                                         <div className={styles.centerInfoRow}>
                                                             <span className={styles.centerLabel}>연락처</span>
-                                                            <span className={styles.centerValue}>{center.contact || '-'}</span>
+                                                            {center.contact ? (
+                                                                <a href={`tel:${center.contact}`} className={styles.centerValue} style={{ color: 'inherit', textDecoration: 'none', cursor: 'pointer' }}>
+                                                                    {center.contact}
+                                                                </a>
+                                                            ) : (
+                                                                <span className={styles.centerValue}>-</span>
+                                                            )}
                                                         </div>
                                                         <div className={styles.centerInfoRow}>
                                                             <span className={styles.centerLabel}>적용 법령</span>
@@ -446,7 +452,13 @@ export default function MatchingPage() {
                                                         {/* 아래 정보: 한 줄씩 */}
                                                         <div className={styles.centerInfoRow}>
                                                             <span className={styles.centerLabel}>연락처</span>
-                                                            <span className={styles.centerValue}>{inst.contact || '-'}</span>
+                                                            {inst.contact ? (
+                                                                <a href={`tel:${inst.contact}`} className={styles.centerValue} style={{ color: 'inherit', textDecoration: 'none', cursor: 'pointer' }}>
+                                                                    {inst.contact}
+                                                                </a>
+                                                            ) : (
+                                                                <span className={styles.centerValue}>-</span>
+                                                            )}
                                                         </div>
                                                         <div className={styles.centerInfoRow}>
                                                             <span className={styles.centerLabel}>주소</span>
