@@ -870,12 +870,6 @@ export default function MyPage() {
                       >
                         재갱신
                       </button>
-                      <button
-                        className={styles.refundBtn}
-                        onClick={() => handleSubscriptionAction("refund")}
-                      >
-                        환불 요청
-                      </button>
                     </div>
                   </div>
                 </>
@@ -1004,13 +998,7 @@ export default function MyPage() {
                         className={styles.cancelBtn}
                         onClick={() => handleSubscriptionAction("cancel")}
                       >
-                        구독 취소
-                      </button>
-                      <button
-                        className={styles.refundBtn}
-                        onClick={() => handleSubscriptionAction("refund")}
-                      >
-                        환불 요청
+                        구독 해지
                       </button>
                     </div>
                   </div>

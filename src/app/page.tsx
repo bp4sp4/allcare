@@ -67,8 +67,61 @@ export default function Home() {
   const accordionList = [
     {
       title: "상품 정보 고시",
-      content:
-        "<b>상품명</b><br/> 한평생 올케어 구독 서비스<br/><br/> <b>상품 유형</b><br/> 디지털 콘텐츠 및 교육·매칭 지원이 결합된 구독형 서비스<br/><br/> <b>구독 요금</b><br/>월 20,000원 (부가세 포함)<br/><br/><b> 구독 기간</b><br/>결제일로부터 1개월 단위 자동 갱신<br/><br/><b> 제공 서비스 내용</b><br/> 1. 미이수 환급 보장 서비스<br/> 2. 한평생 직업훈련원 온라인 과정 무료수강권<br/> 3.실습매칭 프로그램 열람권<br/> <br/><b>서비스 개시 시점</b><br/>결제 즉시 자동 제공",
+      content: `
+        <div style="margin-bottom: 30px;">
+          <b>상품명</b><br/>
+          한평생 올케어 구독 서비스 프리미엄<br/><br/>
+          <b>상품 유형</b><br/>
+          디지털 콘텐츠 및 교육·매칭 지원이 결합된 구독형 서비스<br/><br/>
+          <b>구독 요금</b><br/>
+          월 29,900원 (부가세 포함)<br/><br/>
+          <b>구독 기간</b><br/>
+          결제일로부터 1개월 단위 자동 갱신<br/><br/>
+          <b>제공 서비스 내용</b><br/>
+          1. 미이수 환급 보장 서비스<br/>
+          2. 한평생 직업훈련원 온라인 과정 무료수강권<br/>
+          3. 실습매칭 프로그램 열람권<br/>
+          4. 취업연계(취업 알선)<br/>
+          5. 행정대행서비스<br/><br/>
+          <b>서비스 개시 시점</b><br/>
+          결제 즉시 자동 제공
+        </div>
+        <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
+        <div style="margin-bottom: 30px;">
+          <b>상품명</b><br/>
+          한평생 올케어 구독 서비스 스탠다드<br/><br/>
+          <b>상품 유형</b><br/>
+          디지털 콘텐츠 및 교육·매칭 지원이 결합된 구독형 서비스<br/><br/>
+          <b>구독 요금</b><br/>
+          월 19,900원 (부가세 포함)<br/><br/>
+          <b>구독 기간</b><br/>
+          결제일로부터 1개월 단위 자동 갱신<br/><br/>
+          <b>제공 서비스 내용</b><br/>
+          1. 미이수 환급 보장 서비스<br/>
+          2. 한평생 직업훈련원 온라인 과정 무료수강권<br/>
+          3. 실습매칭 프로그램 열람권<br/>
+          4. 취업연계(취업 알선)<br/><br/>
+          <b>서비스 개시 시점</b><br/>
+          결제 즉시 자동 제공
+        </div>
+        <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
+        <div>
+          <b>상품명</b><br/>
+          한평생 올케어 구독 서비스 베이직<br/><br/>
+          <b>상품 유형</b><br/>
+          디지털 콘텐츠 및 교육·매칭 지원이 결합된 구독형 서비스<br/><br/>
+          <b>구독 요금</b><br/>
+          월 9,900원 (부가세 포함)<br/><br/>
+          <b>구독 기간</b><br/>
+          결제일로부터 1개월 단위 자동 갱신<br/><br/>
+          <b>제공 서비스 내용</b><br/>
+          1. 미이수 환급 보장 서비스<br/>
+          2. 한평생 직업훈련원 온라인 과정 무료수강권<br/>
+          3. 실습매칭 프로그램 열람권<br/><br/>
+          <b>서비스 개시 시점</b><br/>
+          결제 즉시 자동 제공
+        </div>
+      `,
     },
     {
       title: "결제/변경/해지/환불 안내",
@@ -1293,7 +1346,7 @@ export default function Home() {
           </>
         )}
         <div className={styles.productNoticeSection}>
-          <div className={styles.productNoticeTitle}>상품고시</div>
+          <div className={styles.productNoticeTitle}>상품 정보 고시</div>
           {accordionList.map((item, idx) => (
             <div className={styles.accordionItem} key={idx}>
               <div
