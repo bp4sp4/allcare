@@ -54,6 +54,9 @@ export async function GET(req: NextRequest) {
       });
     }
 
+    // 다음 결제 예정금액 계산 (예약된 플랜이 있으면 해당 금액, 없으면 현재 금액)
+    const nextAmount = subscription.scheduled_amount ?? subscription.amount;
+
     // 구독이 있는 경우
     return NextResponse.json({
       isActive: true,
@@ -61,15 +64,18 @@ export async function GET(req: NextRequest) {
       plan: subscription.plan,
       amount: subscription.amount,
       startDate: new Date(subscription.start_date).toLocaleDateString('ko-KR'),
-      nextBillingDate: subscription.next_billing_date 
+      nextBillingDate: subscription.next_billing_date
         ? new Date(subscription.next_billing_date).toLocaleDateString('ko-KR')
         : null,
-      endDate: subscription.end_date 
+      endDate: subscription.end_date
         ? new Date(subscription.end_date).toLocaleDateString('ko-KR')
         : null,
       billingCycle: subscription.billing_cycle,
       status: subscription.status,
-      cancelled_at: subscription.cancelled_at
+      cancelled_at: subscription.cancelled_at,
+      scheduledPlan: subscription.scheduled_plan || null,
+      scheduledAmount: subscription.scheduled_amount || null,
+      nextAmount: nextAmount,
     });
 
   } catch (error) {

@@ -124,8 +124,9 @@ export async function POST(request: NextRequest) {
       }
 
       if (userId) {
-        // 결제 수단 변경 모드인지 확인
+        // 모드 확인
         const isChangeMode = orderData.mode === 'change-payment';
+        const isUpgradeMode = orderData.mode === 'upgrade';
 
         // 구독 정보 생성 또는 업데이트
         const nextBillingDate = new Date();
@@ -149,7 +150,7 @@ export async function POST(request: NextRequest) {
         // 기존 활성 구독이 있는지 확인 (active 또는 cancel_scheduled)
         const { data: existingSub } = await supabaseAdmin
           .from('subscriptions')
-          .select('id, status')
+          .select('id, status, scheduled_plan, scheduled_amount, start_date, next_billing_date')
           .eq('user_id', userId)
           .in('status', ['active', 'cancel_scheduled'])
           .maybeSingle();
@@ -172,11 +173,47 @@ export async function POST(request: NextRequest) {
             if (subscriptionError) {
               console.error('Payment method update error:', subscriptionError);
             }
-          } else {
-            // 일반 업데이트: 전체 구독 정보 업데이트
+          } else if (isUpgradeMode) {
+            // 업그레이드: 플랜/결제수단 변경, 기간은 유지, 예약 초기화
+            // 다음 정기결제 금액은 scheduled_amount (새 금액)
+            const newAmount = existingSub.scheduled_amount || orderData.price || parseInt(price);
+            const newPlan = existingSub.scheduled_plan || planName;
+
             const { error: subscriptionError } = await supabaseAdmin
               .from('subscriptions')
-              .update(subscriptionData)
+              .update({
+                plan: newPlan,
+                amount: newAmount,
+                status: 'active',
+                payapp_bill_key: rebill_no,
+                payapp_trade_id: mul_no,
+                payment_type: pay_type ? parseInt(pay_type) : null,
+                card_name: card_name || null,
+                payment_method_name: paymentMethodName,
+                scheduled_plan: null,
+                scheduled_amount: null,
+              })
+              .eq('id', existingSub.id)
+              .select();
+
+            if (subscriptionError) {
+              console.error('Upgrade update error:', subscriptionError);
+            }
+          } else {
+            // 예약된 플랜이 있으면 적용 (정기결제 자동갱신 시)
+            if (existingSub.scheduled_plan && existingSub.scheduled_amount) {
+              subscriptionData.plan = existingSub.scheduled_plan;
+              subscriptionData.amount = existingSub.scheduled_amount;
+            }
+
+            // 일반 업데이트: 전체 구독 정보 업데이트 + 예약 초기화
+            const { error: subscriptionError } = await supabaseAdmin
+              .from('subscriptions')
+              .update({
+                ...subscriptionData,
+                scheduled_plan: null,
+                scheduled_amount: null,
+              })
               .eq('id', existingSub.id)
               .select();
 

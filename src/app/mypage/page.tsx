@@ -106,6 +106,9 @@ interface SubscriptionInfo {
   endDate?: string;
   cancelled_at?: string;
   status?: string;
+  scheduledPlan?: string | null;
+  scheduledAmount?: number | null;
+  nextAmount?: number | null;
 }
 
 interface PaymentHistory {
@@ -981,9 +984,28 @@ export default function MyPage() {
                         결제 예정금액
                       </span>
                       <span className={styles.detailValueCustom}>
-                        {subscription.amount?.toLocaleString()}원
+                        {(subscription.nextAmount ?? subscription.amount)?.toLocaleString()}원
                       </span>
                     </div>
+                    {subscription.scheduledPlan && (
+                      <div
+                        style={{
+                          padding: "10px 14px",
+                          background: "#f0f6ff",
+                          borderRadius: "8px",
+                          fontSize: "13px",
+                          color: "#0051ff",
+                          marginTop: "4px",
+                          marginBottom: "4px",
+                          lineHeight: "1.5",
+                        }}
+                      >
+                        📌 다음 결제일부터{" "}
+                        <strong>{subscription.scheduledPlan}</strong>(월{" "}
+                        {subscription.scheduledAmount?.toLocaleString()}원)으로
+                        변경 예정
+                      </div>
+                    )}
                   </div>
                   <div className={styles.benefitTitle}>이용중인 혜택</div>
                   {PLAN_BENEFITS.map((benefit) => {
@@ -2010,16 +2032,71 @@ export default function MyPage() {
                 ))}
               </div>
             </div>
-            <div className={styles.sheetSub}>
-              월{" "}
-              <span className={styles.sheetPrice}>
-                {PLANS.find(
-                  (p) => p.id === selectedPlan,
-                )?.price.toLocaleString()}
-                원
-              </span>{" "}
-              결제
-            </div>
+            {(() => {
+              const selectedPlanInfo = PLANS.find(
+                (p) => p.id === selectedPlan,
+              );
+              const currentPlanInfo = PLANS.find(
+                (p) => p.name === subscription.plan,
+              );
+              const isUpgrade =
+                selectedPlanInfo &&
+                currentPlanInfo &&
+                selectedPlanInfo.price > currentPlanInfo.price;
+              const isDowngrade =
+                selectedPlanInfo &&
+                currentPlanInfo &&
+                selectedPlanInfo.price < currentPlanInfo.price;
+              const isSame = subscription.plan === selectedPlanInfo?.name;
+
+              return (
+                <>
+                  <div className={styles.sheetSub}>
+                    월{" "}
+                    <span className={styles.sheetPrice}>
+                      {selectedPlanInfo?.price.toLocaleString()}원
+                    </span>{" "}
+                    결제
+                  </div>
+                  {isUpgrade && !isSame && (
+                    <div
+                      style={{
+                        padding: "10px 14px",
+                        background: "#f0f6ff",
+                        borderRadius: "8px",
+                        fontSize: "12px",
+                        color: "#0051ff",
+                        lineHeight: "1.6",
+                        marginTop: "8px",
+                      }}
+                    >
+                      📌 <strong>업그레이드</strong> — 기능 즉시 적용
+                      <br />
+                      • 남은 기간 일할 차액이 즉시 결제됩니다
+                      <br />• 다음 결제일부터 월{" "}
+                      {selectedPlanInfo?.price.toLocaleString()}원 청구
+                    </div>
+                  )}
+                  {isDowngrade && !isSame && (
+                    <div
+                      style={{
+                        padding: "10px 14px",
+                        background: "#fff8f0",
+                        borderRadius: "8px",
+                        fontSize: "12px",
+                        color: "#e67e22",
+                        lineHeight: "1.6",
+                        marginTop: "8px",
+                      }}
+                    >
+                      📌 <strong>다운그레이드</strong> — 다음 결제일부터 적용
+                      <br />• 현재 결제 기간 종료 후 월{" "}
+                      {selectedPlanInfo?.price.toLocaleString()}원으로 변경
+                    </div>
+                  )}
+                </>
+              );
+            })()}
             <hr className={styles.sheetDivider} />
             <div className={styles.sheetAgreeRow}>
               <span className={styles.sheetAgreeAll}>모두 동의합니다.</span>
@@ -2114,13 +2191,6 @@ export default function MyPage() {
               onClick={async () => {
                 if (!planChangeAgreeAll) return;
 
-                if (!isPayAppLoaded || !window.PayApp) {
-                  alert(
-                    "결제 시스템을 로딩 중입니다. 잠시 후 다시 시도해주세요.",
-                  );
-                  return;
-                }
-
                 try {
                   const token = localStorage.getItem("token");
                   if (!token) {
@@ -2128,109 +2198,138 @@ export default function MyPage() {
                     return;
                   }
 
-                  const userResponse = await fetch("/api/user/profile", {
-                    headers: { Authorization: `Bearer ${token}` },
-                  });
+                  // 1. 서버에 플랜 변경 요청 (업/다운그레이드 판단 + 일할계산)
+                  const response = await fetch(
+                    "/api/subscription/change-plan",
+                    {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({ plan: selectedPlan }),
+                    },
+                  );
 
-                  if (!userResponse.ok) {
-                    alert("사용자 정보를 가져올 수 없습니다.");
+                  const result = await response.json();
+
+                  if (!response.ok) {
+                    alert(result.error || "요금제 변경에 실패했습니다.");
                     return;
                   }
 
-                  const { name, phone } = await userResponse.json();
+                  // 2. 업그레이드: 일할 차액 결제 + 새 금액으로 rebill 재등록
+                  if (result.needsPayment) {
+                    if (!isPayAppLoaded || !window.PayApp) {
+                      alert(
+                        "결제 시스템을 로딩 중입니다. 잠시 후 다시 시도해주세요.",
+                      );
+                      return;
+                    }
 
-                  if (!name || !phone) {
-                    alert(
-                      "사용자 정보(이름, 연락처)가 없습니다. 회원정보를 먼저 입력해주세요.",
+                    const userResponse = await fetch("/api/user/profile", {
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    if (!userResponse.ok) {
+                      alert("사용자 정보를 가져올 수 없습니다.");
+                      return;
+                    }
+                    const { name, phone } = await userResponse.json();
+
+                    let userId = "";
+                    try {
+                      const payload = JSON.parse(atob(token.split(".")[1]));
+                      userId = payload.userId || "";
+                    } catch (e) {
+                      console.error("Token parse error:", e);
+                    }
+
+                    const baseUrl = window.location.origin;
+                    const shopName =
+                      process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME ||
+                      "한평생올케어";
+                    const payappUserId =
+                      process.env.NEXT_PUBLIC_PAYAPP_USER_ID || "";
+
+                    window.PayApp.setDefault("userid", payappUserId);
+                    window.PayApp.setDefault("shopname", shopName);
+
+                    const now = new Date();
+                    const expireDate = new Date(now);
+                    expireDate.setMonth(expireDate.getMonth() + 18);
+                    const rebillExpire = expireDate
+                      .toISOString()
+                      .split("T")[0];
+                    const rebillCycleMonth = now.getDate().toString();
+
+                    // 일할 차액이 있으면 차액 결제, 정기결제는 새 금액으로
+                    const proratedAmount = result.proratedAmount || 0;
+                    const newPlanPrice = result.newPlanPrice;
+                    const newPlanName = result.newPlanName;
+
+                    const orderData = {
+                      orderId: `ORDER-${Date.now()}`,
+                      userId: userId,
+                      phone: phone,
+                      name: name,
+                      mode: "upgrade",
+                      plan: selectedPlan,
+                      price: newPlanPrice,
+                      proratedAmount: proratedAmount,
+                    };
+
+                    const planDisplayName = `올케어구독-${newPlanName} 업그레이드`;
+                    // 첫 결제는 일할 차액, 이후 정기결제는 새 금액
+                    const firstPaymentAmount =
+                      proratedAmount > 0 ? proratedAmount : newPlanPrice;
+
+                    window.PayApp.setParam("goodname", planDisplayName);
+                    window.PayApp.setParam(
+                      "goodprice",
+                      firstPaymentAmount.toString(),
                     );
-                    return;
-                  }
-
-                  let userId = "";
-                  try {
-                    const payload = JSON.parse(atob(token.split(".")[1]));
-                    userId = payload.userId || "";
-                  } catch (e) {
-                    console.error("Token parse error:", e);
-                  }
-
-                  const baseUrl = window.location.origin;
-                  const shopName =
-                    process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || "한평생올케어";
-                  const payappUserId =
-                    process.env.NEXT_PUBLIC_PAYAPP_USER_ID || "";
-
-                  if (!payappUserId) {
-                    alert(
-                      "결제 시스템 설정 오류입니다. 관리자에게 문의하세요.",
+                    window.PayApp.setParam("recvphone", phone);
+                    window.PayApp.setParam("buyername", name);
+                    window.PayApp.setParam("smsuse", "n");
+                    window.PayApp.setParam("rebillCycleType", "Month");
+                    window.PayApp.setParam(
+                      "rebillCycleMonth",
+                      rebillCycleMonth,
                     );
-                    console.error("PAYAPP_USER_ID is not set");
-                    return;
+                    window.PayApp.setParam("rebillExpire", rebillExpire);
+                    window.PayApp.setParam(
+                      "rebillChangePrice",
+                      newPlanPrice.toString(),
+                    );
+                    window.PayApp.setParam(
+                      "feedbackurl",
+                      `${baseUrl}/api/payments/webhook`,
+                    );
+                    window.PayApp.setParam(
+                      "returnurl",
+                      `${baseUrl}/payment/success`,
+                    );
+                    window.PayApp.setParam(
+                      "var1",
+                      JSON.stringify(orderData),
+                    );
+
+                    window.PayApp.rebill();
+                  } else {
+                    // 다운그레이드 또는 예약 취소: alert만
+                    alert(result.message);
                   }
 
-                  window.PayApp.setDefault("userid", payappUserId);
-                  window.PayApp.setDefault("shopname", shopName);
-
-                  const now = new Date();
-                  const expireDate = new Date(now);
-                  expireDate.setFullYear(expireDate.getFullYear() + 1);
-                  const rebillExpire = expireDate.toISOString().split("T")[0];
-                  const rebillCycleMonth = now.getDate().toString();
-
-                  const selectedPlanInfo = PLANS.find(
-                    (p) => p.id === selectedPlan,
-                  );
-                  if (!selectedPlanInfo) {
-                    alert("선택된 요금제가 없습니다.");
-                    return;
-                  }
-
-                  const orderData = {
-                    orderId: `ORDER-${Date.now()}`,
-                    userId: userId,
-                    phone: phone,
-                    name: name,
-                    mode: "change",
-                    plan: selectedPlan,
-                    price: selectedPlanInfo.price,
-                  };
-
-                  const planDisplayName = `올케어구독상품-${selectedPlanInfo.name}`;
-                  window.PayApp.setParam("goodname", planDisplayName);
-                  window.PayApp.setParam(
-                    "goodprice",
-                    selectedPlanInfo.price.toString(),
-                  );
-                  window.PayApp.setParam("recvphone", phone);
-                  window.PayApp.setParam("buyername", name);
-                  window.PayApp.setParam("smsuse", "n");
-                  window.PayApp.setParam("rebillCycleType", "Month");
-                  window.PayApp.setParam("rebillCycleMonth", rebillCycleMonth);
-                  window.PayApp.setParam("rebillExpire", rebillExpire);
-                  window.PayApp.setParam(
-                    "feedbackurl",
-                    `${baseUrl}/api/payments/webhook`,
-                  );
-                  window.PayApp.setParam(
-                    "returnurl",
-                    `${baseUrl}/payment/success`,
-                  );
-                  window.PayApp.setParam("var1", JSON.stringify(orderData));
-
-                  window.PayApp.rebill();
                   handlePlanChangeSheetClose();
+                  fetchSubscriptionInfo();
                 } catch (error) {
                   console.error("Plan change error:", error);
                   alert("요금제 변경 처리 중 오류가 발생했습니다.");
                 }
               }}
-              disabled={!planChangeAgreeAll || !isPayAppLoaded}
+              disabled={!planChangeAgreeAll}
             >
-              {!isPayAppLoaded
-                ? isPayAppLoading
-                  ? "결제 시스템 로딩중..."
-                  : "결제 시스템 로딩 실패"
-                : "요금제 변경하기"}
+              요금제 변경하기
             </button>
           </div>
         </>
