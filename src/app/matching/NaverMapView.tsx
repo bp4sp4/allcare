@@ -183,8 +183,7 @@ export default function NaverMapView({
       });
 
       // 마커 클릭 → InfoWindow
-      naver.maps.Event.addListener(marker, "click", (e: { domEvent?: Event }) => {
-        (e.domEvent as Event & { stopPropagation?: () => void })?.stopPropagation?.();
+      naver.maps.Event.addListener(marker, "click", () => {
         const distText =
           item.distance !== undefined
             ? item.distance < 1
