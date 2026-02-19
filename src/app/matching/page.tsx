@@ -207,9 +207,9 @@ export default function MatchingPage() {
     setLoading(true);
     let query = supabase.from("training_institution").select("*");
     if (filters.region)
-      query = query.ilike("full_address", `%${filters.region}%`);
+      query = query.ilike("address1", `%${filters.region}%`);
     if (filters.subregion)
-      query = query.ilike("full_address", `%${filters.subregion}%`);
+      query = query.ilike("address2", `%${filters.subregion}%`);
     query.then(({ data }) => {
       setInstitutions(data || []);
       setLoading(false);
@@ -223,16 +223,31 @@ export default function MatchingPage() {
     setLoading(true);
     setCurrentPage(1);
 
+    // Supabase 1000건 제한 우회: 1000건씩 나눠서 전체 가져오기
+    const fetchAllPages = async (table: string) => {
+      const PAGE_SIZE = 1000;
+      let all: any[] = [];
+      let from = 0;
+      while (true) {
+        const { data, error } = await supabase
+          .from(table)
+          .select("*")
+          .not("latitude", "is", null)
+          .not("longitude", "is", null)
+          .range(from, from + PAGE_SIZE - 1);
+        if (error || !data || data.length === 0) break;
+        all = all.concat(data);
+        if (data.length < PAGE_SIZE) break;
+        from += PAGE_SIZE;
+      }
+      return all;
+    };
+
     const fetchByLocation = async () => {
       try {
         if (mode === "교육원") {
-          const { data } = await supabase
-            .from("training_centers")
-            .select("*")
-            .not("latitude", "is", null)
-            .not("longitude", "is", null);
-
-          if (data) {
+          const data = await fetchAllPages("training_centers");
+          if (data.length > 0) {
             const withDistance = data
               .map((item: any) => ({
                 ...item,
@@ -244,20 +259,14 @@ export default function MatchingPage() {
                 ),
               }))
               .sort((a: any, b: any) => a.distance - b.distance);
-
             setCenters(withDistance);
           } else {
             setCenters([]);
           }
           setInstitutions([]);
         } else {
-          const { data } = await supabase
-            .from("training_institution")
-            .select("*")
-            .not("latitude", "is", null)
-            .not("longitude", "is", null);
-
-          if (data) {
+          const data = await fetchAllPages("training_institution");
+          if (data.length > 0) {
             const withDistance = data
               .map((item: any) => ({
                 ...item,
@@ -269,7 +278,6 @@ export default function MatchingPage() {
                 ),
               }))
               .sort((a: any, b: any) => a.distance - b.distance);
-
             setInstitutions(withDistance);
           } else {
             setInstitutions([]);
@@ -516,7 +524,13 @@ export default function MatchingPage() {
           <div className={styles.tabWrapper}>
             <button
               className={mode === "교육원" ? styles.tabActive : styles.tab}
-              onClick={() => setMode("교육원")}
+              onClick={() => {
+                setMode("교육원");
+                setHasSearched(false);
+                setFilters({ region: "", subregion: "", law: "" });
+                setFiltersTemp({ region: "", subregion: "", law: "" });
+                setCurrentPage(1);
+              }}
             >
               교육원 찾기
             </button>
@@ -524,7 +538,13 @@ export default function MatchingPage() {
               className={
                 mode === "현장실습기관" ? styles.tabActive : styles.tab
               }
-              onClick={() => setMode("현장실습기관")}
+              onClick={() => {
+                setMode("현장실습기관");
+                setHasSearched(false);
+                setFilters({ region: "", subregion: "", law: "" });
+                setFiltersTemp({ region: "", subregion: "", law: "" });
+                setCurrentPage(1);
+              }}
             >
               현장실습기관 찾기
             </button>
