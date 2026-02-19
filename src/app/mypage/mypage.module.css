@@ -102,6 +102,25 @@
   display: flex;
   align-items: center;
   justify-content: flex-start;
+  gap: 6px;
+  opacity: 1;
+  min-height: 44px;
+}
+
+.benefitItemActive {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 20px 0;
+  font-size: 16px;
+  font-family: Pretendard, sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  color: #010101;
+  line-height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
   opacity: 1;
   min-height: 44px;
 }

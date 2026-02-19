@@ -108,9 +108,9 @@ export default function PaymentPage() {
       // 현재 날짜 기준으로 설정
       const now = new Date();
       
-      // 구독 만료일 계산 (1년 후)
+      // 구독 만료일 계산 (1년 6개월 후)
       const expireDate = new Date(now);
-      expireDate.setFullYear(expireDate.getFullYear() + 1);
+      expireDate.setMonth(expireDate.getMonth() + 18);
       const rebillExpire = expireDate.toISOString().split('T')[0]; // YYYY-MM-DD 형식
       
       // 결제일: 오늘 날짜 (1~31)
