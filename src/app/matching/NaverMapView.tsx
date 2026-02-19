@@ -74,7 +74,7 @@ export default function NaverMapView({
       }
 
       const script = document.createElement("script");
-      script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${clientId}`;
+      script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${clientId}`;
       script.async = true;
       script.onload = () => waitForNaver();
       script.onerror = () => reject(new Error("스크립트 로드 실패"));
@@ -172,13 +172,9 @@ export default function NaverMapView({
     });
     markersRef.current.push(userMarker);
 
-    // bounds 계산용
-    const bounds = new naver.maps.LatLngBounds(center, center);
-
     // 기관/교육원 마커들
     items.forEach((item) => {
       const position = new naver.maps.LatLng(item.latitude, item.longitude);
-      bounds.extend(position);
 
       const marker = new naver.maps.Marker({
         position,
@@ -187,7 +183,8 @@ export default function NaverMapView({
       });
 
       // 마커 클릭 → InfoWindow
-      naver.maps.Event.addListener(marker, "click", () => {
+      naver.maps.Event.addListener(marker, "click", (e: naver.maps.PointerEvent) => {
+        e.domEvent?.stopPropagation?.();
         const distText =
           item.distance !== undefined
             ? item.distance < 1
@@ -213,10 +210,13 @@ export default function NaverMapView({
       markersRef.current.push(marker);
     });
 
-    // 마커가 있으면 bounds로 자동 조절
-    if (items.length > 0) {
-      map.fitBounds(bounds, 60);
-    }
+    // 지도 빈 곳 클릭 시 InfoWindow 닫기
+    naver.maps.Event.addListener(map, "click", () => {
+      infoWindow.close();
+    });
+
+    // 내 위치 중심 zoom 14 고정
+    map.setZoom(14);
 
     // cleanup: 마커만 제거 (지도는 유지)
     return () => {
