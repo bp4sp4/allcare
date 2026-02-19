@@ -160,11 +160,10 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 2. DB 즉시 플랜 변경 + 다음 결제금액 예약
+      // 2. DB에 예약만 저장 (플랜은 결제 완료 후 webhook에서 변경)
       const { error: updateError } = await supabaseAdmin
         .from('subscriptions')
         .update({
-          plan: newPlanInfo.name,
           scheduled_plan: newPlanInfo.name,
           scheduled_amount: newPlanInfo.price,
           payapp_bill_key: null,

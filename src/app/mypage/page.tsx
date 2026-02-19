@@ -2070,11 +2070,11 @@ export default function MyPage() {
                         marginTop: "8px",
                       }}
                     >
-                      📌 <strong>업그레이드</strong> — 기능 즉시 적용
+                      📌 <strong>업그레이드</strong> — 결제 후 즉시 적용
                       <br />
-                      • 남은 기간 일할 차액이 즉시 결제됩니다
-                      <br />• 다음 결제일부터 월{" "}
-                      {selectedPlanInfo?.price.toLocaleString()}원 청구
+                      • 월 {selectedPlanInfo?.price.toLocaleString()}원으로
+                      새 정기결제가 등록됩니다
+                      <br />• 기능은 결제 완료 즉시 적용됩니다
                     </div>
                   )}
                   {isDowngrade && !isSame && (
@@ -2262,8 +2262,6 @@ export default function MyPage() {
                       .split("T")[0];
                     const rebillCycleMonth = now.getDate().toString();
 
-                    // 일할 차액이 있으면 차액 결제, 정기결제는 새 금액으로
-                    const proratedAmount = result.proratedAmount || 0;
                     const newPlanPrice = result.newPlanPrice;
                     const newPlanName = result.newPlanName;
 
@@ -2275,18 +2273,13 @@ export default function MyPage() {
                       mode: "upgrade",
                       plan: selectedPlan,
                       price: newPlanPrice,
-                      proratedAmount: proratedAmount,
                     };
 
-                    const planDisplayName = `올케어구독-${newPlanName} 업그레이드`;
-                    // 첫 결제는 일할 차액, 이후 정기결제는 새 금액
-                    const firstPaymentAmount =
-                      proratedAmount > 0 ? proratedAmount : newPlanPrice;
-
+                    const planDisplayName = `올케어구독상품-${newPlanName}`;
                     window.PayApp.setParam("goodname", planDisplayName);
                     window.PayApp.setParam(
                       "goodprice",
-                      firstPaymentAmount.toString(),
+                      newPlanPrice.toString(),
                     );
                     window.PayApp.setParam("recvphone", phone);
                     window.PayApp.setParam("buyername", name);
@@ -2297,10 +2290,6 @@ export default function MyPage() {
                       rebillCycleMonth,
                     );
                     window.PayApp.setParam("rebillExpire", rebillExpire);
-                    window.PayApp.setParam(
-                      "rebillChangePrice",
-                      newPlanPrice.toString(),
-                    );
                     window.PayApp.setParam(
                       "feedbackurl",
                       `${baseUrl}/api/payments/webhook`,
