@@ -223,65 +223,60 @@ export default function MatchingPage() {
     setLoading(true);
     setCurrentPage(1);
 
-    // Supabase 1000건 제한 우회: 1000건씩 나눠서 전체 가져오기
-    const fetchAllPages = async (table: string) => {
-      const PAGE_SIZE = 1000;
-      let all: any[] = [];
-      let from = 0;
-      while (true) {
-        const { data, error } = await supabase
+    // 반경을 단계적으로 넓혀가며 충분한 결과 확보
+    // 5km → 20km → 50km → 전국 순서로 확장
+    const fetchNearby = async (table: string, lat: number, lng: number) => {
+      const RADIUS_STEPS = [5, 20, 50]; // km
+      const MIN_RESULTS = 5;
+
+      for (const radiusKm of RADIUS_STEPS) {
+        const latDelta = radiusKm / 111;
+        const lngDelta = radiusKm / (111 * Math.cos((lat * Math.PI) / 180));
+        const { data } = await supabase
           .from(table)
           .select("*")
           .not("latitude", "is", null)
           .not("longitude", "is", null)
-          .range(from, from + PAGE_SIZE - 1);
-        if (error || !data || data.length === 0) break;
-        all = all.concat(data);
-        if (data.length < PAGE_SIZE) break;
-        from += PAGE_SIZE;
+          .gte("latitude", lat - latDelta)
+          .lte("latitude", lat + latDelta)
+          .gte("longitude", lng - lngDelta)
+          .lte("longitude", lng + lngDelta)
+          .limit(500);
+        if (data && data.length >= MIN_RESULTS) return data;
       }
-      return all;
+
+      // 전국: 최대 500건
+      const { data } = await supabase
+        .from(table)
+        .select("*")
+        .not("latitude", "is", null)
+        .not("longitude", "is", null)
+        .limit(500);
+      return data || [];
     };
 
     const fetchByLocation = async () => {
       try {
+        const { latitude, longitude } = locationState.coords!;
         if (mode === "교육원") {
-          const data = await fetchAllPages("training_centers");
-          if (data.length > 0) {
-            const withDistance = data
-              .map((item: any) => ({
-                ...item,
-                distance: haversineDistance(
-                  locationState.coords!.latitude,
-                  locationState.coords!.longitude,
-                  item.latitude,
-                  item.longitude,
-                ),
-              }))
-              .sort((a: any, b: any) => a.distance - b.distance);
-            setCenters(withDistance);
-          } else {
-            setCenters([]);
-          }
+          const data = await fetchNearby("training_centers", latitude, longitude);
+          const withDistance = data
+            .map((item: any) => ({
+              ...item,
+              distance: haversineDistance(latitude, longitude, item.latitude, item.longitude),
+            }))
+            .sort((a: any, b: any) => a.distance - b.distance);
+          setCenters(withDistance);
           setInstitutions([]);
         } else {
-          const data = await fetchAllPages("training_institution");
-          if (data.length > 0) {
-            const withDistance = data
-              .map((item: any) => ({
-                ...item,
-                distance: haversineDistance(
-                  locationState.coords!.latitude,
-                  locationState.coords!.longitude,
-                  item.latitude,
-                  item.longitude,
-                ),
-              }))
-              .sort((a: any, b: any) => a.distance - b.distance);
-            setInstitutions(withDistance);
-          } else {
-            setInstitutions([]);
-          }
+          const data = await fetchNearby("training_institution", latitude, longitude);
+          const withDistance = data
+            .map((item: any) => ({
+              ...item,
+              distance: haversineDistance(latitude, longitude, item.latitude, item.longitude),
+            }))
+            .sort((a: any, b: any) => a.distance - b.distance);
+          setInstitutions(withDistance);
           setCenters([]);
         }
       } catch (err) {
