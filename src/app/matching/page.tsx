@@ -1,10 +1,24 @@
 "use client";
 import styles from "./matching.module.css";
+import mapStyles from "./navermap.module.css";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { supabase } from "../../lib/supabase";
+import { haversineDistance } from "../../lib/haversine";
 import FilterBarCustom from "./FilterBarCustom";
+import LocationSearchBar from "./LocationSearchBar";
+import { useUserLocation } from "./useUserLocation";
 import AlertModal from "../../components/AlertModal";
+
+// 네이버 지도 컴포넌트 (SSR 비활성화, lazy load)
+const NaverMapView = dynamic(() => import("./NaverMapView"), {
+  ssr: false,
+  loading: () => (
+    <div className={mapStyles.mapLoading}>지도 로딩 중...</div>
+  ),
+});
+
 export default function MatchingPage() {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(true);
@@ -19,6 +33,13 @@ export default function MatchingPage() {
     { title: "실무 및 섭외" },
   ];
   const [mode, setMode] = useState<"교육원" | "현장실습기관">("교육원");
+
+  // 검색 모드: 지역 필터 vs 위치 검색
+  const [searchMode, setSearchMode] = useState<"region" | "location">(
+    "region",
+  );
+
+  // 기존 지역 필터 state
   const [filters, setFilters] = useState({
     region: "",
     subregion: "",
@@ -26,11 +47,17 @@ export default function MatchingPage() {
   });
   const [filtersTemp, setFiltersTemp] = useState(filters);
   const [hasSearched, setHasSearched] = useState(false);
+
+  // 데이터 state
   const [centers, setCenters] = useState<any[]>([]);
   const [institutions, setInstitutions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+
+  // 위치 검색 hook
+  const { locationState, detectGPS, geocodeAddress, clearLocation } =
+    useUserLocation();
 
   // 로그인 및 구독 상태 체크
   useEffect(() => {
@@ -104,10 +131,14 @@ export default function MatchingPage() {
     };
   }, []);
 
+  // 모드 변경 시 기본 데이터 로드 (지역 검색 모드)
   useEffect(() => {
     setCurrentPage(1);
     // reset temp filters to current filters
     setFiltersTemp(filters);
+
+    // 위치 검색 모드면 이 effect에서 데이터 안 불러옴
+    if (searchMode === "location") return;
 
     // if user has already performed a manual search, don't override results
     if (hasSearched) return;
@@ -139,9 +170,11 @@ export default function MatchingPage() {
     };
 
     fetchDefaults();
-  }, [mode, hasSearched]);
+  }, [mode, hasSearched, searchMode]);
 
+  // 지역 필터 검색 (교육원)
   useEffect(() => {
+    if (searchMode === "location") return;
     if (!hasSearched) return;
     if (mode !== "교육원") return;
     setLoading(true);
@@ -160,13 +193,15 @@ export default function MatchingPage() {
     }
     if (filters.law) query = query.eq("law_type", filters.law);
 
-    query.then(({ data, error }) => {
+    query.then(({ data }) => {
       setCenters(data || []);
       setLoading(false);
     });
-  }, [filters, mode, hasSearched]);
+  }, [filters, mode, hasSearched, searchMode]);
 
+  // 지역 필터 검색 (현장실습기관)
   useEffect(() => {
+    if (searchMode === "location") return;
     if (!hasSearched) return;
     if (mode !== "현장실습기관") return;
     setLoading(true);
@@ -175,11 +210,121 @@ export default function MatchingPage() {
       query = query.ilike("full_address", `%${filters.region}%`);
     if (filters.subregion)
       query = query.ilike("full_address", `%${filters.subregion}%`);
-    query.then(({ data, error }) => {
+    query.then(({ data }) => {
       setInstitutions(data || []);
       setLoading(false);
     });
-  }, [filters, mode, hasSearched]);
+  }, [filters, mode, hasSearched, searchMode]);
+
+  // 위치 기반 검색: 좌표가 설정되면 전체 데이터 조회 + 거리 계산 + 정렬
+  useEffect(() => {
+    if (searchMode !== "location" || !locationState.coords) return;
+
+    setLoading(true);
+    setCurrentPage(1);
+
+    const fetchByLocation = async () => {
+      try {
+        if (mode === "교육원") {
+          const { data } = await supabase
+            .from("training_centers")
+            .select("*")
+            .not("latitude", "is", null)
+            .not("longitude", "is", null);
+
+          if (data) {
+            const withDistance = data
+              .map((item: any) => ({
+                ...item,
+                distance: haversineDistance(
+                  locationState.coords!.latitude,
+                  locationState.coords!.longitude,
+                  item.latitude,
+                  item.longitude,
+                ),
+              }))
+              .sort((a: any, b: any) => a.distance - b.distance);
+
+            setCenters(withDistance);
+          } else {
+            setCenters([]);
+          }
+          setInstitutions([]);
+        } else {
+          const { data } = await supabase
+            .from("training_institution")
+            .select("*")
+            .not("latitude", "is", null)
+            .not("longitude", "is", null);
+
+          if (data) {
+            const withDistance = data
+              .map((item: any) => ({
+                ...item,
+                distance: haversineDistance(
+                  locationState.coords!.latitude,
+                  locationState.coords!.longitude,
+                  item.latitude,
+                  item.longitude,
+                ),
+              }))
+              .sort((a: any, b: any) => a.distance - b.distance);
+
+            setInstitutions(withDistance);
+          } else {
+            setInstitutions([]);
+          }
+          setCenters([]);
+        }
+      } catch (err) {
+        console.error("[매칭 시스템] 위치 기반 검색 실패", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchByLocation();
+  }, [locationState.coords, mode, searchMode]);
+
+  // 검색 모드 변경 시 데이터 초기화
+  const handleSearchModeChange = (newMode: "region" | "location") => {
+    setSearchMode(newMode);
+    setCurrentPage(1);
+    setCenters([]);
+    setInstitutions([]);
+    setHasSearched(false);
+    setFilters({ region: "", subregion: "", law: "" });
+    setFiltersTemp({ region: "", subregion: "", law: "" });
+    if (newMode === "region") {
+      clearLocation();
+    }
+  };
+
+  // 지도에 전달할 아이템 생성
+  const getMapItems = () => {
+    const sourceData = mode === "교육원" ? centers : institutions;
+    return sourceData
+      .filter((item: any) => item.latitude && item.longitude)
+      .map((item: any) => ({
+        id: item.id,
+        name: mode === "교육원" ? item.institute_name : item.name,
+        address:
+          mode === "교육원" ? item.address || "" : item.full_address || "",
+        contact: item.contact,
+        distance: item.distance,
+        latitude: item.latitude,
+        longitude: item.longitude,
+      }));
+  };
+
+  // 거리 표시 포맷
+  const formatDistance = (distance?: number) => {
+    if (distance === undefined) return null;
+    if (distance < 1) {
+      return `${Math.round(distance * 1000)}m`;
+    }
+    return `${distance.toFixed(1)}km`;
+  };
 
   // 접근 권한 체크 중일 때
   if (isChecking) {
@@ -362,9 +507,12 @@ export default function MatchingPage() {
         <div className={styles.guideBox}>
           {mode === "현장실습기관"
             ? "잠깐! 교육원에 실습 과목 신청하셨나요?"
-            : "앞으로 실습 하실 지역을 기준으로 검색해보세요!"}
+            : searchMode === "location"
+              ? "내 위치 또는 주소를 입력해 가까운 기관을 찾아보세요!"
+              : "앞으로 실습 하실 지역을 기준으로 검색해보세요!"}
         </div>
         <div className={styles.filterSection}>
+          {/* 모드 탭: 교육원 / 현장실습기관 */}
           <div className={styles.tabWrapper}>
             <button
               className={mode === "교육원" ? styles.tabActive : styles.tab}
@@ -381,25 +529,73 @@ export default function MatchingPage() {
               현장실습기관 찾기
             </button>
           </div>
-          <FilterBarCustom
-            mode={mode}
-            region={filtersTemp.region}
-            subregion={filtersTemp.subregion}
-            law={filtersTemp.law}
-            onChange={setFiltersTemp}
-          />
-          <div className={styles.searchButtonWrapper}>
+
+          {/* 검색 모드 토글: 지역 검색 / 위치 검색 */}
+          <div className={mapStyles.searchModeToggle}>
             <button
-              className={styles.searchButton}
-              onClick={() => {
-                setFilters(filtersTemp);
-                setHasSearched(true);
-                setCurrentPage(1);
-              }}
+              className={
+                searchMode === "region"
+                  ? mapStyles.searchModeButtonActive
+                  : mapStyles.searchModeButton
+              }
+              onClick={() => handleSearchModeChange("region")}
             >
-              검색
+              지역 검색
+            </button>
+            <button
+              className={
+                searchMode === "location"
+                  ? mapStyles.searchModeButtonActive
+                  : mapStyles.searchModeButton
+              }
+              onClick={() => handleSearchModeChange("location")}
+            >
+              위치 검색
             </button>
           </div>
+
+          {/* 지역 검색 모드: 기존 필터 */}
+          {searchMode === "region" && (
+            <>
+              <FilterBarCustom
+                mode={mode}
+                region={filtersTemp.region}
+                subregion={filtersTemp.subregion}
+                law={filtersTemp.law}
+                onChange={setFiltersTemp}
+              />
+              <div className={styles.searchButtonWrapper}>
+                <button
+                  className={styles.searchButton}
+                  onClick={() => {
+                    setFilters(filtersTemp);
+                    setHasSearched(true);
+                    setCurrentPage(1);
+                  }}
+                >
+                  검색
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* 위치 검색 모드: 위치 입력 + 지도 */}
+          {searchMode === "location" && (
+            <>
+              <LocationSearchBar
+                locationState={locationState}
+                onDetectGPS={detectGPS}
+                onGeocodeAddress={geocodeAddress}
+                onClear={clearLocation}
+              />
+              {locationState.coords && (
+                <NaverMapView
+                  userLocation={locationState.coords}
+                  items={getMapItems()}
+                />
+              )}
+            </>
+          )}
         </div>
 
         {/* 교육원 리스트 */}
@@ -408,7 +604,11 @@ export default function MatchingPage() {
             {loading ? (
               <div>불러오는 중...</div>
             ) : centers.length === 0 ? (
-              <div>검색 결과가 없습니다.</div>
+              <div>
+                {searchMode === "location" && !locationState.coords
+                  ? "위치를 설정하면 가까운 교육원을 찾아드립니다."
+                  : "검색 결과가 없습니다."}
+              </div>
             ) : (
               <>
                 <ul className={styles.centerListContainer}>
@@ -419,12 +619,18 @@ export default function MatchingPage() {
                     )
                     .map((center) => (
                       <li key={center.id} className={styles.centerList}>
-                        {/* 상단 한 줄: 이름/카테고리 */}
+                        {/* 상단 한 줄: 이름/카테고리/거리 */}
                         <div className={styles.centerNameRow}>
                           <span>{center.institute_name}</span>
                           <span className={styles.centerTypeBadge}>
                             {center.category || "교육원"}
                           </span>
+                          {searchMode === "location" &&
+                            formatDistance(center.distance) && (
+                              <span className={mapStyles.distanceBadge}>
+                                {formatDistance(center.distance)}
+                              </span>
+                            )}
                         </div>
                         {/* 아래 정보: 한 줄씩 */}
                         <div className={styles.centerInfoRow}>
@@ -589,7 +795,11 @@ export default function MatchingPage() {
             {loading ? (
               <div>불러오는 중...</div>
             ) : institutions.length === 0 ? (
-              <div>검색 결과가 없습니다.</div>
+              <div>
+                {searchMode === "location" && !locationState.coords
+                  ? "위치를 설정하면 가까운 실습기관을 찾아드립니다."
+                  : "검색 결과가 없습니다."}
+              </div>
             ) : (
               <>
                 <ul className={styles.centerListContainer}>
@@ -600,12 +810,18 @@ export default function MatchingPage() {
                     )
                     .map((inst) => (
                       <li key={inst.id} className={styles.centerList}>
-                        {/* 상단 한 줄: 이름/기관유형 */}
+                        {/* 상단 한 줄: 이름/기관유형/거리 */}
                         <div className={styles.centerNameRow}>
                           <span>{inst.name}</span>
                           <span className={styles.centerTypeBadge}>
                             {inst.institution_type || "기관"}
                           </span>
+                          {searchMode === "location" &&
+                            formatDistance(inst.distance) && (
+                              <span className={mapStyles.distanceBadge}>
+                                {formatDistance(inst.distance)}
+                              </span>
+                            )}
                         </div>
                         {/* 아래 정보: 한 줄씩 */}
                         <div className={styles.centerInfoRow}>
