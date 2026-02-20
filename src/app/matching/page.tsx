@@ -113,7 +113,16 @@ export default function MatchingPage() {
           return;
         }
 
-        // 구독자는 접근 허용
+        // 베이직 플랜은 실습매칭 이용 불가
+        if (data.plan === "베이직") {
+          setAlertMessage(
+            "실습매칭 시스템은 스탠다드 이상 구독자만 이용할 수 있습니다.\n확인 버튼을 눌러 홈으로 이동합니다.",
+          );
+          setAlertOpen(true);
+          return;
+        }
+
+        // 스탠다드/프리미엄 구독자는 접근 허용
         setIsChecking(false);
       } catch (error) {
         console.error("[매칭 시스템] Access check error:", error);

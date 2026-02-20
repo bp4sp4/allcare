@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { cancelRebill } from '@/lib/payapp';
+import { cancelRebill, cancelPayment, requestPaymentCancellation } from '@/lib/payapp';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
@@ -13,45 +13,36 @@ const PLAN_MAP: Record<string, { name: string; price: number; rank: number }> = 
   premium: { name: '프리미엄', price: 29900, rank: 3 },
 };
 
-// 플랜 이름으로 rank 찾기
 function getPlanRank(planName: string): number {
   const entry = Object.values(PLAN_MAP).find((p) => p.name === planName);
   return entry?.rank ?? 0;
 }
 
-// 플랜 이름으로 price 찾기
 function getPlanPrice(planName: string): number {
   const entry = Object.values(PLAN_MAP).find((p) => p.name === planName);
   return entry?.price ?? 0;
 }
 
 /**
- * 일할 차액 계산
- * (상위요금 - 현재요금) ÷ 전체기간일수 × 남은일수
+ * 현재 플랜의 남은 기간 일할 환불 금액 계산
+ * currentPrice ÷ 전체기간일수 × 남은일수
  */
-function calculateProratedAmount(
-  currentPrice: number,
-  newPrice: number,
-  nextBillingDate: string,
-): number {
+function calculateRemainingRefund(currentPrice: number, nextBillingDate: string): number {
   const now = new Date();
   const nextDate = new Date(nextBillingDate);
 
-  // 남은 일수 계산
+  if (nextDate <= now) return 0;
+
+  const prevDate = new Date(nextDate);
+  prevDate.setMonth(prevDate.getMonth() - 1);
+
+  const totalMs = nextDate.getTime() - prevDate.getTime();
+  const totalDays = Math.max(Math.ceil(totalMs / (1000 * 60 * 60 * 24)), 1);
+
   const remainingMs = nextDate.getTime() - now.getTime();
   const remainingDays = Math.max(Math.ceil(remainingMs / (1000 * 60 * 60 * 24)), 0);
 
-  // 한 달 기간 (이전 결제일 ~ 다음 결제일)
-  const prevBillingDate = new Date(nextDate);
-  prevBillingDate.setMonth(prevBillingDate.getMonth() - 1);
-  const totalMs = nextDate.getTime() - prevBillingDate.getTime();
-  const totalDays = Math.max(Math.ceil(totalMs / (1000 * 60 * 60 * 24)), 1);
-
-  // 일할 차액
-  const dailyDiff = (newPrice - currentPrice) / totalDays;
-  const prorated = Math.round(dailyDiff * remainingDays);
-
-  return Math.max(prorated, 0);
+  return Math.round(currentPrice * remainingDays / totalDays);
 }
 
 export async function POST(req: NextRequest) {
@@ -138,12 +129,8 @@ export async function POST(req: NextRequest) {
 
     // ========== 업그레이드 (더 비싼 플랜) ==========
     if (newRank > currentRank) {
-      // 일할 차액 계산
-      const proratedAmount = subscription.next_billing_date
-        ? calculateProratedAmount(currentPrice, newPlanInfo.price, subscription.next_billing_date)
-        : 0;
 
-      // 1. 기존 PayApp 정기결제 해지
+      // 1. 기존 정기결제(rebill) 해지
       if (subscription.payapp_bill_key && PAYAPP_USER_ID && PAYAPP_LINK_KEY) {
         const cancelResult = await cancelRebill({
           userId: PAYAPP_USER_ID,
@@ -160,30 +147,91 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 2. DB에 예약만 저장 (플랜은 결제 완료 후 webhook에서 변경)
+      // 2. 기존 결제건 잔여분 부분환불
+      let refundAmount = 0;
+      let refundStatus: 'immediate' | 'requested' | 'skipped' = 'skipped';
+
+      if (subscription.payapp_trade_id && subscription.next_billing_date && PAYAPP_USER_ID && PAYAPP_LINK_KEY) {
+        refundAmount = calculateRemainingRefund(currentPrice, subscription.next_billing_date);
+
+        if (refundAmount > 0) {
+          const cancelMemo = `업그레이드 잔여분 환불 (${subscription.plan} → ${newPlanInfo.name}, 잔여 ${refundAmount.toLocaleString()}원)`;
+
+          // 최근 결제일 조회 (D+5 기준 판단)
+          const { data: lastPayment } = await supabaseAdmin
+            .from('payments')
+            .select('approved_at')
+            .eq('user_id', userId)
+            .eq('trade_id', subscription.payapp_trade_id)
+            .maybeSingle();
+
+          const now = new Date();
+          const approvedAt = lastPayment?.approved_at ? new Date(lastPayment.approved_at) : null;
+          const daysSincePayment = approvedAt
+            ? Math.floor((now.getTime() - approvedAt.getTime()) / (1000 * 60 * 60 * 24))
+            : 999;
+
+          if (daysSincePayment <= 5) {
+            // D+5 이내 → 즉시 부분취소
+            const refundResult = await cancelPayment({
+              userId: PAYAPP_USER_ID,
+              linkKey: PAYAPP_LINK_KEY,
+              mulNo: subscription.payapp_trade_id,
+              cancelMemo,
+              partCancel: 1,
+              cancelPrice: refundAmount,
+            });
+
+            if (refundResult.success) {
+              refundStatus = 'immediate';
+            } else {
+              console.error('Partial refund (immediate) failed:', refundResult.error);
+              // 환불 실패해도 업그레이드는 진행 (로그만 남김)
+            }
+          } else {
+            // D+5 초과 → 취소 요청
+            const refundReqResult = await requestPaymentCancellation({
+              userId: PAYAPP_USER_ID,
+              linkKey: PAYAPP_LINK_KEY,
+              mulNo: subscription.payapp_trade_id,
+              cancelMemo,
+              partCancel: 1,
+              cancelPrice: refundAmount,
+            });
+
+            if (refundReqResult.success) {
+              refundStatus = 'requested';
+            } else {
+              console.error('Partial refund (request) failed:', refundReqResult.error);
+              // 환불 실패해도 업그레이드는 진행 (로그만 남김)
+            }
+          }
+        }
+      }
+
+      // 3. bill_key null 초기화 (scheduled_plan은 결제 완료 webhook에서 저장)
       const { error: updateError } = await supabaseAdmin
         .from('subscriptions')
         .update({
-          scheduled_plan: newPlanInfo.name,
-          scheduled_amount: newPlanInfo.price,
           payapp_bill_key: null,
         })
         .eq('id', subscription.id);
 
       if (updateError) {
-        console.error('Upgrade error:', updateError);
+        console.error('Upgrade DB update error:', updateError);
         return NextResponse.json(
           { error: '요금제 변경 중 오류가 발생했습니다.' },
           { status: 500 }
         );
       }
 
-      // 3. 클라이언트에서 일할 차액 결제 + 새 금액으로 rebill 재등록
+      // 4. 클라이언트에서 새 금액(전액)으로 rebill 재등록
       return NextResponse.json({
         success: true,
         type: 'upgrade',
         message: `${newPlanInfo.name}으로 업그레이드합니다.`,
-        proratedAmount,
+        refundAmount,
+        refundStatus,
         newPlanName: newPlanInfo.name,
         newPlanPrice: newPlanInfo.price,
         needsPayment: true,
