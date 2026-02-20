@@ -157,34 +157,36 @@ export async function POST(req: NextRequest) {
         if (refundAmount > 0) {
           const cancelMemo = `업그레이드 잔여분 환불 (${subscription.plan} → ${newPlanInfo.name}, 잔여 ${refundAmount.toLocaleString()}원)`;
 
-          // 즉시 부분취소 시도 (D+5 이내)
+          // 환불금액이 전체금액 이상이면 전체취소, 아니면 부분취소
+          const isFullRefund = refundAmount >= currentPrice;
+
           const refundResult = await cancelPayment({
             userId: PAYAPP_USER_ID,
             linkKey: PAYAPP_LINK_KEY,
             mulNo: subscription.payapp_trade_id,
             cancelMemo,
-            partCancel: 1,
-            cancelPrice: refundAmount,
+            partCancel: isFullRefund ? 0 : 1,
+            cancelPrice: isFullRefund ? undefined : refundAmount,
           });
 
           if (refundResult.success) {
             refundStatus = 'immediate';
           } else {
             // 즉시 취소 실패 → D+5 초과로 간주하고 취소 요청
-            console.log('Immediate partial refund failed, trying cancel request:', refundResult.error);
+            console.log('Immediate refund failed, trying cancel request:', refundResult.error);
             const refundReqResult = await requestPaymentCancellation({
               userId: PAYAPP_USER_ID,
               linkKey: PAYAPP_LINK_KEY,
               mulNo: subscription.payapp_trade_id,
               cancelMemo,
-              partCancel: 1,
-              cancelPrice: refundAmount,
+              partCancel: isFullRefund ? 0 : 1,
+              cancelPrice: isFullRefund ? undefined : refundAmount,
             });
 
             if (refundReqResult.success) {
               refundStatus = 'requested';
             } else {
-              console.error('Partial refund request also failed:', refundReqResult.error);
+              console.error('Refund request also failed:', refundReqResult.error);
               // 환불 실패해도 업그레이드는 진행 (로그만 남김)
             }
           }
