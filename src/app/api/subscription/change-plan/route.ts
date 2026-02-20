@@ -157,39 +157,21 @@ export async function POST(req: NextRequest) {
         if (refundAmount > 0) {
           const cancelMemo = `업그레이드 잔여분 환불 (${subscription.plan} → ${newPlanInfo.name}, 잔여 ${refundAmount.toLocaleString()}원)`;
 
-          // 최근 결제일 조회 (D+5 기준 판단)
-          const { data: lastPayment } = await supabaseAdmin
-            .from('payments')
-            .select('approved_at')
-            .eq('user_id', userId)
-            .eq('trade_id', subscription.payapp_trade_id)
-            .maybeSingle();
+          // 즉시 부분취소 시도 (D+5 이내)
+          const refundResult = await cancelPayment({
+            userId: PAYAPP_USER_ID,
+            linkKey: PAYAPP_LINK_KEY,
+            mulNo: subscription.payapp_trade_id,
+            cancelMemo,
+            partCancel: 1,
+            cancelPrice: refundAmount,
+          });
 
-          const now = new Date();
-          const approvedAt = lastPayment?.approved_at ? new Date(lastPayment.approved_at) : null;
-          const daysSincePayment = approvedAt
-            ? Math.floor((now.getTime() - approvedAt.getTime()) / (1000 * 60 * 60 * 24))
-            : 999;
-
-          if (daysSincePayment <= 5) {
-            // D+5 이내 → 즉시 부분취소
-            const refundResult = await cancelPayment({
-              userId: PAYAPP_USER_ID,
-              linkKey: PAYAPP_LINK_KEY,
-              mulNo: subscription.payapp_trade_id,
-              cancelMemo,
-              partCancel: 1,
-              cancelPrice: refundAmount,
-            });
-
-            if (refundResult.success) {
-              refundStatus = 'immediate';
-            } else {
-              console.error('Partial refund (immediate) failed:', refundResult.error);
-              // 환불 실패해도 업그레이드는 진행 (로그만 남김)
-            }
+          if (refundResult.success) {
+            refundStatus = 'immediate';
           } else {
-            // D+5 초과 → 취소 요청
+            // 즉시 취소 실패 → D+5 초과로 간주하고 취소 요청
+            console.log('Immediate partial refund failed, trying cancel request:', refundResult.error);
             const refundReqResult = await requestPaymentCancellation({
               userId: PAYAPP_USER_ID,
               linkKey: PAYAPP_LINK_KEY,
@@ -202,7 +184,7 @@ export async function POST(req: NextRequest) {
             if (refundReqResult.success) {
               refundStatus = 'requested';
             } else {
-              console.error('Partial refund (request) failed:', refundReqResult.error);
+              console.error('Partial refund request also failed:', refundReqResult.error);
               // 환불 실패해도 업그레이드는 진행 (로그만 남김)
             }
           }

@@ -1828,7 +1828,7 @@ export default function MyPage() {
 
                   const now = new Date();
                   const expireDate = new Date(now);
-                  expireDate.setFullYear(expireDate.getFullYear() + 1);
+                  expireDate.setMonth(expireDate.getMonth() + 18);
                   const rebillExpire = expireDate.toISOString().split("T")[0];
                   const rebillCycleMonth = now.getDate().toString();
                   const orderId = `SUBS-${userId}-${Date.now()}`;
