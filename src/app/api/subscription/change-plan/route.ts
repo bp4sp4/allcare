@@ -4,7 +4,7 @@ import { cancelRebill, cancelPayment, requestPaymentCancellation } from '@/lib/p
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
-const PAYAPP_USER_ID = process.env.PAYAPP_USER_ID || '';
+const PAYAPP_USER_ID = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
 const PAYAPP_LINK_KEY = process.env.PAYAPP_LINK_KEY || '';
 
 const PLAN_MAP: Record<string, { name: string; price: number; rank: number }> = {

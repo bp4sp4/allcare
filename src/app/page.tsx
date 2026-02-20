@@ -59,6 +59,7 @@ const PLANS: Plan[] = [
 
 export default function Home() {
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showAlreadySubscribedModal, setShowAlreadySubscribedModal] = useState(false);
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showSticky, setShowSticky] = useState(true);
@@ -370,6 +371,12 @@ export default function Home() {
             setShowSheet(false);
             router.push("/auth/login");
           }}
+        />
+      )}
+      {showAlreadySubscribedModal && (
+        <AlertModal
+          message={"이미 구독 중입니다.\n내정보 관리에서 요금제를 변경하거나\n구독을 관리하세요."}
+          onClose={() => setShowAlreadySubscribedModal(false)}
         />
       )}
       {/* PayApp SDK is loaded via loadPayAppSDK util */}
@@ -929,17 +936,16 @@ export default function Home() {
                       setShowLoginModal(true);
                       return;
                     }
-                    {
-                      showLoginModal && (
-                        <AlertModal
-                          message="로그인이 필요합니다."
-                          onClose={() => {
-                            setShowLoginModal(false);
-                            setShowSheet(false);
-                            router.push("/auth/login");
-                          }}
-                        />
-                      );
+
+                    // 이미 구독 중인지 확인
+                    const subCheckRes = await fetch("/api/subscription/status", {
+                      headers: { Authorization: `Bearer ${token}` },
+                    });
+                    const subCheckData = await subCheckRes.json();
+                    if (subCheckData.isActive) {
+                      setShowSheet(false);
+                      setShowAlreadySubscribedModal(true);
+                      return;
                     }
 
                     // API를 통해 사용자 정보 가져오기
