@@ -350,8 +350,6 @@ export default function MyPage() {
         const orderData = {
           orderId: `ORDER-${Date.now()}`,
           userId,
-          phone,
-          name,
           mode: "upgrade",
           plan: selectedPlan,
           price: newPlanPrice,
