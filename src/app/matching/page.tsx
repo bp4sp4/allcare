@@ -53,7 +53,7 @@ export default function MatchingPage() {
   const [institutions, setInstitutions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = mode === "교육원" ? 9999 : 5;
 
   // 위치 검색 hook
   const { locationState, detectGPS, geocodeAddress, clearLocation } =
@@ -122,7 +122,16 @@ export default function MatchingPage() {
           return;
         }
 
-        // 스탠다드/프리미엄 구독자는 접근 허용
+        // 열람권 없으면 차단
+        if (!data.practiceMatchingAccess) {
+          setAlertMessage(
+            "실습매칭 시스템 열람권이 없습니다.\n관리자에게 문의해주세요.",
+          );
+          setAlertOpen(true);
+          return;
+        }
+
+        // 접근 허용
         setIsChecking(false);
       } catch (error) {
         console.error("[매칭 시스템] Access check error:", error);
@@ -159,8 +168,7 @@ export default function MatchingPage() {
         if (mode === "교육원") {
           const { data } = await supabase
             .from("training_centers")
-            .select("*")
-            .limit(20);
+            .select("*");
           setCenters(data || []);
           setInstitutions([]);
         } else {
@@ -268,8 +276,13 @@ export default function MatchingPage() {
       try {
         const { latitude, longitude } = locationState.coords!;
         if (mode === "교육원") {
-          const data = await fetchNearby("training_centers", latitude, longitude);
-          const withDistance = data
+          // 교육원은 전체 조회 후 거리순 정렬
+          const { data: allCenters } = await supabase
+            .from("training_centers")
+            .select("*")
+            .not("latitude", "is", null)
+            .not("longitude", "is", null);
+          const withDistance = (allCenters || [])
             .map((item: any) => ({
               ...item,
               distance: haversineDistance(latitude, longitude, item.latitude, item.longitude),
@@ -351,6 +364,7 @@ export default function MatchingPage() {
               router.push("/auth/login");
             else if (alertMessage.includes("만료")) router.push("/auth/login");
             else if (alertMessage.includes("구독자만")) router.push("/");
+            else if (alertMessage.includes("열람권")) router.push("/");
           }}
         />
       );
@@ -374,6 +388,7 @@ export default function MatchingPage() {
               router.push("/auth/login");
             else if (alertMessage.includes("만료")) router.push("/auth/login");
             else if (alertMessage.includes("구독자만")) router.push("/");
+            else if (alertMessage.includes("열람권")) router.push("/");
           }}
         />
       )}

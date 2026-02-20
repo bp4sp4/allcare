@@ -241,9 +241,43 @@
   color: #721c24;
 }
 
+.statusCancelScheduled {
+  background: #fff3cd;
+  color: #856404;
+}
+
 .statusNone {
   background: #e2e8f0;
   color: #718096;
+}
+
+.accessBtn {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.accessEnabled {
+  background: #c6f6d5;
+  color: #276749;
+}
+
+.accessEnabled:hover {
+  background: #9ae6b4;
+}
+
+.accessDisabled {
+  background: #e2e8f0;
+  color: #718096;
+}
+
+.accessDisabled:hover {
+  background: #cbd5e0;
 }
 
 .actionBtn {

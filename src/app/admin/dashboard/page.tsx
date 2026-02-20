@@ -16,6 +16,7 @@ interface UserData {
   amount: number | null;
   next_billing_date: string | null;
   cancelled_at: string | null;
+  practice_matching_access: boolean;
 }
 
 interface Stats {
@@ -145,6 +146,32 @@ export default function AdminDashboardPage() {
     setNewStatus('active');
   };
 
+  const handleAccessToggle = async (user: UserData) => {
+    const newAccess = !user.practice_matching_access;
+    const confirmMsg = newAccess
+      ? `${user.name || user.email}에게 실습매칭 열람권을 부여하시겠습니까?`
+      : `${user.name || user.email}의 실습매칭 열람권을 회수하시겠습니까?`;
+
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      const token = localStorage.getItem('admin_token');
+      const response = await fetch('/api/admin/users/access', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userId: user.user_id, access: newAccess }),
+      });
+
+      if (!response.ok) throw new Error('변경에 실패했습니다.');
+      fetchUsers();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : '오류가 발생했습니다.');
+    }
+  };
+
   const handleSubscriptionAction = async () => {
     if (!selectedUser) return;
 
@@ -266,6 +293,7 @@ export default function AdminDashboardPage() {
               >
                 <option value="all">전체</option>
                 <option value="active">활성</option>
+                <option value="cancel_scheduled">구독취소 상태</option>
                 <option value="cancelled">취소됨</option>
                 <option value="none">구독 없음</option>
               </select>
@@ -299,6 +327,7 @@ export default function AdminDashboardPage() {
                   <th>구독상태</th>
                   <th>구독플랜</th>
                   <th>다음결제일</th>
+                  <th>실습매칭 열람권</th>
                   <th>관리</th>
                 </tr>
               </thead>
@@ -328,12 +357,12 @@ export default function AdminDashboardPage() {
                     <td>{formatDate(user.registered_at)}</td>
                     <td>
                       {user.subscription_status === 'active' ? (
-                        <span
-                          className={`${styles.statusBadge} ${
-                            user.cancelled_at ? styles.statusCancelled : styles.statusActive
-                          }`}
-                        >
-                          {user.cancelled_at ? '취소됨' : '활성'}
+                        <span className={`${styles.statusBadge} ${styles.statusActive}`}>
+                          활성
+                        </span>
+                      ) : user.subscription_status === 'cancel_scheduled' ? (
+                        <span className={`${styles.statusBadge} ${styles.statusCancelScheduled}`}>
+                          구독취소 상태
                         </span>
                       ) : (
                         <span className={`${styles.statusBadge} ${styles.statusNone}`}>
@@ -343,6 +372,14 @@ export default function AdminDashboardPage() {
                     </td>
                     <td>{user.plan || '-'}</td>
                     <td>{formatDate(user.next_billing_date)}</td>
+                    <td>
+                      <button
+                        onClick={() => handleAccessToggle(user)}
+                        className={`${styles.accessBtn} ${user.practice_matching_access ? styles.accessEnabled : styles.accessDisabled}`}
+                      >
+                        {user.practice_matching_access ? '허용됨' : '미허용'}
+                      </button>
+                    </td>
                     <td>
                       {user.subscription_status === 'active' && (
                         <button

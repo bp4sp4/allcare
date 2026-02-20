@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# 교육원 좌표 일괄 변환 스크립트
+# 교육원(training_centers) 좌표 일괄 변환 스크립트
 # offset 없이 항상 null인 것 앞에서부터 100개씩 처리
 
 BASE_URL="http://localhost:3000"

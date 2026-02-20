@@ -29,6 +29,14 @@ export async function GET(req: NextRequest) {
 
     const userId = decoded.userId;
 
+    // 열람권 조회
+    const { data: userData } = await supabaseAdmin
+      .from('users')
+      .select('practice_matching_access')
+      .eq('id', userId)
+      .maybeSingle();
+    const practiceMatchingAccess = userData?.practice_matching_access ?? false;
+
     // 구독 정보 조회 (active 또는 cancel_scheduled 상태)
     const { data: subscription, error: subError } = await supabaseAdmin
       .from('subscriptions')
@@ -50,7 +58,8 @@ export async function GET(req: NextRequest) {
     // 구독이 없는 경우
     if (!subscription) {
       return NextResponse.json({
-        isActive: false
+        isActive: false,
+        practiceMatchingAccess: practiceMatchingAccess,
       });
     }
 
@@ -60,6 +69,7 @@ export async function GET(req: NextRequest) {
     // 구독이 있는 경우
     return NextResponse.json({
       isActive: true,
+      practiceMatchingAccess: practiceMatchingAccess,
       id: subscription.id,
       plan: subscription.plan,
       amount: subscription.amount,

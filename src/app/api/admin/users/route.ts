@@ -78,6 +78,7 @@ export async function GET(request: NextRequest) {
     } else if (subscription === 'none') {
       query = query.is('subscription_status', null);
     }
+    // cancel_scheduled: VIEW가 반환 못 할 수 있으므로 필터 미적용 후 코드에서 처리
 
     // 최신 가입자부터 정렬
     query = query.order('registered_at', { ascending: false });
@@ -102,9 +103,54 @@ export async function GET(request: NextRequest) {
     // 관리자 계정을 제외한 회원 목록만 반환
     const filteredUsers = users?.filter(user => !adminEmails.has(user.email)) || [];
 
+    const userIds = filteredUsers.map((u: any) => u.user_id);
+
+    // practice_matching_access 조회 후 병합
+    let accessMap = new Map<string, boolean>();
+    // cancel_scheduled 상태 보완 (VIEW가 cancel_scheduled를 반환하지 않는 경우 대비)
+    let subscriptionStatusMap = new Map<string, string>();
+
+    if (userIds.length > 0) {
+      const [accessResult, subscriptionResult] = await Promise.all([
+        supabaseAdmin
+          .from('users')
+          .select('id, practice_matching_access')
+          .in('id', userIds),
+        supabaseAdmin
+          .from('subscriptions')
+          .select('user_id, status')
+          .in('user_id', userIds)
+          .in('status', ['active', 'cancel_scheduled'])
+          .order('created_at', { ascending: false }),
+      ]);
+
+      accessResult.data?.forEach((u: any) => accessMap.set(u.id, u.practice_matching_access ?? false));
+
+      // 유저별 가장 최근 구독 상태 저장 (VIEW가 null 반환할 때 사용)
+      const seenUserIds = new Set<string>();
+      subscriptionResult.data?.forEach((s: any) => {
+        if (!seenUserIds.has(s.user_id)) {
+          subscriptionStatusMap.set(s.user_id, s.status);
+          seenUserIds.add(s.user_id);
+        }
+      });
+    }
+
+    const usersWithAccess = filteredUsers.map((u: any) => ({
+      ...u,
+      // VIEW의 subscription_status가 null이면 subscriptions 테이블에서 보완
+      subscription_status: u.subscription_status ?? subscriptionStatusMap.get(u.user_id) ?? null,
+      practice_matching_access: accessMap.get(u.user_id) ?? false,
+    }));
+
+    // cancel_scheduled 필터는 status 보완 후 후처리 적용
+    const finalUsers = subscription === 'cancel_scheduled'
+      ? usersWithAccess.filter((u: any) => u.subscription_status === 'cancel_scheduled')
+      : usersWithAccess;
+
     return NextResponse.json({
       success: true,
-      users: filteredUsers
+      users: finalUsers
     });
   } catch (error) {
     console.error('Admin users API error:', error);
