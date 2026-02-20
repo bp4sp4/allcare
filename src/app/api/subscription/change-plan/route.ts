@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
-import { cancelRebill, cancelPayment, requestPaymentCancellation } from '@/lib/payapp';
+import { cancelRebill } from '@/lib/payapp';
 import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
@@ -147,53 +147,15 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 2. 기존 결제건 잔여분 부분환불
+      // 2. 잔여 환불금액 계산 (실제 환불은 새 결제 완료 후 webhook에서 처리)
       let refundAmount = 0;
-      let refundStatus: 'immediate' | 'requested' | 'skipped' = 'skipped';
+      const refundTradeId = subscription.payapp_trade_id || null;
 
-      if (subscription.payapp_trade_id && subscription.next_billing_date && PAYAPP_USER_ID && PAYAPP_LINK_KEY) {
+      if (subscription.next_billing_date) {
         refundAmount = calculateRemainingRefund(currentPrice, subscription.next_billing_date);
-
-        if (refundAmount > 0) {
-          const cancelMemo = `업그레이드 잔여분 환불 (${subscription.plan} → ${newPlanInfo.name}, 잔여 ${refundAmount.toLocaleString()}원)`;
-
-          // 환불금액이 전체금액 이상이면 전체취소, 아니면 부분취소
-          const isFullRefund = refundAmount >= currentPrice;
-
-          const refundResult = await cancelPayment({
-            userId: PAYAPP_USER_ID,
-            linkKey: PAYAPP_LINK_KEY,
-            mulNo: subscription.payapp_trade_id,
-            cancelMemo,
-            partCancel: isFullRefund ? 0 : 1,
-            cancelPrice: isFullRefund ? undefined : refundAmount,
-          });
-
-          if (refundResult.success) {
-            refundStatus = 'immediate';
-          } else {
-            // 즉시 취소 실패 → D+5 초과로 간주하고 취소 요청
-            console.log('Immediate refund failed, trying cancel request:', refundResult.error);
-            const refundReqResult = await requestPaymentCancellation({
-              userId: PAYAPP_USER_ID,
-              linkKey: PAYAPP_LINK_KEY,
-              mulNo: subscription.payapp_trade_id,
-              cancelMemo,
-              partCancel: isFullRefund ? 0 : 1,
-              cancelPrice: isFullRefund ? undefined : refundAmount,
-            });
-
-            if (refundReqResult.success) {
-              refundStatus = 'requested';
-            } else {
-              console.error('Refund request also failed:', refundReqResult.error);
-              // 환불 실패해도 업그레이드는 진행 (로그만 남김)
-            }
-          }
-        }
       }
 
-      // 3. bill_key null 초기화 (scheduled_plan은 결제 완료 webhook에서 저장)
+      // 3. bill_key null 초기화 (플랜/trade_id는 결제 완료 webhook에서 업데이트)
       const { error: updateError } = await supabaseAdmin
         .from('subscriptions')
         .update({
@@ -210,12 +172,14 @@ export async function POST(req: NextRequest) {
       }
 
       // 4. 클라이언트에서 새 금액(전액)으로 rebill 재등록
+      // 환불 정보는 var1에 담아 webhook으로 전달
       return NextResponse.json({
         success: true,
         type: 'upgrade',
         message: `${newPlanInfo.name}으로 업그레이드합니다.`,
         refundAmount,
-        refundStatus,
+        refundTradeId,
+        prevPrice: currentPrice,
         newPlanName: newPlanInfo.name,
         newPlanPrice: newPlanInfo.price,
         needsPayment: true,

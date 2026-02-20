@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { cancelPayment, requestPaymentCancellation } from '@/lib/payapp';
 
 // 페이앱 웹훅 처리 (결제 결과 수신)
 export async function POST(request: NextRequest) {
@@ -198,6 +199,41 @@ export async function POST(request: NextRequest) {
 
             if (subscriptionError) {
               console.error('Upgrade update error:', subscriptionError);
+            }
+
+            // 업그레이드: 이전 결제건 잔여분 환불 처리
+            const refundTradeId = orderData.refundTradeId;
+            const refundAmount = orderData.refundAmount ? parseInt(String(orderData.refundAmount)) : 0;
+            const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
+            const linkKey = process.env.PAYAPP_LINK_KEY || '';
+
+            if (refundTradeId && refundAmount > 0 && payappUserId && linkKey) {
+              const cancelMemo = `업그레이드 잔여분 환불 (잔여 ${refundAmount.toLocaleString()}원)`;
+              const isFullRefund = refundAmount >= (orderData.prevPrice || refundAmount);
+
+              const refundResult = await cancelPayment({
+                userId: payappUserId,
+                linkKey,
+                mulNo: refundTradeId,
+                cancelMemo,
+                partCancel: isFullRefund ? 0 : 1,
+                cancelPrice: isFullRefund ? undefined : refundAmount,
+              });
+
+              if (!refundResult.success) {
+                console.log('Immediate refund failed, trying cancel request:', refundResult.error);
+                const refundReqResult = await requestPaymentCancellation({
+                  userId: payappUserId,
+                  linkKey,
+                  mulNo: refundTradeId,
+                  cancelMemo,
+                  partCancel: isFullRefund ? 0 : 1,
+                  cancelPrice: isFullRefund ? undefined : refundAmount,
+                });
+                if (!refundReqResult.success) {
+                  console.error('Refund request also failed:', refundReqResult.error);
+                }
+              }
             }
           } else {
             // 예약된 플랜이 있으면 적용 (정기결제 자동갱신 시)

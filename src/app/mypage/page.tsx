@@ -355,6 +355,9 @@ export default function MyPage() {
           mode: "upgrade",
           plan: selectedPlan,
           price: newPlanPrice,
+          refundTradeId: result.refundTradeId || null,
+          refundAmount: result.refundAmount || 0,
+          prevPrice: result.prevPrice || 0,
         };
 
         window.PayApp.setParam("goodname", `올케어구독상품-${newPlanName}`);
