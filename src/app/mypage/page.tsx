@@ -7,6 +7,7 @@ import { loadPayAppSDK } from "@/lib/payapp";
 import styles from "./mypage.module.css";
 import BottomSheetHandle from "../../components/BottomSheetHandle";
 import Portal from "../../components/Portal";
+import AlertModal from "../../components/AlertModal";
 
 // PayApp SDK 타입 정의
 declare global {
@@ -159,6 +160,9 @@ export default function MyPage() {
     false,
     false,
   ]);
+  const [showDowngradeConfirm, setShowDowngradeConfirm] = useState(false);
+  const [downgradeWarning, setDowngradeWarning] = useState("");
+  const [pendingPlanChange, setPendingPlanChange] = useState<(() => void) | null>(null);
 
   // Prevent background scroll when any modal or sheet is open
   useEffect(() => {
@@ -278,6 +282,104 @@ export default function MyPage() {
       setPlanChangeAgreeAll(next.every(Boolean));
       return next;
     });
+  };
+
+  const executePlanChange = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("로그인이 필요합니다.");
+        return;
+      }
+
+      const response = await fetch("/api/subscription/change-plan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ plan: selectedPlan }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        alert(result.error || "요금제 변경에 실패했습니다.");
+        return;
+      }
+
+      if (result.needsPayment) {
+        if (!isPayAppLoaded || !window.PayApp) {
+          alert("결제 시스템을 로딩 중입니다. 잠시 후 다시 시도해주세요.");
+          return;
+        }
+
+        const userResponse = await fetch("/api/user/profile", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!userResponse.ok) {
+          alert("사용자 정보를 가져올 수 없습니다.");
+          return;
+        }
+        const { name, phone } = await userResponse.json();
+
+        let userId = "";
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          userId = payload.userId || "";
+        } catch (e) {
+          console.error("Token parse error:", e);
+        }
+
+        const baseUrl = window.location.origin;
+        const shopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || "한평생올케어";
+        const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || "";
+
+        window.PayApp.setDefault("userid", payappUserId);
+        window.PayApp.setDefault("shopname", shopName);
+
+        const now = new Date();
+        const expireDate = new Date(now);
+        expireDate.setMonth(expireDate.getMonth() + 18);
+        const rebillExpire = expireDate.toISOString().split("T")[0];
+        const rebillCycleMonth = now.getDate().toString();
+
+        const newPlanPrice = result.newPlanPrice;
+        const newPlanName = result.newPlanName;
+
+        const orderData = {
+          orderId: `ORDER-${Date.now()}`,
+          userId,
+          phone,
+          name,
+          mode: "upgrade",
+          plan: selectedPlan,
+          price: newPlanPrice,
+        };
+
+        window.PayApp.setParam("goodname", `올케어구독상품-${newPlanName}`);
+        window.PayApp.setParam("goodprice", newPlanPrice.toString());
+        window.PayApp.setParam("recvphone", phone);
+        window.PayApp.setParam("buyername", name);
+        window.PayApp.setParam("smsuse", "n");
+        window.PayApp.setParam("rebillCycleType", "Month");
+        window.PayApp.setParam("rebillCycleMonth", rebillCycleMonth);
+        window.PayApp.setParam("rebillExpire", rebillExpire);
+        window.PayApp.setParam("feedbackurl", `${baseUrl}/api/payments/webhook`);
+        window.PayApp.setParam("returnurl", `${baseUrl}/payment/success`);
+        window.PayApp.setParam("var1", JSON.stringify(orderData));
+
+        window.PayApp.rebill();
+      } else {
+        alert(result.message);
+      }
+
+      handlePlanChangeSheetClose();
+      fetchSubscriptionInfo();
+    } catch (error) {
+      console.error("Plan change error:", error);
+      alert("요금제 변경 처리 중 오류가 발생했습니다.");
+    }
   };
 
   useEffect(() => {
@@ -2188,133 +2290,36 @@ export default function MyPage() {
             ))}
             <button
               className={`${styles.sheetButton} ${!planChangeAgreeAll ? styles.sheetButtonDisabled : ""}`}
-              onClick={async () => {
+              onClick={() => {
                 if (!planChangeAgreeAll) return;
 
-                try {
-                  const token = localStorage.getItem("token");
-                  if (!token) {
-                    alert("로그인이 필요합니다.");
+                const selectedPlanInfo = PLANS.find((p) => p.id === selectedPlan);
+                const currentPlanInfo = PLANS.find((p) => p.name === subscription.plan);
+                const isDowngrade =
+                  selectedPlanInfo &&
+                  currentPlanInfo &&
+                  selectedPlanInfo.price < currentPlanInfo.price;
+
+                if (isDowngrade) {
+                  const lostFeatures = PLAN_BENEFITS
+                    .filter(
+                      (b) =>
+                        b.plans.includes(currentPlanInfo!.name) &&
+                        !b.plans.includes(selectedPlanInfo!.name),
+                    )
+                    .map((b) => b.key);
+
+                  if (lostFeatures.length > 0) {
+                    setDowngradeWarning(
+                      `${selectedPlanInfo!.name}으로 변경하면\n${lostFeatures.join(", ")}을(를)\n이용할 수 없게 됩니다.\n\n그래도 변경하시겠습니까?`,
+                    );
+                    setPendingPlanChange(() => executePlanChange);
+                    setShowDowngradeConfirm(true);
                     return;
                   }
-
-                  // 1. 서버에 플랜 변경 요청 (업/다운그레이드 판단 + 일할계산)
-                  const response = await fetch(
-                    "/api/subscription/change-plan",
-                    {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                      },
-                      body: JSON.stringify({ plan: selectedPlan }),
-                    },
-                  );
-
-                  const result = await response.json();
-
-                  if (!response.ok) {
-                    alert(result.error || "요금제 변경에 실패했습니다.");
-                    return;
-                  }
-
-                  // 2. 업그레이드: 일할 차액 결제 + 새 금액으로 rebill 재등록
-                  if (result.needsPayment) {
-                    if (!isPayAppLoaded || !window.PayApp) {
-                      alert(
-                        "결제 시스템을 로딩 중입니다. 잠시 후 다시 시도해주세요.",
-                      );
-                      return;
-                    }
-
-                    const userResponse = await fetch("/api/user/profile", {
-                      headers: { Authorization: `Bearer ${token}` },
-                    });
-                    if (!userResponse.ok) {
-                      alert("사용자 정보를 가져올 수 없습니다.");
-                      return;
-                    }
-                    const { name, phone } = await userResponse.json();
-
-                    let userId = "";
-                    try {
-                      const payload = JSON.parse(atob(token.split(".")[1]));
-                      userId = payload.userId || "";
-                    } catch (e) {
-                      console.error("Token parse error:", e);
-                    }
-
-                    const baseUrl = window.location.origin;
-                    const shopName =
-                      process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME ||
-                      "한평생올케어";
-                    const payappUserId =
-                      process.env.NEXT_PUBLIC_PAYAPP_USER_ID || "";
-
-                    window.PayApp.setDefault("userid", payappUserId);
-                    window.PayApp.setDefault("shopname", shopName);
-
-                    const now = new Date();
-                    const expireDate = new Date(now);
-                    expireDate.setMonth(expireDate.getMonth() + 18);
-                    const rebillExpire = expireDate
-                      .toISOString()
-                      .split("T")[0];
-                    const rebillCycleMonth = now.getDate().toString();
-
-                    const newPlanPrice = result.newPlanPrice;
-                    const newPlanName = result.newPlanName;
-
-                    const orderData = {
-                      orderId: `ORDER-${Date.now()}`,
-                      userId: userId,
-                      phone: phone,
-                      name: name,
-                      mode: "upgrade",
-                      plan: selectedPlan,
-                      price: newPlanPrice,
-                    };
-
-                    const planDisplayName = `올케어구독상품-${newPlanName}`;
-                    window.PayApp.setParam("goodname", planDisplayName);
-                    window.PayApp.setParam(
-                      "goodprice",
-                      newPlanPrice.toString(),
-                    );
-                    window.PayApp.setParam("recvphone", phone);
-                    window.PayApp.setParam("buyername", name);
-                    window.PayApp.setParam("smsuse", "n");
-                    window.PayApp.setParam("rebillCycleType", "Month");
-                    window.PayApp.setParam(
-                      "rebillCycleMonth",
-                      rebillCycleMonth,
-                    );
-                    window.PayApp.setParam("rebillExpire", rebillExpire);
-                    window.PayApp.setParam(
-                      "feedbackurl",
-                      `${baseUrl}/api/payments/webhook`,
-                    );
-                    window.PayApp.setParam(
-                      "returnurl",
-                      `${baseUrl}/payment/success`,
-                    );
-                    window.PayApp.setParam(
-                      "var1",
-                      JSON.stringify(orderData),
-                    );
-
-                    window.PayApp.rebill();
-                  } else {
-                    // 다운그레이드 또는 예약 취소: alert만
-                    alert(result.message);
-                  }
-
-                  handlePlanChangeSheetClose();
-                  fetchSubscriptionInfo();
-                } catch (error) {
-                  console.error("Plan change error:", error);
-                  alert("요금제 변경 처리 중 오류가 발생했습니다.");
                 }
+
+                executePlanChange();
               }}
               disabled={!planChangeAgreeAll}
             >
@@ -2403,6 +2408,24 @@ export default function MyPage() {
             </div>
           </div>
         </Portal>
+      )}
+
+      {/* 다운그레이드 기능 손실 확인 모달 */}
+      {showDowngradeConfirm && (
+        <AlertModal
+          message={downgradeWarning}
+          onClose={() => {
+            setShowDowngradeConfirm(false);
+            setPendingPlanChange(null);
+          }}
+          onConfirm={() => {
+            setShowDowngradeConfirm(false);
+            if (pendingPlanChange) pendingPlanChange();
+            setPendingPlanChange(null);
+          }}
+          confirmLabel="변경하기"
+          cancelLabel="취소"
+        />
       )}
 
       {/* PayApp SDK loading handled via loadPayAppSDK util */}

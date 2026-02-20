@@ -64,3 +64,34 @@
 .button:active {
   transform: scale(0.98);
 }
+
+.buttonRow {
+  display: flex;
+  gap: 8px;
+}
+
+.cancelButton {
+  flex: 1;
+  height: 48px;
+  background: #f3f4f6;
+  border: none;
+  border-radius: 12px;
+  color: #374151;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.cancelButton:hover {
+  background: #e5e7eb;
+}
+
+.cancelButton:active {
+  transform: scale(0.98);
+}
+
+.buttonRow .button {
+  flex: 1;
+}
