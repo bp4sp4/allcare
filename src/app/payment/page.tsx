@@ -21,6 +21,8 @@ export default function PaymentPage() {
   const [isPayAppLoaded, setIsPayAppLoaded] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [isChangeMode, setIsChangeMode] = useState(false);
+  const [alreadySubscribed, setAlreadySubscribed] = useState(false);
+  const [subscriptionCheckDone, setSubscriptionCheckDone] = useState(false);
   const [paymentData, setPaymentData] = useState({
     goodname: '올케어구독상품',
     goodprice: '20000',
@@ -34,8 +36,31 @@ export default function PaymentPage() {
     // 결제 수단 변경 모드인지 확인
     const urlParams = new URLSearchParams(window.location.search);
     const mode = urlParams.get('mode');
-    if (mode === 'change-payment') {
+    const isChange = mode === 'change-payment';
+    if (isChange) {
       setIsChangeMode(true);
+    }
+
+    // 결제 수단 변경 모드가 아닐 때만 기존 구독 여부 확인
+    if (!isChange) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetch('/api/subscription/status', {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.isActive) {
+              setAlreadySubscribed(true);
+            }
+          })
+          .catch(() => {})
+          .finally(() => setSubscriptionCheckDone(true));
+      } else {
+        setSubscriptionCheckDone(true);
+      }
+    } else {
+      setSubscriptionCheckDone(true);
     }
     
     // 팝업인지 확인하고 결제 완료 시 팝업 닫기
@@ -184,7 +209,73 @@ export default function PaymentPage() {
           borderRadius: '12px',
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
         }}>
-        {paymentSuccess ? (
+        {!subscriptionCheckDone ? (
+          // 구독 상태 확인 중
+          <div style={{ textAlign: 'center', padding: '3rem 0', color: '#6b7280' }}>
+            구독 정보를 확인하는 중...
+          </div>
+        ) : alreadySubscribed ? (
+          // 이미 구독 중인 경우
+          <>
+            <h1 style={{ marginBottom: '1.5rem', color: '#111827', fontSize: '1.75rem', textAlign: 'center', fontWeight: 'bold' }}>
+              이미 구독 중입니다
+            </h1>
+            <div style={{
+              marginBottom: '2rem',
+              padding: '2rem',
+              backgroundColor: '#eff6ff',
+              borderRadius: '12px',
+              border: '2px solid #bfdbfe',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>ℹ️</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 'bold', color: '#1d4ed8', marginBottom: '0.75rem' }}>
+                현재 활성화된 구독이 있습니다
+              </div>
+              <div style={{ fontSize: '0.875rem', color: '#1e40af', lineHeight: '1.8' }}>
+                중복 결제는 허용되지 않습니다.<br/>
+                결제 수단을 변경하거나 구독을 관리하려면<br/>
+                내정보 관리 페이지를 이용해주세요.
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <a
+                href="/mypage"
+                style={{
+                  padding: '1rem',
+                  backgroundColor: '#0051FF',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  fontWeight: 'bold',
+                  textDecoration: 'none',
+                  textAlign: 'center'
+                }}
+              >
+                내정보 관리로 이동
+              </a>
+              <a
+                href="/"
+                style={{
+                  padding: '1rem',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '1rem',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  textDecoration: 'none',
+                  textAlign: 'center'
+                }}
+              >
+                홈으로
+              </a>
+            </div>
+          </>
+        ) : paymentSuccess ? (
           // 구독 완료 화면
           <>
             <h1 style={{ marginBottom: '1.5rem', color: '#111827', fontSize: '2rem', textAlign: 'center', fontWeight: 'bold' }}>
