@@ -115,11 +115,11 @@ interface SubscriptionInfo {
 interface PaymentHistory {
   id: string;
   date: string;
-  plan: string;
+  productName: string;
   amount: number;
   status: string;
-  billingCycle: string;
-  paymentMethod: string;
+  type: string;
+  paymentMethod: string | null;
 }
 
 export default function MyPage() {
@@ -369,6 +369,13 @@ export default function MyPage() {
         window.PayApp.setParam("feedbackurl", `${baseUrl}/api/payments/webhook`);
         window.PayApp.setParam("returnurl", `${baseUrl}/payment/success`);
         window.PayApp.setParam("var1", JSON.stringify(orderData));
+
+        // 환불 안내 (업그레이드 시 잔여일 환불 발생)
+        if (result.refundAmount > 0) {
+          alert(
+            `업그레이드 결제 후 기존 플랜 잔여 금액 ${result.refundAmount.toLocaleString()}원은 영업일 기준 3~5일 내에 자동 환불됩니다.`
+          );
+        }
 
         window.PayApp.rebill();
       } else {
@@ -1212,11 +1219,9 @@ export default function MyPage() {
                         <td>
                           {new Date(payment.date).toLocaleDateString("ko-KR")}
                         </td>
-                        <td>
-                          {payment.plan === "premium" ? "올케어" : payment.plan}
-                        </td>
+                        <td>{payment.productName || '-'}</td>
                         <td>{payment.amount.toLocaleString()}원</td>
-                        <td>{payment.paymentMethod}</td>
+                        <td>{payment.paymentMethod || '-'}</td>
                       </tr>
                     ))}
                   </tbody>

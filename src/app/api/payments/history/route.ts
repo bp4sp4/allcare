@@ -29,12 +29,19 @@ export async function GET(req: NextRequest) {
 
     const userId = decoded.userId;
 
-    // payments 테이블에서 결제/환불/취소/변경 내역 조회
-    const { data: payments, error } = await supabaseAdmin
-      .from('payments')
-      .select('*')
-      .eq('user_id', userId)
-      .order('approved_at', { ascending: false });
+    // payments 테이블과 subscriptions 테이블 병렬 조회
+    const [{ data: payments, error }, { data: subscriptions }] = await Promise.all([
+      supabaseAdmin
+        .from('payments')
+        .select('*')
+        .eq('user_id', userId)
+        .order('approved_at', { ascending: false }),
+      supabaseAdmin
+        .from('subscriptions')
+        .select('plan, payment_method_name, start_date, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false }),
+    ]);
 
     if (error) {
       console.error('Payment history error:', error);
@@ -43,6 +50,15 @@ export async function GET(req: NextRequest) {
         { status: 500 }
       );
     }
+
+    // 각 결제 시점에 해당하는 구독 찾기 (결제일 기준 가장 가까운 구독)
+    const findSubscriptionAt = (paymentDate: string) => {
+      if (!subscriptions || subscriptions.length === 0) return null;
+      const pDate = new Date(paymentDate).getTime();
+      // 결제일 이전에 생성된 구독 중 가장 최근 것
+      const match = subscriptions.find(s => new Date(s.created_at).getTime() <= pDate + 60000);
+      return match || subscriptions[subscriptions.length - 1];
+    };
 
     // 결제 내역 포맷팅 - status 기반으로 type 결정
     const paymentHistory = (payments || []).map(p => {
@@ -57,14 +73,20 @@ export async function GET(req: NextRequest) {
         type = 'plan_change';
       }
 
+      const sub = findSubscriptionAt(p.approved_at || p.created_at);
+      // good_name이 있으면 사용, 없으면 구독 플랜명으로 보완
+      const productName = p.good_name || (sub ? `${sub.plan} 구독` : '결제');
+      // 결제수단은 subscriptions에서 가져옴
+      const paymentMethod = sub?.payment_method_name || null;
+
       return {
         id: p.order_id || p.id,
         date: p.approved_at || p.created_at,
         amount: p.amount || 0,
         status: p.status,
         type,
-        productName: p.good_name || '결제',
-        paymentMethod: null,
+        productName,
+        paymentMethod,
       };
     });
 
