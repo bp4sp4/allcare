@@ -59,7 +59,8 @@ const PLANS: Plan[] = [
 
 export default function Home() {
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [showAlreadySubscribedModal, setShowAlreadySubscribedModal] = useState(false);
+  const [showAlreadySubscribedModal, setShowAlreadySubscribedModal] =
+    useState(false);
   const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showSticky, setShowSticky] = useState(true);
@@ -127,22 +128,29 @@ export default function Home() {
     {
       title: "결제/변경/해지/환불 안내",
       content: `
-  <strong>1. 청약철회 및 이용 간주 기준</strong><br/>
-  본 상품은 결제 즉시 제공되는 디지털 콘텐츠(열람권, 자료 등)가 포함된 상품으로, <strong>이용 여부와 관계없이 제공 사실만으로 서비스를 이용한 것으로 간주</strong>합니다. 이에 따라 전자상거래법 제17조 제2항에 의거, 상세 내용을 확인하거나 7일이 경과한 경우 단순 변심에 의한 청약철회가 제한됩니다.<br/><br/>
+  <strong>[한평생교육] '한평생 올케어' 구독 결합 패키지 이용 및 환불 약관</strong><br/><br/>
 
-  <strong>2. 구독 해지</strong><br/>
-  구독 해지는 언제든지 가능하나, 차기 결제를 중단하기 위해서는 다음 결제일 이전에 신청해야 합니다. 이미 결제된 회차의 이용료는 서비스 제공이 개시(열람권 부여 등)된 경우 원칙적으로 환불되지 않습니다.<br/><br/>
+  <strong>제1조 (목적)</strong><br/>
+  본 약관은 한평생교육이 제공하는 정기 구독형 서비스인 '한평생 올케어'의 이용 및 수강 과정 결합 구매에 따른 특별 할인 혜택, 중도 해지, 환불 등에 관한 제반 사항을 규정함을 목적으로 합니다.<br/><br/>
 
-  <strong>3. 중도 해지 시 이용 대가 산정</strong><br/>
-  구독 기간 중 해지 신청 시, 회사는 아래 항목을 '기이용 대가'로 산정하여 환불 금액에서 차감합니다.<br/>
-  <strong>[차감 항목 구성]</strong><br/>
-  - 이미 제공된 디지털 콘텐츠 및 데이터 이용료 (정가 기준)<br/>
-  - 무료수강권 및 혜택 제공에 따른 할인 차액<br/>
-  - 실습매칭 프로그램 열람권 제공에 따른 고정 비용<br/>
-  기이용 대가와 업무 처리 수수료의 합계가 결제 금액을 초과할 경우 환불 금액은 발생하지 않습니다.<br/><br/>
+  <strong>제2조 (구독 결합 패키지 특별 장학 할인 및 의무 유지 기간)</strong><br/>
+  ① 회원은 '한평생 올케어' 구독 서비스를 해당 과정 종료 시까지 유지하는 조건으로, 단과 정상가(과목당 60,000원)에서 과목당 22,000원의 '구독 결합 특별 고정 장학 할인'을 일괄 적용받아 과목당 38,000원에 결제합니다.<br/>
+  ② 본 할인은 16과목 패키지 등 다과목 신청 시 구독 서비스 유지를 전제로 제공되는 조건부 혜택이므로, 구독 서비스 중도 해지 시 제4조에 명시된 고정 할인반환금이 청구됩니다.<br/><br/>
 
-  <strong>4. 환불 불가 항목</strong><br/>
-  무료 제공된 수강권, 열람권, 콘텐츠 이용 내역은 환불 및 현금 환산이 불가합니다. 이는 디지털 콘텐츠의 특성상 복제 및 정보 획득이 즉시 가능하기 때문입니다.
+  <strong>제3조 (계약의 해지 및 환불 규정)</strong><br/>
+  ① 회원은 언제든지 본 구독 서비스 및 수강 계약의 해지를 요청할 수 있습니다. 단, 수강료(패키지)의 환불은 「평생교육법」 등 관련 법령 및 지침을 따르며, 정기 구독 서비스의 해지 및 환불은 「방문판매 등에 관한 법률(계속거래)」에 따라 처리됩니다.<br/>
+  ② [구독 서비스 환불] 구독 서비스 중도 해지 시, 회사는 다음의 금액을 공제한 후 남은 금액을 환불합니다.<br/>
+  &nbsp;&nbsp;• 공제액 = (해지일까지의 이용일수에 해당하는 월 구독료 일할 계산 금액) + (잔여 구독 기간 총요금의 10%에 해당하는 위약금)<br/>
+  &nbsp;&nbsp;• 단, 기결제된 월 구독료가 공제액보다 적을 경우 회사는 회원에게 차액을 추가 청구할 수 있습니다.<br/>
+  ③ [고정 할인반환금 청구] 제3조의 특별 할인을 받은 회원이 의무 유지 기간(12개월 또는 과정 종료) 이전에 구독을 중도 해지할 경우, 면제받았던 고정 할인액 전액(과목당 22,000원 × 신청 과목 수)을 회사에 반환하여야 합니다. 수강료 환불 등 회사로부터 반환받을 금액이 있는 경우 해당 금액에서 우선 공제(차감)됩니다.<br/>
+  ④ [무료 혜택 공제] 구독 혜택으로 제공된 '직업훈련과정 무료 수강권'을 이미 수강 시작(로그인 및 1강 이상 클릭 등 이용 의사 표시)한 상태에서 구독을 중도 해지할 경우, 해당 혜택의 실비용인 50,000원이 할인반환금과 별도로 추가 차감되거나 청구됩니다. 미사용 상태인 경우 권한은 즉시 회수됩니다.<br/><br/>
+
+  <strong>제4조 (결제 및 미납에 따른 조치)</strong><br/>
+  ① 구독료는 매월 지정된 결제일에 회원이 등록한 결제 수단으로 자동 청구됩니다.<br/>
+  ② 회원의 잔고 부족 등의 사유로 결제가 1개월 이상 미납될 경우 실습 및 취업 연계 등의 서비스 제공이 중단될 수 있으며, 2개월 이상 미납 시 회사는 직권 해지 처리하고 제4조 ③항의 고정 할인반환금을 청구할 수 있습니다.<br/><br/>
+
+  <strong>제5조 (관할 법원)</strong><br/>
+  본 약관과 관련하여 발생한 분쟁에 대해 소송이 제기될 경우, 회사의 본점 소재지를 관할하는 법원을 전속 관할 법원으로 합니다.
 `,
     },
     {
@@ -375,7 +383,9 @@ export default function Home() {
       )}
       {showAlreadySubscribedModal && (
         <AlertModal
-          message={"이미 구독 중입니다.\n내정보 관리에서 요금제를 변경하거나\n구독을 관리하세요."}
+          message={
+            "이미 구독 중입니다.\n내정보 관리에서 요금제를 변경하거나\n구독을 관리하세요."
+          }
           onClose={() => setShowAlreadySubscribedModal(false)}
         />
       )}
@@ -938,9 +948,12 @@ export default function Home() {
                     }
 
                     // 이미 구독 중인지 확인
-                    const subCheckRes = await fetch("/api/subscription/status", {
-                      headers: { Authorization: `Bearer ${token}` },
-                    });
+                    const subCheckRes = await fetch(
+                      "/api/subscription/status",
+                      {
+                        headers: { Authorization: `Bearer ${token}` },
+                      },
+                    );
                     const subCheckData = await subCheckRes.json();
                     if (subCheckData.isActive) {
                       setShowSheet(false);
@@ -1216,9 +1229,9 @@ export default function Home() {
                 - 위약금: 중도 해지 시 총 결제 금액의 **[ ]%**를 행정 서비스
                 유지 및 해지 위약금으로 차감합니다.
                 <br />
-                - 할인 회수: 1년 6개월 구독을 조건으로 제공된 혜택이므로, 중도 해지 시
-                이미 적용받은 수강료 할인 차액(정상가 - 할인가)을 공제한 후 잔여
-                금액을 환불합니다.
+                - 할인 회수: 1년 6개월 구독을 조건으로 제공된 혜택이므로, 중도
+                해지 시 이미 적용받은 수강료 할인 차액(정상가 - 할인가)을 공제한
+                후 잔여 금액을 환불합니다.
                 <br />
               </div>
             </div>
@@ -1240,8 +1253,8 @@ export default function Home() {
               <div className={styles.modalTitle}>구독 및 결제 안내</div>
               <div className={styles.modalBody}>
                 <strong>[구독 및 결제 안내]</strong>
-                <br />• 본 상품은 <strong>1년 6개월 정기 구독 상품</strong>으로, 최초
-                가입일 기준 1년 6개월마다 자동 정기 결제가 발생합니다.
+                <br />• 본 상품은 <strong>1년 6개월 정기 구독 상품</strong>으로,
+                최초 가입일 기준 1년 6개월마다 자동 정기 결제가 발생합니다.
                 <br />
                 • 결제 완료 즉시 '수강료 할인 혜택'과 '올케어 매칭 시스템 접속
                 권한'이 활성화됩니다.

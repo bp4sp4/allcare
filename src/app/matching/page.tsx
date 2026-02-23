@@ -660,7 +660,22 @@ export default function MatchingPage() {
                       <li key={center.id} className={styles.centerList}>
                         {/* 상단 한 줄: 이름/카테고리/거리 */}
                         <div className={styles.centerNameRow}>
-                          <span>{center.institute_name}</span>
+                          {center.link ? (
+                            <a
+                              href={center.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: "inherit",
+                                textDecoration: "underline",
+                                cursor: "pointer",
+                              }}
+                            >
+                              {center.institute_name}
+                            </a>
+                          ) : (
+                            <span>{center.institute_name}</span>
+                          )}
                           <span className={styles.centerTypeBadge}>
                             {center.category || "교육원"}
                           </span>
