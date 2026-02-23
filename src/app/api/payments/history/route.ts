@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   try {
     // 토큰에서 사용자 ID 가져오기
     const token = req.headers.get('authorization')?.replace('Bearer ', '');
-    
+
     if (!token) {
       return NextResponse.json(
         { error: '인증이 필요합니다.' },
@@ -29,12 +29,12 @@ export async function GET(req: NextRequest) {
 
     const userId = decoded.userId;
 
-    // 구독 내역 조회 (payments 테이블이 없으므로 subscriptions에서 조회)
-    const { data: subscriptions, error } = await supabaseAdmin
-      .from('subscriptions')
+    // payments 테이블에서 결제/환불/취소/변경 내역 조회
+    const { data: payments, error } = await supabaseAdmin
+      .from('payments')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('approved_at', { ascending: false });
 
     if (error) {
       console.error('Payment history error:', error);
@@ -44,19 +44,29 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // 결제 내역 포맷팅
-    const paymentHistory = subscriptions?.map(sub => ({
-      id: sub.id,
-      date: sub.created_at,
-      plan: sub.plan,
-      amount: sub.amount,
-      status: sub.status,
-      billingCycle: sub.billing_cycle,
-      startDate: sub.start_date,
-      nextBillingDate: sub.next_billing_date,
-      cancelledAt: sub.cancelled_at,
-      paymentMethod: sub.payment_method_name || '자동결제', // 실제 결제수단
-    })) || [];
+    // 결제 내역 포맷팅 - status 기반으로 type 결정
+    const paymentHistory = (payments || []).map(p => {
+      let type: 'payment' | 'refund' | 'cancellation' | 'plan_change' = 'payment';
+      const status = (p.status || '').toLowerCase();
+
+      if (status === 'refunded' || status === 'refund_requested') {
+        type = 'refund';
+      } else if (status === 'cancelled') {
+        type = 'cancellation';
+      } else if (status === 'plan_change') {
+        type = 'plan_change';
+      }
+
+      return {
+        id: p.order_id || p.id,
+        date: p.approved_at || p.created_at,
+        amount: p.amount || 0,
+        status: p.status,
+        type,
+        productName: p.good_name || '결제',
+        paymentMethod: null,
+      };
+    });
 
     return NextResponse.json({
       success: true,

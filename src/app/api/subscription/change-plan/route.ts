@@ -204,6 +204,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // payments 테이블에 플랜 변경 예약 이벤트 기록
+    await supabaseAdmin
+      .from('payments')
+      .insert({
+        user_id: userId,
+        order_id: `planchange-${subscription.id}-${Date.now()}`,
+        amount: newPlanInfo.price,
+        status: 'plan_change',
+        good_name: `${subscription.plan} → ${newPlanInfo.name} 변경 예약`,
+        payment_method: 'internal',
+        approved_at: new Date().toISOString(),
+      });
+
     return NextResponse.json({
       success: true,
       type: 'downgrade',

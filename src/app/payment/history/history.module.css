@@ -126,8 +126,15 @@
 
 
 .statusBadgeCancelled {
-  
+  color: #6b7280;
+}
+
+.statusBadgeRefund {
   color: #f60000;
+}
+
+.statusBadgeChange {
+  color: #0070f3;
 }
 
 .itemBody {
@@ -157,6 +164,10 @@
   color: #0070f3;
   font-weight: bold;
   font-size: 1.125rem;
+}
+
+.amountRefund {
+  color: #f60000;
 }
 
 .copyBtn {

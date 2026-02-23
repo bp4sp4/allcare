@@ -10,8 +10,17 @@ interface Payment {
   date: string;
   amount: number;
   status: string;
+  type: 'payment' | 'refund' | 'cancellation' | 'plan_change';
   productName: string;
+  paymentMethod: string | null;
 }
+
+const TYPE_CONFIG: Record<string, { label: string; badgeClass: string; amountPrefix: string }> = {
+  payment: { label: '결제', badgeClass: 'statusBadgeSuccess', amountPrefix: '' },
+  refund: { label: '환불', badgeClass: 'statusBadgeRefund', amountPrefix: '-' },
+  cancellation: { label: '취소', badgeClass: 'statusBadgeCancelled', amountPrefix: '' },
+  plan_change: { label: '변경', badgeClass: 'statusBadgeChange', amountPrefix: '' },
+};
 
 export default function PaymentHistoryPage() {
   const router = useRouter();
@@ -21,7 +30,6 @@ export default function PaymentHistoryPage() {
 
   const formatOrderId = (id: string) => {
     if (!id) return '';
-    // remove common prefixes
     const cleaned = id.replace(/^ORDER-|^SUBS-|^TXN-/i, '');
     if (cleaned.length <= 12) return cleaned;
     const head = cleaned.slice(0, 8);
@@ -33,10 +41,8 @@ export default function PaymentHistoryPage() {
     if (!d) return '';
     try {
       let dt: Date;
-      // numeric timestamp (seconds or ms)
       if (/^\d+$/.test(d)) {
         const n = Number(d);
-        // if seconds (10 digits) convert to ms
         dt = new Date(n < 1e12 ? n * 1000 : n);
       } else {
         dt = new Date(d);
@@ -96,15 +102,15 @@ export default function PaymentHistoryPage() {
         }
 
         const data = await res.json();
-        // API may return { payments: [...] } or an array directly
-        const list: Payment[] = Array.isArray(data) ? data : data.payments || [];
-        // normalize fields if necessary
-        const normalized = list.map((p: any) => ({
-          id: p.orderId || p.id || p.mulNo || p.trade_id || p.order_id || p.linkNo || '',
-          date: p.paid_at || p.date || p.created_at || p.payment_date || '',
+        const list: any[] = Array.isArray(data) ? data : data.payments || [];
+        const normalized: Payment[] = list.map((p: any) => ({
+          id: p.id || p.orderId || p.mulNo || p.trade_id || p.order_id || p.linkNo || '',
+          date: p.date || p.paid_at || p.created_at || p.payment_date || '',
           amount: Number(p.amount || p.price || p.total || p.payamount || 0),
           status: p.status || p.result || '완료',
-          productName: p.productName || p.goodname || p.goods || '결제'
+          type: p.type || 'payment',
+          productName: p.productName || p.goodname || p.goods || '결제',
+          paymentMethod: p.paymentMethod || p.payment_method || null,
         }));
         setPayments(normalized);
       } catch (e: any) {
@@ -122,7 +128,7 @@ export default function PaymentHistoryPage() {
     <div className={styles.container}>
       <div className={styles.card}>
         <div className={styles.header}>
-    
+
           <h1 className={styles.title}>결제 내역</h1>
           <p className={styles.infoText}>결제 관련 문의는 하단에 안내된 이메일을 통해 부탁드립니다.</p>
 
@@ -143,28 +149,14 @@ export default function PaymentHistoryPage() {
         ) : (
           <div className={styles.list}>
             {payments.map((payment) => {
-              const st = (payment.status || '').toString().toLowerCase();
-              let statusClass = styles.statusBadgeDefault;
-              if (st.includes('취소') || st.includes('cancel') || st.includes('cancelled') || st.includes('refund')) {
-                statusClass = styles.statusBadgeCancelled;
-              } else if (st.includes('완료') || st.includes('success') || st.includes('paid') || st.includes('결제') || st.includes('active')) {
-                statusClass = styles.statusBadgeSuccess;
-              }
-
-        
-              let displayStatus = payment.status;
-              const s = (payment.status || '').toString().toLowerCase();
-              if (s.includes('cancel') || s.includes('취소') || s.includes('refund')) {
-                displayStatus = '취소';
-              } else if (s.includes('active') || s.includes('success') || s.includes('완료') || s.includes('paid') || s.includes('결제')) {
-                displayStatus = '성공';
-              }
+              const config = TYPE_CONFIG[payment.type] || TYPE_CONFIG.payment;
+              const badgeClass = styles[config.badgeClass] || styles.statusBadgeDefault;
 
               return (
               <div key={payment.id} className={styles.item}>
                 <div className={styles.itemHeader}>
                   <span className={styles.productName}>{payment.productName}</span>
-                  <span className={`${styles.statusBadge} ${statusClass}`}>{displayStatus}</span>
+                  <span className={`${styles.statusBadge} ${badgeClass}`}>{config.label}</span>
                 </div>
                 <div className={styles.itemBody}>
                   <div className={styles.itemInfo} style={{display: 'flex', gap: 8, alignItems: 'center'}}>
@@ -179,9 +171,17 @@ export default function PaymentHistoryPage() {
                     <span className={styles.value}>{formatDateKST(payment.date)}</span>
                   </div>
                   <div className={styles.itemInfo}>
-                    <span className={styles.label}>결제금액</span>
-                    <span className={styles.amount}>{payment.amount.toLocaleString()}원</span>
+                    <span className={styles.label}>금액</span>
+                    <span className={`${styles.amount} ${payment.type === 'refund' ? styles.amountRefund : ''}`}>
+                      {config.amountPrefix}{payment.amount.toLocaleString()}원
+                    </span>
                   </div>
+                  {payment.paymentMethod && (
+                    <div className={styles.itemInfo}>
+                      <span className={styles.label}>결제수단</span>
+                      <span className={styles.value}>{payment.paymentMethod}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             );

@@ -114,6 +114,19 @@ export async function POST(req: NextRequest) {
           })
           .eq('id', subscription.id);
 
+        // payments 테이블에 환불 요청 이벤트 기록
+        await supabaseAdmin
+          .from('payments')
+          .insert({
+            user_id: userId,
+            order_id: `refund-${subscription.id}-${Date.now()}`,
+            amount: subscription.amount || 0,
+            status: 'refund_requested',
+            good_name: `${subscription.plan} 환불 요청`,
+            payment_method: 'internal',
+            approved_at: new Date().toISOString(),
+          });
+
         // 취소 요청의 경우 관리자 확인이 필요함을 알림
         return NextResponse.json({
           success: true,
@@ -141,6 +154,19 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+
+    // payments 테이블에 환불 완료 이벤트 기록
+    await supabaseAdmin
+      .from('payments')
+      .insert({
+        user_id: userId,
+        order_id: `refund-${subscription.id}-${Date.now()}`,
+        amount: subscription.amount || 0,
+        status: 'refunded',
+        good_name: `${subscription.plan} 환불`,
+        payment_method: 'internal',
+        approved_at: new Date().toISOString(),
+      });
 
     return NextResponse.json({
       success: true,

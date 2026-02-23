@@ -88,6 +88,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // payments 테이블에 취소 이벤트 기록
+    await supabaseAdmin
+      .from('payments')
+      .insert({
+        user_id: userId,
+        order_id: `cancel-${subscription.id}-${Date.now()}`,
+        amount: subscription.amount || 0,
+        status: 'cancelled',
+        good_name: `${subscription.plan} 구독 취소`,
+        payment_method: 'internal',
+        approved_at: new Date().toISOString(),
+      });
+
     // 다음 결제일 계산
     const endDate = new Date(subscription.next_billing_date);
     const daysRemaining = Math.ceil((endDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
