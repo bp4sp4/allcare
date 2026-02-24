@@ -25,6 +25,14 @@ const INITIAL_MESSAGE: Message = {
     "안녕하세요! 학점은행제 평생교육원 상담 도우미입니다. 거주 지역과 관심 있는 자격증을 알려주시면 맞춤 교육원을 안내해드릴게요.",
 };
 
+const EXAMPLE_QUESTIONS = [
+  "사회복지사 2급 자격증 어떻게 따나요?",
+  "현장실습은 어떻게 시작하나요?",
+  "우리 동네 근처 실습기관 어디서 찾아요?",
+  "구법이랑 신법 차이가 뭔가요?",
+  "실습 전에 뭐 먼저 들어야 하나요?",
+];
+
 export default function ChatBot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
@@ -170,6 +178,39 @@ export default function ChatBot() {
                       >
                         {linkifyPhones(msg.content)}
                       </ReactMarkdown>
+                      {i === 0 && messages.length === 1 && (
+                        <div className={styles.exampleQuestions}>
+                          {EXAMPLE_QUESTIONS.map((q) => (
+                            <button
+                              key={q}
+                              className={styles.exampleBtn}
+                              onClick={() => {
+                                if (loading) return;
+                                const userMessage: Message = { role: "user", content: q };
+                                const nextMessages = [...messages, userMessage];
+                                setMessages(nextMessages);
+                                setLoading(true);
+                                fetch("/api/chat", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ messages: nextMessages }),
+                                })
+                                  .then((res) => res.json())
+                                  .then((data) => {
+                                    setMessages((prev) => [...prev, { role: "assistant", content: data.message }]);
+                                  })
+                                  .catch(() => {
+                                    setMessages((prev) => [...prev, { role: "assistant", content: "죄송합니다. 일시적인 오류가 발생했습니다." }]);
+                                  })
+                                  .finally(() => setLoading(false));
+                              }}
+                              disabled={loading}
+                            >
+                              {q}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     msg.content

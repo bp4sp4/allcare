@@ -370,6 +370,38 @@
   cursor: not-allowed;
 }
 
+/* 예시 질문 버튼 */
+.exampleQuestions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.exampleBtn {
+  background: #f2f4f6;
+  border: none;
+  border-radius: 10px;
+  padding: 11px 14px;
+  font-size: 15px;
+  font-family: inherit;
+  color: #191f28;
+  cursor: pointer;
+  text-align: left;
+  line-height: 1.4;
+  width: 100%;
+  transition: background 0.15s;
+}
+
+.exampleBtn:hover {
+  background: #e4e8ee;
+}
+
+.exampleBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* 모바일 */
 @media (max-width: 480px) {
   .chatWindow {
