@@ -1,8 +1,8 @@
 "use client";
 import styles from "./matching.module.css";
 import mapStyles from "./navermap.module.css";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { supabase } from "../../lib/supabase";
 import { haversineDistance } from "../../lib/haversine";
@@ -10,6 +10,7 @@ import FilterBarCustom from "./FilterBarCustom";
 import LocationSearchBar from "./LocationSearchBar";
 import { useUserLocation } from "./useUserLocation";
 import AlertModal from "../../components/AlertModal";
+import ChatBot from "../../components/ChatBot";
 
 // 네이버 지도 컴포넌트 (SSR 비활성화, lazy load)
 const NaverMapView = dynamic(() => import("./NaverMapView"), {
@@ -19,8 +20,9 @@ const NaverMapView = dynamic(() => import("./NaverMapView"), {
   ),
 });
 
-export default function MatchingPage() {
+function MatchingPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isChecking, setIsChecking] = useState(true);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -32,21 +34,30 @@ export default function MatchingPage() {
     { title: "이론 및 행정 절차" },
     { title: "실무 및 섭외" },
   ];
-  const [mode, setMode] = useState<"교육원" | "현장실습기관">("교육원");
+  const urlMode = searchParams.get("mode");
+  const urlRegion = searchParams.get("region") || "";
+  const urlSearchMode = searchParams.get("searchMode") || "region";
+  const [mode, setMode] = useState<"교육원" | "현장실습기관">(
+    urlMode === "현장실습기관" ? "현장실습기관" : "교육원"
+  );
 
   // 검색 모드: 지역 필터 vs 위치 검색
   const [searchMode, setSearchMode] = useState<"region" | "location">(
-    "region",
+    urlSearchMode === "location" ? "location" : "region",
   );
 
   // 기존 지역 필터 state
   const [filters, setFilters] = useState({
-    region: "",
+    region: urlRegion,
     subregion: "",
     law: "",
   });
-  const [filtersTemp, setFiltersTemp] = useState(filters);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [filtersTemp, setFiltersTemp] = useState({
+    region: urlRegion,
+    subregion: "",
+    law: "",
+  });
+  const [hasSearched, setHasSearched] = useState(!!urlRegion);
 
   // 데이터 state
   const [centers, setCenters] = useState<any[]>([]);
@@ -56,7 +67,7 @@ export default function MatchingPage() {
   const itemsPerPage = mode === "교육원" ? 9999 : 5;
 
   // 위치 검색 hook
-  const { locationState, detectGPS, geocodeAddress, clearLocation } =
+  const { locationState, detectGPS, geocodeAddress, setCoords, clearLocation } =
     useUserLocation();
 
   // 로그인 및 구독 상태 체크
@@ -148,6 +159,37 @@ export default function MatchingPage() {
       mounted = false;
     };
   }, []);
+
+  // 주요 지역 중심 좌표
+  const REGION_COORDS: Record<string, { latitude: number; longitude: number }> = {
+    서울: { latitude: 37.5665, longitude: 126.9780 },
+    경기: { latitude: 37.4138, longitude: 127.5183 },
+    인천: { latitude: 37.4563, longitude: 126.7052 },
+    강원: { latitude: 37.8228, longitude: 128.1555 },
+    대전: { latitude: 36.3504, longitude: 127.3845 },
+    세종: { latitude: 36.4800, longitude: 127.2890 },
+    충남: { latitude: 36.5184, longitude: 126.8000 },
+    충북: { latitude: 36.9910, longitude: 127.9259 },
+    전북: { latitude: 35.7175, longitude: 127.1530 },
+    광주: { latitude: 35.1595, longitude: 126.8526 },
+    전남: { latitude: 34.8679, longitude: 126.9910 },
+    대구: { latitude: 35.8714, longitude: 128.6014 },
+    경북: { latitude: 36.4919, longitude: 128.8889 },
+    경남: { latitude: 35.4606, longitude: 128.2132 },
+    울산: { latitude: 35.5384, longitude: 129.3114 },
+    부산: { latitude: 35.1796, longitude: 129.0756 },
+    제주: { latitude: 33.4996, longitude: 126.5312 },
+  };
+
+  // 챗봇에서 지역+위치검색 모드로 진입 시 자동으로 지도 중심 설정
+  useEffect(() => {
+    if (!isChecking && urlRegion && urlSearchMode === "location") {
+      const coords = REGION_COORDS[urlRegion];
+      if (coords) {
+        setCoords(coords.latitude, coords.longitude, `${urlRegion} 지역`);
+      }
+    }
+  }, [isChecking, urlRegion, urlSearchMode]);
 
   // 모드 변경 시 기본 데이터 로드 (지역 검색 모드)
   useEffect(() => {
@@ -1031,6 +1073,15 @@ export default function MatchingPage() {
           </div>
         )}
       </main>
+      <ChatBot />
     </>
+  );
+}
+
+export default function MatchingPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: "40px", textAlign: "center" }}>로딩 중...</div>}>
+      <MatchingPageInner />
+    </Suspense>
   );
 }

@@ -99,6 +99,17 @@ export function useUserLocation() {
     }
   }, []);
 
+  // 좌표 직접 설정
+  const setCoords = useCallback((latitude: number, longitude: number, label: string) => {
+    setLocationState({
+      coords: { latitude, longitude },
+      addressText: label,
+      isLoading: false,
+      error: null,
+      source: "manual",
+    });
+  }, []);
+
   // 위치 초기화
   const clearLocation = useCallback(() => {
     setLocationState({
@@ -110,5 +121,5 @@ export function useUserLocation() {
     });
   }, []);
 
-  return { locationState, detectGPS, geocodeAddress, clearLocation };
+  return { locationState, detectGPS, geocodeAddress, setCoords, clearLocation };
 }
