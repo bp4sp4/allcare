@@ -83,6 +83,7 @@ const REGION_KEYWORDS: Record<string, string> = {
 };
 
 const PRACTICE_KEYWORDS = ["실습", "실습기관", "현장실습", "실습처", "실습할 곳", "실습 기관"];
+const CENTER_KEYWORDS = ["교육원", "평생교육원", "학원", "수강", "등록", "어디서 들어", "어디서 배워", "어디 다녀", "사이버"];
 
 // 메시지에서 지역과 실습 의도 감지
 function detectRegionAndIntent(message: string): string | null {
@@ -95,18 +96,34 @@ function detectRegionAndIntent(message: string): string | null {
   return null;
 }
 
-// Supabase에서 현장실습기관 개수 조회
-async function fetchPracticeInstitutions(region: string): Promise<string> {
+// 메시지에서 지역과 교육원 의도 감지
+function detectRegionAndCenterIntent(message: string): string | null {
+  const hasCenterIntent = CENTER_KEYWORDS.some((kw) => message.includes(kw));
+  if (!hasCenterIntent) return null;
+
+  for (const [keyword, region] of Object.entries(REGION_KEYWORDS)) {
+    if (message.includes(keyword)) return region;
+  }
+  return null;
+}
+
+// Supabase 클라이언트 생성 공통 함수
+function getSupabaseClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   const supabaseKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
     "";
+  if (!supabaseUrl || !supabaseKey) return null;
+  return createClient(supabaseUrl, supabaseKey);
+}
 
-  if (!supabaseUrl || !supabaseKey) return "";
+// Supabase에서 현장실습기관 개수 조회
+async function fetchPracticeInstitutions(region: string): Promise<string> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return "";
 
   try {
-    const supabase = createClient(supabaseUrl, supabaseKey);
     const { count, error } = await supabase
       .from("training_institution")
       .select("*", { count: "exact", head: true })
@@ -117,6 +134,27 @@ async function fetchPracticeInstitutions(region: string): Promise<string> {
     const mapLink = `/matching?mode=현장실습기관&region=${encodeURIComponent(region)}&searchMode=location`;
 
     return `\n\n[현장실습기관 DB 조회 결과]\n지역: ${region}\n총 선정기관 수: ${count}개\n지도 링크: ${mapLink}`;
+  } catch {
+    return "";
+  }
+}
+
+// Supabase에서 교육원 개수 조회
+async function fetchTrainingCenters(region: string): Promise<string> {
+  const supabase = getSupabaseClient();
+  if (!supabase) return "";
+
+  try {
+    const { count, error } = await supabase
+      .from("training_centers")
+      .select("*", { count: "exact", head: true })
+      .or(`province.ilike.%${region}%,available_region.ilike.%전국%,available_region.ilike.%${region}%`);
+
+    if (error || count === null) return "";
+
+    const mapLink = `/matching?mode=교육원&region=${encodeURIComponent(region)}&searchMode=location`;
+
+    return `\n\n[교육원 DB 조회 결과]\n지역: ${region}\n총 교육원 수: ${count}개\n지도 링크: ${mapLink}`;
   } catch {
     return "";
   }
@@ -150,12 +188,16 @@ export async function POST(req: NextRequest) {
     // 마지막 메시지 (현재 유저 입력)
     const lastMessage: { role: string; content: string } = messages[messages.length - 1];
 
-    // 현장실습기관 DB 조회 (지역+실습 키워드 감지 시)
+    // DB 조회 (지역+키워드 감지 시 병렬 실행)
     let dbContext = "";
-    const detectedRegion = detectRegionAndIntent(lastMessage.content);
-    if (detectedRegion) {
-      dbContext = await fetchPracticeInstitutions(detectedRegion);
-    }
+    const practiceRegion = detectRegionAndIntent(lastMessage.content);
+    const centerRegion = detectRegionAndCenterIntent(lastMessage.content);
+
+    const [practiceContext, centerContext] = await Promise.all([
+      practiceRegion ? fetchPracticeInstitutions(practiceRegion) : Promise.resolve(""),
+      centerRegion ? fetchTrainingCenters(centerRegion) : Promise.resolve(""),
+    ]);
+    dbContext = practiceContext + centerContext;
 
     // DB 결과를 유저 메시지에 컨텍스트로 추가
     const enrichedLastContent = lastMessage.content + dbContext;

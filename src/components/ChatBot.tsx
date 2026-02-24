@@ -39,6 +39,8 @@ export default function ChatBot() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const latestAssistantRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // localStorage에서 대화 이력 불러오기
@@ -59,11 +61,19 @@ export default function ChatBot() {
     } catch {}
   }, [messages]);
 
+  // 챗창 열릴 때만 맨 아래로 스크롤
   useEffect(() => {
     if (isOpen) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages, isOpen]);
+  }, [isOpen]);
+
+  // 로딩 중(유저 메시지 전송 후)엔 맨 아래로
+  useEffect(() => {
+    if (loading) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [loading]);
 
   useEffect(() => {
     if (isOpen) {
@@ -71,16 +81,8 @@ export default function ChatBot() {
     }
   }, [isOpen]);
 
-  const sendMessage = async () => {
-    const text = input.trim();
-    if (!text || loading) return;
-
-    const userMessage: Message = { role: "user", content: text };
-    const nextMessages = [...messages, userMessage];
-    setMessages(nextMessages);
-    setInput("");
+  const streamResponse = async (nextMessages: Message[]) => {
     setLoading(true);
-
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -91,22 +93,35 @@ export default function ChatBot() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "오류 발생");
 
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.message },
-      ]);
+      setMessages((prev) => [...prev, { role: "assistant", content: data.message }]);
+      setLoading(false);
+      setTimeout(() => {
+        const el = latestAssistantRef.current;
+        const container = messagesContainerRef.current;
+        if (el && container) {
+          const offset = el.offsetTop - 16;
+          container.scrollTo({ top: offset, behavior: "smooth" });
+        }
+      }, 50);
     } catch (err) {
+      setLoading(false);
       setMessages((prev) => [
         ...prev,
-        {
-          role: "assistant",
-          content: "죄송합니다. 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.",
-        },
+        { role: "assistant", content: "죄송합니다. 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요." },
       ]);
       console.error("[ChatBot]", err);
-    } finally {
-      setLoading(false);
     }
+  };
+
+  const sendMessage = async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+
+    const userMessage: Message = { role: "user", content: text };
+    const nextMessages = [...messages, userMessage];
+    setMessages(nextMessages);
+    setInput("");
+    await streamResponse(nextMessages);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -151,9 +166,13 @@ export default function ChatBot() {
             </div>
           </div>
 
-          <div className={styles.messages}>
+          <div ref={messagesContainerRef} className={styles.messages}>
             {messages.map((msg, i) => (
-              <div key={i} className={`${styles.message} ${styles[msg.role]}`}>
+              <div
+                key={i}
+                ref={i === messages.length - 1 && msg.role === "assistant" ? latestAssistantRef : null}
+                className={`${styles.message} ${styles[msg.role]}`}
+              >
                 {msg.role === "assistant" && (
                   <Image
                     src="/images/chatbot.jpg"
@@ -189,20 +208,7 @@ export default function ChatBot() {
                                 const userMessage: Message = { role: "user", content: q };
                                 const nextMessages = [...messages, userMessage];
                                 setMessages(nextMessages);
-                                setLoading(true);
-                                fetch("/api/chat", {
-                                  method: "POST",
-                                  headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ messages: nextMessages }),
-                                })
-                                  .then((res) => res.json())
-                                  .then((data) => {
-                                    setMessages((prev) => [...prev, { role: "assistant", content: data.message }]);
-                                  })
-                                  .catch(() => {
-                                    setMessages((prev) => [...prev, { role: "assistant", content: "죄송합니다. 일시적인 오류가 발생했습니다." }]);
-                                  })
-                                  .finally(() => setLoading(false));
+                                streamResponse(nextMessages);
                               }}
                               disabled={loading}
                             >

@@ -137,6 +137,18 @@
   align-self: flex-start;
   align-items: flex-start;
   padding-top: 10px;
+  animation: messageSlideIn 0.25s ease-out;
+}
+
+@keyframes messageSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .botEmoji {
@@ -305,6 +317,22 @@
   40% {
     opacity: 1;
   }
+}
+
+/* 스트리밍 커서 */
+.streamingCursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: #191f28;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursorBlink 0.7s step-end infinite;
+}
+
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
 }
 
 /* 입력 영역 */
