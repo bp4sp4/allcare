@@ -253,8 +253,10 @@ export default function ChatBot() {
               disabled={!input.trim() || loading}
               aria-label="전송"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" viewBox="0 0 25 25" fill="none">
+                <path d="M12.5 21C7.8 21 4 17.2 4 12.5C4 7.8 7.8 4 12.5 4C17.2 4 21 7.8 21 12.5C21 17.2 17.2 21 12.5 21ZM12.5 5C8.35 5 5 8.35 5 12.5C5 16.65 8.35 20 12.5 20C16.65 20 20 16.65 20 12.5C20 8.35 16.65 5 12.5 5Z" fill="#0051FF"/>
+                <path d="M16.6499 13.3498L12.4999 9.1998L8.3499 13.3498L7.6499 12.6498L12.4999 7.7998L17.3499 12.6498L16.6499 13.3498Z" fill="#0051FF"/>
+                <path d="M12 8.5H13V17H12V8.5Z" fill="#0051FF"/>
               </svg>
             </button>
           </div>
