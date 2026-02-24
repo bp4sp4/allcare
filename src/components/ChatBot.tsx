@@ -96,12 +96,7 @@ export default function ChatBot() {
       setMessages((prev) => [...prev, { role: "assistant", content: data.message }]);
       setLoading(false);
       setTimeout(() => {
-        const el = latestAssistantRef.current;
-        const container = messagesContainerRef.current;
-        if (el && container) {
-          const offset = el.offsetTop - 16;
-          container.scrollTo({ top: offset, behavior: "smooth" });
-        }
+        latestAssistantRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 50);
     } catch (err) {
       setLoading(false);
