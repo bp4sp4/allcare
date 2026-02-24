@@ -2,7 +2,16 @@
 import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import styles from "./ChatBot.module.css";
+
+// 전화번호를 tel: 링크로 변환
+function linkifyPhones(text: string): string {
+  return text.replace(
+    /(\b\d{2,4}-\d{3,4}-\d{4}\b|\b\d{4}-\d{4}\b)/g,
+    "[$1](tel:$1)"
+  );
+}
 
 interface Message {
   role: "user" | "assistant";
@@ -149,7 +158,18 @@ export default function ChatBot() {
                 <div className={styles.bubble}>
                   {msg.role === "assistant" ? (
                     <div className={styles.markdown}>
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          a: ({ href, children }) => (
+                            <a href={href} target="_blank" rel="noopener noreferrer">
+                              {children}
+                            </a>
+                          ),
+                        }}
+                      >
+                        {linkifyPhones(msg.content)}
+                      </ReactMarkdown>
                     </div>
                   ) : (
                     msg.content
