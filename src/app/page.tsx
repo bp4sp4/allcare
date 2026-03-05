@@ -474,8 +474,7 @@ export default function Home() {
         {/* 올케어 플랜 알아보기 영역 */}
         <div className={styles.planInfoWrapper}>
           <div className={styles.pointBadge}>올케어 플랜 알아보기</div>
-          <div className={styles.planInfoBox}>
-            <div className={styles.planInfoPopular}>인기 플랜</div>
+          <div className={styles.planInfoBoxGray}>
             {/* 여기에 플랜 설명 등 추가 가능 */}
             <div className={styles.planInfoContentTop}>
               <span className={styles.planInfoTitle}>프리미엄</span>
@@ -487,7 +486,7 @@ export default function Home() {
               </span>
             </div>
             <button
-              className={styles.planInfoButton}
+              className={styles.planInfoButtonGray}
               onClick={() => {
                 setSelectedPlan("premium");
                 handleSheetOpen();
@@ -567,7 +566,8 @@ export default function Home() {
             </div>
           </div>
 
-          <div className={styles.planInfoBoxGray}>
+          <div className={styles.planInfoBox}>
+            <div className={styles.planInfoPopular}>인기 플랜</div>
             {/* 여기에 플랜 설명 등 추가 가능 */}
             <div className={styles.planInfoContentTop}>
               <span className={styles.planInfoTitle}>스탠다드</span>
@@ -579,7 +579,7 @@ export default function Home() {
               </span>
             </div>
             <button
-              className={styles.planInfoButtonGray}
+              className={styles.planInfoButton}
               onClick={() => {
                 setSelectedPlan("standard");
                 handleSheetOpen();
@@ -757,7 +757,7 @@ export default function Home() {
             <div className={styles.stickyButtonInner}>
               <button
                 className={styles.subscribeButton}
-                onClick={() => handleSheetOpen("premium")}
+                onClick={() => handleSheetOpen("standard")}
               >
                 한평생올케어 구독하기
               </button>
