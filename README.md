@@ -1,38 +1,105 @@
-# AllCare - 페이앱 결제 연동
+# AllCare - 돌봄 서비스 매칭 플랫폼
 
-Next.js 기반 페이앱(PayApp) 결제 시스템
+돌봄 서비스 제공자와 이용자를 연결하는 위치 기반 매칭 플랫폼입니다.
+네이버 지도 기반 검색, 구독 결제, AI 챗봇 상담 기능을 제공합니다.
 
-## 🚀 기술 스택
+## 기술 스택
 
-- **Framework**: Next.js 16 (App Router)
-- **Language**: TypeScript
-- **Payment**: PayApp Lite API v2
-- **Runtime**: Node.js
+| 분류 | 기술 |
+|------|------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript |
+| Database | Supabase (PostgreSQL) |
+| Auth | JWT + bcrypt, 네이버 OAuth |
+| Payment | PayApp SDK |
+| Map | Naver Maps API |
+| AI Chatbot | Google Gemini API |
+| Font | Pretendard, Paperlogy |
 
-## 📁 프로젝트 구조
+## 주요 기능
+
+### 매칭 시스템
+- 네이버 지도 기반 돌봄 서비스 검색
+- 위치 기반 거리 계산 (Haversine)
+- 필터링 및 지역 검색
+- 사용자 현재 위치 자동 감지
+
+### 회원 인증
+- 이메일 회원가입 / 로그인
+- 네이버 소셜 로그인
+- 이메일 인증 (SMS 발송)
+- 이메일 찾기 / 비밀번호 재설정
+
+### 구독 & 결제
+- 3단계 요금제 (Basic / Standard / Premium)
+- PayApp SDK 연동 결제
+- 구독 갱신, 플랜 변경, 해지, 환불
+- 결제 내역 조회
+- 결제 결과 웹훅 처리
+
+### AI 챗봇
+- Google Gemini 기반 상담 챗봇
+- 마크다운 응답 렌더링
+- 전화번호 자동 링크 변환
+
+### 관리자 대시보드
+- 관리자 로그인
+- 사용자 목록 및 접근 권한 관리
+- 구독 상태 관리
+- 통계 조회
+
+### 마이페이지
+- 프로필 조회 및 수정
+- 비밀번호 변경
+- 구독 정보 확인 및 관리
+- 회원 탈퇴
+
+## 프로젝트 구조
 
 ```
 allcare/
+├── database/                    # SQL 마이그레이션
+├── public/
+│   ├── fonts/                   # Pretendard, Paperlogy 폰트
+│   └── images/                  # 배너, 매칭, 챗봇 이미지
 ├── src/
 │   ├── app/
 │   │   ├── api/
-│   │   │   ├── health/              # 헬스체크 API
-│   │   │   └── payments/            # 결제 API
-│   │   │       ├── route.ts         # 결제 요청/조회
-│   │   │       ├── result/          # 결제 결과 저장
-│   │   │       └── webhook/         # 페이앱 웹훅
-│   │   ├── payment/
-│   │   │   ├── page.tsx             # 결제 페이지
-│   │   │   └── result/              # 결제 결과 페이지
-│   │   └── page.tsx                 # 홈페이지
-│   ├── lib/
-│   │   └── config.ts                # 환경 설정
-│   └── types/
-│       └── payment.ts               # 결제 타입 정의
-└── .env.local.example               # 환경 변수 예제
+│   │   │   ├── admin/           # 관리자 API (로그인, 통계, 사용자, 구독)
+│   │   │   ├── auth/            # 인증 API (로그인, 회원가입, 네이버, 인증)
+│   │   │   ├── chat/            # AI 챗봇 API
+│   │   │   ├── geocode/         # 지오코딩 API (단건, 배치)
+│   │   │   ├── payments/        # 결제 API (요청, 결과, 웹훅, 내역)
+│   │   │   ├── subscription/    # 구독 API (상태, 갱신, 변경, 해지, 환불)
+│   │   │   └── user/            # 사용자 API (프로필, 비밀번호, 탈퇴)
+│   │   ├── admin/               # 관리자 페이지
+│   │   ├── auth/                # 인증 페이지
+│   │   ├── matching/            # 매칭 페이지 (지도, 필터, 검색)
+│   │   ├── mypage/              # 마이페이지
+│   │   ├── payment/             # 결제 페이지
+│   │   ├── privacy/             # 개인정보처리방침
+│   │   ├── refund/              # 환불 안내
+│   │   └── terms/               # 이용약관
+│   ├── components/              # 공통 컴포넌트
+│   │   ├── AlertModal.tsx
+│   │   ├── BottomSheetHandle.tsx
+│   │   ├── ChatBot.tsx
+│   │   ├── Footer.tsx
+│   │   ├── Header.tsx
+│   │   └── Portal.tsx
+│   ├── lib/                     # 유틸리티
+│   │   ├── config.ts            # 환경 설정
+│   │   ├── haversine.ts         # 거리 계산
+│   │   ├── naver-geocode.ts     # 네이버 지오코딩
+│   │   ├── payapp.ts            # PayApp SDK
+│   │   ├── sms.ts               # SMS 발송
+│   │   └── supabase.ts          # Supabase 클라이언트
+│   ├── types/                   # 타입 정의
+│   └── middleware.ts            # 요청 헤더 미들웨어
+└── .env.local.example           # 환경 변수 예제
 ```
 
-## 🔧 설치 및 실행
+## 설치 및 실행
 
 ### 1. 의존성 설치
 
@@ -42,141 +109,103 @@ npm install
 
 ### 2. 환경 변수 설정
 
-`.env.local.example` 파일을 `.env.local`로 복사하고 페이앱 정보를 입력하세요:
+`.env.local.example`을 `.env.local`로 복사 후 값을 입력하세요.
 
 ```bash
 cp .env.local.example .env.local
 ```
 
-`.env.local` 파일 수정:
-```env
-NEXT_PUBLIC_PAYAPP_USER_ID=your_payapp_userid
-NEXT_PUBLIC_PAYAPP_SHOP_NAME=Your Shop Name
-```
+### 3. 데이터베이스 설정
 
-### 3. 개발 서버 실행
+Supabase 프로젝트 생성 후 `database/` 폴더의 SQL 파일을 순서대로 실행하세요.
+
+- `create-payments-table.sql` - 결제 테이블 생성
+- `add-payment-method.sql` - 결제 수단 컬럼 추가
+- `add-practice-matching-access.sql` - 매칭 접근 권한 추가
+- `update-subscription-status-constraint.sql` - 구독 상태 제약 조건 수정
+
+### 4. 개발 서버 실행
 
 ```bash
 npm run dev
 ```
 
-서버가 [http://localhost:3000](http://localhost:3000)에서 실행됩니다.
+http://localhost:3000 에서 실행됩니다.
 
-### 4. 빌드
+### 5. 빌드 및 배포
 
 ```bash
 npm run build
-```
-
-### 5. 프로덕션 실행
-
-```bash
 npm start
 ```
 
-## 💳 페이앱 연동 방법
+## API 엔드포인트
 
-### 결제 페이지
-1. 브라우저에서 [http://localhost:3000/payment](http://localhost:3000/payment) 접속
-2. 상품명, 결제금액, 연락처 입력
-3. "결제하기" 버튼 클릭
-4. 페이앱 결제 프로세스 진행
+### 인증
 
-### 페이앱 SDK 사용
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| POST | `/api/auth/signup` | 회원가입 |
+| POST | `/api/auth/login` | 로그인 |
+| POST | `/api/auth/logout` | 로그아웃 |
+| GET | `/api/auth/naver` | 네이버 로그인 |
+| GET | `/api/auth/naver/callback` | 네이버 콜백 |
+| POST | `/api/auth/find-email` | 이메일 찾기 |
+| POST | `/api/auth/reset-password` | 비밀번호 재설정 요청 |
+| POST | `/api/auth/reset-password/confirm` | 비밀번호 재설정 확인 |
+| POST | `/api/auth/verification/send` | 인증 코드 발송 |
+| POST | `/api/auth/verification/verify` | 인증 코드 확인 |
 
-```javascript
-// PayApp SDK 자동 로드됨
-PayApp.setDefault('userid', 'your_userid');
-PayApp.setDefault('shopname', 'your_shop');
+### 결제
 
-// 결제 파라미터 설정
-PayApp.setParam('goodname', '상품명');
-PayApp.setParam('price', '1000');
-PayApp.setParam('recvphone', '01012345678');
-PayApp.setParam('feedbackurl', '/api/payments/webhook');
-PayApp.setParam('returnurl', '/payment/result');
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| POST | `/api/payments` | 결제 요청 |
+| GET | `/api/payments` | 결제 조회 |
+| POST | `/api/payments/webhook` | 결제 웹훅 (PayApp -> 서버) |
+| POST | `/api/payments/result` | 결제 결과 저장 |
+| GET | `/api/payments/history` | 결제 내역 조회 |
 
-// 결제 요청
-PayApp.payrequest();
-```
+### 구독
 
-## 📡 API 엔드포인트
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| GET | `/api/subscription/status` | 구독 상태 조회 |
+| POST | `/api/subscription/renew` | 구독 갱신 |
+| POST | `/api/subscription/change-plan` | 플랜 변경 |
+| POST | `/api/subscription/cancel` | 구독 해지 |
+| POST | `/api/subscription/refund` | 환불 |
 
-### 결제 요청 생성
-```http
-POST /api/payments
-Content-Type: application/json
+### 사용자
 
-{
-  "amount": 10000,
-  "orderName": "테스트 상품",
-  "customerName": "홍길동",
-  "customerPhone": "01012345678"
-}
-```
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| GET/PUT | `/api/user/profile` | 프로필 조회/수정 |
+| POST | `/api/user/change-password` | 비밀번호 변경 |
+| DELETE | `/api/user/delete` | 회원 탈퇴 |
 
-### 결제 조회
-```http
-GET /api/payments?orderId=ORDER-123456789
-```
+### 관리자
 
-### 결제 웹훅 (페이앱 → 서버)
-```http
-POST /api/payments/webhook
-Content-Type: application/x-www-form-urlencoded
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| POST | `/api/admin/login` | 관리자 로그인 |
+| GET | `/api/admin/stats` | 통계 조회 |
+| GET | `/api/admin/users` | 사용자 목록 |
+| POST | `/api/admin/users/access` | 접근 권한 관리 |
+| POST | `/api/admin/subscription/update` | 구독 상태 변경 |
 
-RETURNCODE=0000&TRADEID=xxx&PRICE=1000&...
-```
+### 기타
 
-### 헬스체크
-```http
-GET /api/health
-```
+| Method | Endpoint | 설명 |
+|--------|----------|------|
+| POST | `/api/chat` | AI 챗봇 |
+| GET | `/api/geocode` | 지오코딩 |
+| POST | `/api/geocode/batch` | 배치 지오코딩 |
 
-## 🔄 결제 플로우
+## 결제 플로우
 
-1. **결제 요청**: 사용자가 `/payment` 페이지에서 결제 정보 입력
-2. **페이앱 호출**: PayApp SDK를 통해 결제 프로세스 시작
-3. **결제 진행**: 페이앱 결제창에서 결제 진행
-4. **웹훅 수신**: 페이앱이 `/api/payments/webhook`로 결제 결과 전송
-5. **결과 확인**: 사용자가 `/payment/result`에서 결제 결과 확인
-
-## 📝 페이앱 파라미터
-
-| 파라미터 | 설명 | 필수 |
-|---------|------|-----|
-| `goodname` | 상품명 | ✅ |
-| `price` | 결제금액 | ✅ |
-| `recvphone` | 연락처 | ✅ |
-| `feedbackurl` | 웹훅 URL | ✅ |
-| `returnurl` | 리턴 URL | ✅ |
-| `var1` | 주문번호 | ❌ |
-| `checkretry` | 재시도 체크 | ❌ |
-| `smsuse` | SMS 사용 | ❌ |
-| `redirectpay` | 리다이렉트 결제 | ❌ |
-| `skip_cstpage` | 고객정보 입력 스킵 | ❌ |
-
-## 🎯 다음 단계
-
-- [ ] 데이터베이스 연동 (PostgreSQL, MongoDB 등)
-- [ ] 결제 내역 저장 및 조회 기능
-- [ ] 결제 취소/환불 기능
-- [ ] 관리자 대시보드
-- [ ] 결제 내역 엑셀 다운로드
-- [ ] 이메일/SMS 알림
-- [ ] 테스트 코드 작성
-- [ ] 에러 핸들링 개선
-- [ ] 로깅 시스템 구축
-
-## 🔒 보안 권장사항
-
-1. **환경 변수 보호**: `.env.local` 파일을 절대 커밋하지 마세요
-2. **웹훅 검증**: 페이앱 웹훅 요청의 진위를 검증하세요
-3. **HTTPS 사용**: 프로덕션에서는 반드시 HTTPS를 사용하세요
-4. **IP 화이트리스트**: 가능하면 페이앱 서버 IP만 허용하세요
-
-## 📚 참고 문서
-
-- [페이앱 공식 문서](https://www.payapp.kr)
-- [Next.js 공식 문서](https://nextjs.org/docs)
-- [TypeScript 공식 문서](https://www.typescriptlang.org/docs)
+1. 사용자가 홈페이지 또는 마이페이지에서 구독 플랜 선택
+2. PayApp SDK를 통해 결제 프로세스 시작
+3. 페이앱 결제창에서 결제 진행
+4. 페이앱이 `/api/payments/webhook`으로 결제 결과 전송
+5. 결제 성공 시 구독 활성화 및 매칭 서비스 이용 가능
