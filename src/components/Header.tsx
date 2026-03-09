@@ -89,7 +89,10 @@ export default function Header() {
   };
 
   const handleCardPayment = async () => {
-    const { cardNo, expMonth, expYear, cardPw, buyerAuthNo, buyerPhone, buyerName } = cardForm;
+    const { cardNo, expMonth, expYear, cardPw, buyerAuthNo } = cardForm;
+    const buyerPhone = userProfile?.phone || cardForm.buyerPhone;
+    const buyerName = userProfile?.name || cardForm.buyerName;
+
     if (!cardNo || !expMonth || !expYear || !cardPw || !buyerAuthNo || !buyerPhone || !buyerName) {
       alert('모든 항목을 입력해주세요.');
       return;
@@ -109,7 +112,7 @@ export default function Header() {
       const res = await fetch('/api/payments/bill', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...cardForm, packageType: selectedPackage, userId }),
+        body: JSON.stringify({ ...cardForm, buyerPhone, buyerName, packageType: selectedPackage, userId }),
       });
 
       const data = await res.json();
@@ -292,26 +295,30 @@ export default function Header() {
                     onChange={(e) => setCardForm({ ...cardForm, buyerAuthNo: e.target.value.replace(/\D/g, '') })}
                   />
                 </div>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>이름</label>
-                  <input
-                    className={styles.fieldInput}
-                    type="text"
-                    placeholder="홍길동"
-                    value={cardForm.buyerName}
-                    onChange={(e) => setCardForm({ ...cardForm, buyerName: e.target.value })}
-                  />
-                </div>
-                <div className={styles.fieldGroup}>
-                  <label className={styles.fieldLabel}>휴대폰 번호</label>
-                  <input
-                    className={styles.fieldInput}
-                    type="tel"
-                    placeholder="01012345678"
-                    value={cardForm.buyerPhone}
-                    onChange={(e) => setCardForm({ ...cardForm, buyerPhone: e.target.value.replace(/\D/g, '') })}
-                  />
-                </div>
+                {!userProfile?.name && (
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>이름</label>
+                    <input
+                      className={styles.fieldInput}
+                      type="text"
+                      placeholder="홍길동"
+                      value={cardForm.buyerName}
+                      onChange={(e) => setCardForm({ ...cardForm, buyerName: e.target.value })}
+                    />
+                  </div>
+                )}
+                {!userProfile?.phone && (
+                  <div className={styles.fieldGroup}>
+                    <label className={styles.fieldLabel}>휴대폰 번호</label>
+                    <input
+                      className={styles.fieldInput}
+                      type="tel"
+                      placeholder="01012345678"
+                      value={cardForm.buyerPhone}
+                      onChange={(e) => setCardForm({ ...cardForm, buyerPhone: e.target.value.replace(/\D/g, '') })}
+                    />
+                  </div>
+                )}
 
                 <button
                   className={styles.payBtn}
