@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://allcare.korhrd.co.kr';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.hanallcare.com';
     const recvphone = req.users?.phone || '';
     const buyerName = req.users?.name || '';
 
