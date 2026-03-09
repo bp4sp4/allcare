@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      if (userId) {
+      if (userId && orderData.type !== 'custom') {
         // 모드 확인
         const isChangeMode = orderData.mode === 'change-payment';
         const isUpgradeMode = orderData.mode === 'upgrade';
@@ -296,6 +296,18 @@ export async function POST(request: NextRequest) {
           if (userUpdateError) {
             console.error('Users table update error:', userUpdateError);
           }
+        }
+      }
+
+      // 단과반 결제인 경우 custom_payment_requests 상태 업데이트
+      if (orderData.type === 'custom' && orderData.requestId) {
+        const { error: customUpdateError } = await supabaseAdmin
+          .from('custom_payment_requests')
+          .update({ status: 'paid' })
+          .eq('id', orderData.requestId);
+
+        if (customUpdateError) {
+          console.error('Custom payment request update error:', customUpdateError);
         }
       }
 
