@@ -1,236 +1,303 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import Script from 'next/script';
 import { useSearchParams } from 'next/navigation';
+import styles from './page.module.css';
 
 const PACKAGES = {
   high: {
-    name: '고등학교 졸업자 패키지',
+    fullName: '[고졸] 요양보호사 자격증 패키지',
+    desc: '[고졸] 요양보호사 자격증 패키지 전과정',
     price: 1170000,
-    description: '고등학교 졸업자를 위한 요양보호사 자격증 취득 패키지',
-    features: ['이론 교육 전과정', '실기 교육 전과정', '시험 대비 특강', '합격 보장 관리'],
   },
   college: {
-    name: '대학교 졸업자 패키지',
+    fullName: '[대졸] 요양보호사 자격증 패키지',
+    desc: '[대졸] 요양보호사 자격증 패키지 전과정',
     price: 720000,
-    description: '대학교 졸업자를 위한 요양보호사 자격증 취득 패키지',
-    features: ['이론 교육 전과정', '실기 교육 전과정', '시험 대비 특강'],
   },
 };
-
 
 function PackagePaymentContent() {
   const searchParams = useSearchParams();
   const type = searchParams.get('type') as 'high' | 'college' | null;
-  const [isPayAppLoaded, setIsPayAppLoaded] = useState(false);
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
-  const [formData, setFormData] = useState({ buyername: '', recvphone: '', buyeremail: '' });
-
   const pkg = type && PACKAGES[type] ? PACKAGES[type] : null;
 
+  const [step, setStep] = useState<'info' | 'card' | 'done' | 'fail'>('info');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [phone, setPhone] = useState('');
+  const [userName, setUserName] = useState('');
+  const [agreeAll, setAgreeAll] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [agreePrivacy, setAgreePrivacy] = useState(false);
+
+  const [card, setCard] = useState({
+    cardNo: '', expMonth: '', expYear: '', cardPw: '', authNo: '',
+  });
+
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('success') === 'true') {
-      setPaymentSuccess(true);
-      window.history.replaceState({}, '', window.location.pathname + window.location.search.replace('&success=true', '').replace('?success=true', ''));
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch('/api/user/profile', { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.json())
+        .then((d) => {
+          if (d.phone) setPhone(d.phone);
+          if (d.name) setUserName(d.name);
+        })
+        .catch(() => {});
     }
   }, []);
 
-  const handlePayment = () => {
-    if (!pkg) return;
-    if (!isPayAppLoaded || !window.PayApp) {
-      alert('결제 시스템을 로딩 중입니다. 잠시 후 다시 시도해주세요.');
-      return;
-    }
-    if (!formData.buyername || !formData.recvphone) {
-      alert('이름과 연락처를 입력해주세요.');
-      return;
-    }
-    if (!formData.recvphone.match(/^01[0-9]{8,9}$/)) {
-      alert('올바른 휴대폰 번호를 입력해주세요. (예: 01012345678)');
-      return;
-    }
+  useEffect(() => {
+    setAgreeAll(agreeTerms && agreePrivacy);
+  }, [agreeTerms, agreePrivacy]);
 
-    const token = localStorage.getItem('token');
-    let userId = '';
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        userId = payload.userId || '';
-      } catch (e) {
-        console.error('Token parse error:', e);
-      }
-    }
+  const handleAgreeAll = (checked: boolean) => {
+    setAgreeAll(checked);
+    setAgreeTerms(checked);
+    setAgreePrivacy(checked);
+  };
 
-    const baseUrl = window.location.origin;
-    const shopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어';
-    const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
+  const goToCard = () => {
+    if (!phone) { alert('연락처를 입력해주세요.'); return; }
+    if (!agreeTerms || !agreePrivacy) { alert('필수 약관에 동의해주세요.'); return; }
+    setStep('card');
+  };
 
-    if (!payappUserId) {
-      alert('결제 시스템 설정 오류입니다. 관리자에게 문의하세요.');
+  const handlePay = async () => {
+    const { cardNo, expMonth, expYear, cardPw, authNo } = card;
+    if (!cardNo || !expMonth || !expYear || !cardPw || !authNo) {
+      alert('카드 정보를 모두 입력해주세요.');
       return;
     }
 
+    setIsSubmitting(true);
     try {
-      const orderData = {
-        orderId: `PKG-${Date.now()}`,
-        userId,
-        packageType: type,
-        phone: formData.recvphone,
-        name: formData.buyername,
-      };
-
-      window.PayApp.setDefault('userid', payappUserId);
-      window.PayApp.setDefault('shopname', shopName);
-      window.PayApp.setParam('goodname', pkg.name);
-      window.PayApp.setParam('goodprice', pkg.price.toString());
-      window.PayApp.setParam('recvphone', formData.recvphone);
-      window.PayApp.setParam('buyername', formData.buyername);
-      if (formData.buyeremail) {
-        window.PayApp.setParam('buyeremail', formData.buyeremail);
+      const token = localStorage.getItem('token');
+      let userId = '';
+      if (token) {
+        try { userId = JSON.parse(atob(token.split('.')[1])).userId || ''; } catch {}
       }
-      window.PayApp.setParam('smsuse', 'n');
-      window.PayApp.setParam('feedbackurl', `${baseUrl}/api/payments/webhook`);
-      window.PayApp.setParam('returnurl', `${baseUrl}/payment/package?type=${type}&success=true`);
-      window.PayApp.setParam('var1', JSON.stringify(orderData));
 
-      window.PayApp.call();
-    } catch (error) {
-      alert('결제 요청 중 오류가 발생했습니다. 다시 시도해주세요.');
+      const res = await fetch('/api/payments/bill', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          packageType: type,
+          cardNo,
+          expMonth,
+          expYear,
+          cardPw,
+          buyerAuthNo: authNo,
+          buyerName: userName,
+          buyerPhone: phone,
+          userId,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setErrorMsg(data.error || '결제에 실패했습니다.');
+        setStep('fail');
+      } else {
+        setStep('done');
+      }
+    } catch {
+      setErrorMsg('결제 요청 중 오류가 발생했습니다.');
+      setStep('fail');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   if (!pkg) {
     return (
-      <div style={{ padding: '2rem', paddingTop: '80px', maxWidth: '600px', margin: '0 auto', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '1.5rem', color: '#111827', marginBottom: '1rem' }}>잘못된 접근입니다</h1>
-        <a href="/" style={{ color: '#0051FF' }}>홈으로 돌아가기</a>
+      <div className={styles.errorWrap}>
+        <p>잘못된 접근입니다.</p>
+        <a href="/">홈으로</a>
       </div>
     );
   }
 
-  return (
-    <>
-      <Script
-        src="https://lite.payapp.kr/public/api/v2/payapp-lite.js"
-        strategy="afterInteractive"
-        onLoad={() => {
-          if (window.PayApp) {
-            window.PayApp.setDefault('userid', process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '');
-            window.PayApp.setDefault('shopname', process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어');
-            setIsPayAppLoaded(true);
-          }
-        }}
-      />
-
-      <div style={{ padding: '2rem', paddingTop: '80px', maxWidth: '600px', margin: '0 auto', minHeight: '100vh', backgroundColor: '#f9fafb' }}>
-        <div style={{ backgroundColor: 'white', padding: '2rem', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-
-          {paymentSuccess ? (
-            <>
-              <h1 style={{ fontSize: '2rem', fontWeight: 'bold', textAlign: 'center', marginBottom: '1.5rem', color: '#111827' }}>
-                결제가 완료되었습니다
-              </h1>
-              <div style={{ padding: '2rem', backgroundColor: '#f0fdf4', borderRadius: '12px', border: '2px solid #86efac', textAlign: 'center', marginBottom: '2rem' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>✓</div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#15803d', marginBottom: '0.5rem' }}>
-                  {pkg.name} 결제 완료
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#166534' }}>
-                  {pkg.price.toLocaleString()}원 결제가 완료되었습니다.<br />
-                  빠른 시일 내에 담당자가 연락드리겠습니다.
-                </div>
-              </div>
-              <a href="/" style={{ display: 'block', textAlign: 'center', padding: '1rem', backgroundColor: '#0051FF', color: 'white', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold' }}>
-                홈으로
-              </a>
-            </>
-          ) : (
-            <>
-              <h1 style={{ fontSize: '1.75rem', fontWeight: 'bold', marginBottom: '1.5rem', color: '#111827' }}>
-                {pkg.name}
-              </h1>
-
-              <div style={{ padding: '1.25rem', backgroundColor: '#eff6ff', borderRadius: '10px', border: '1px solid #bfdbfe', marginBottom: '1.5rem' }}>
-                <div style={{ fontSize: '0.875rem', color: '#1e40af', marginBottom: '0.5rem' }}>{pkg.description}</div>
-                <div style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1d4ed8' }}>
-                  {pkg.price.toLocaleString()}원
-                </div>
-                <div style={{ fontSize: '0.75rem', color: '#3b82f6', marginTop: '0.25rem' }}>일시불 결제</div>
-              </div>
-
-              <div style={{ marginBottom: '1.5rem', padding: '1rem', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
-                {pkg.features.map((f, i) => (
-                  <div key={i} style={{ fontSize: '0.875rem', color: '#374151', marginBottom: '0.4rem' }}>✓ {f}</div>
-                ))}
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                  이름 <span style={{ color: 'red' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.buyername}
-                  onChange={(e) => setFormData({ ...formData, buyername: e.target.value })}
-                  placeholder="홍길동"
-                  style={{ width: '100%', padding: '0.75rem', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }}
-                  onFocus={(e) => e.target.style.borderColor = '#0051FF'}
-                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-                  연락처 <span style={{ color: 'red' }}>*</span>
-                </label>
-                <input
-                  type="tel"
-                  value={formData.recvphone}
-                  onChange={(e) => setFormData({ ...formData, recvphone: e.target.value })}
-                  placeholder="01012345678"
-                  style={{ width: '100%', padding: '0.75rem', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }}
-                  onFocus={(e) => e.target.style.borderColor = '#0051FF'}
-                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-                />
-              </div>
-
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>이메일</label>
-                <input
-                  type="email"
-                  value={formData.buyeremail}
-                  onChange={(e) => setFormData({ ...formData, buyeremail: e.target.value })}
-                  placeholder="example@email.com"
-                  style={{ width: '100%', padding: '0.75rem', border: '2px solid #e5e7eb', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }}
-                  onFocus={(e) => e.target.style.borderColor = '#0051FF'}
-                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-                />
-              </div>
-
-              <button
-                onClick={handlePayment}
-                disabled={!isPayAppLoaded || !formData.buyername || !formData.recvphone}
-                style={{
-                  width: '100%',
-                  padding: '1.125rem',
-                  backgroundColor: isPayAppLoaded && formData.buyername && formData.recvphone ? '#0051FF' : '#d1d5db',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '12px',
-                  fontSize: '1.125rem',
-                  cursor: isPayAppLoaded && formData.buyername && formData.recvphone ? 'pointer' : 'not-allowed',
-                  fontWeight: 'bold',
-                }}
-              >
-                {!isPayAppLoaded ? '로딩 중...' : `${pkg.price.toLocaleString()}원 결제하기`}
-              </button>
-            </>
-          )}
+  if (step === 'done') {
+    return (
+      <div className={styles.page}>
+        <div className={styles.header}>
+          <span className={styles.logo}>PAYAPP</span>
+          <span className={styles.headerSub}>비대면 결제서비스 페이앱</span>
+        </div>
+        <div className={styles.resultWrap}>
+          <div className={styles.resultCheck}>✓</div>
+          <p className={styles.resultTitle}>결제가 완료되었습니다</p>
+          <p className={styles.resultDesc}>{pkg.fullName}<br />{pkg.price.toLocaleString()}원<br /><br />빠른 시일 내에 담당자가 연락드리겠습니다.</p>
+          <a href="/" className={styles.homeBtn}>홈으로</a>
         </div>
       </div>
-    </>
+    );
+  }
+
+  if (step === 'fail') {
+    return (
+      <div className={styles.page}>
+        <div className={styles.header}>
+          <span className={styles.logo}>PAYAPP</span>
+          <span className={styles.headerSub}>비대면 결제서비스 페이앱</span>
+        </div>
+        <div className={styles.resultWrap}>
+          <div className={styles.resultX}>✕</div>
+          <p className={styles.resultTitle}>결제에 실패했습니다</p>
+          <p className={styles.resultDesc}>{errorMsg}</p>
+          <button className={styles.homeBtn} onClick={() => setStep('card')}>다시 시도</button>
+        </div>
+      </div>
+    );
+  }
+
+  if (step === 'card') {
+    return (
+      <div className={styles.page}>
+        <div className={styles.header}>
+          <button className={styles.backBtn} onClick={() => setStep('info')}>←</button>
+          <span className={styles.logo}>PAYAPP</span>
+          <span className={styles.headerSub}>비대면 결제서비스 페이앱</span>
+        </div>
+
+        <div className={styles.productSection}>
+          <div className={styles.productName}>{pkg.fullName}</div>
+          <div className={styles.priceRow}>
+            <span className={styles.priceLabel}>결제금액 &gt;</span>
+            <span className={styles.price}>{pkg.price.toLocaleString()}</span>
+            <span className={styles.priceUnit}>원</span>
+          </div>
+        </div>
+
+        <div className={styles.divider} />
+
+        <div className={styles.cardSection}>
+          <div className={styles.fieldLabel}>카드번호</div>
+          <input className={styles.fieldInput} type="text" placeholder="숫자 16자리"
+            maxLength={16} value={card.cardNo}
+            onChange={(e) => setCard({ ...card, cardNo: e.target.value.replace(/\D/g, '') })} />
+
+          <div className={styles.fieldRow}>
+            <div className={styles.fieldHalf}>
+              <div className={styles.fieldLabel}>유효월 (MM)</div>
+              <input className={styles.fieldInput} type="text" placeholder="01" maxLength={2}
+                value={card.expMonth}
+                onChange={(e) => setCard({ ...card, expMonth: e.target.value.replace(/\D/g, '') })} />
+            </div>
+            <div className={styles.fieldHalf}>
+              <div className={styles.fieldLabel}>유효년 (YY)</div>
+              <input className={styles.fieldInput} type="text" placeholder="26" maxLength={2}
+                value={card.expYear}
+                onChange={(e) => setCard({ ...card, expYear: e.target.value.replace(/\D/g, '') })} />
+            </div>
+          </div>
+
+          <div className={styles.fieldRow}>
+            <div className={styles.fieldHalf}>
+              <div className={styles.fieldLabel}>비밀번호 앞 2자리</div>
+              <input className={styles.fieldInput} type="password" placeholder="••" maxLength={2}
+                value={card.cardPw}
+                onChange={(e) => setCard({ ...card, cardPw: e.target.value.replace(/\D/g, '') })} />
+            </div>
+            <div className={styles.fieldHalf}>
+              <div className={styles.fieldLabel}>생년월일 6자리</div>
+              <input className={styles.fieldInput} type="text" placeholder="YYMMDD" maxLength={6}
+                value={card.authNo}
+                onChange={(e) => setCard({ ...card, authNo: e.target.value.replace(/\D/g, '') })} />
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.btnRowFixed}>
+          <button className={styles.btnPay} onClick={handlePay} disabled={isSubmitting}>
+            {isSubmitting ? '결제 처리 중...' : `${pkg.price.toLocaleString()}원 바로결제`}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // step === 'info'
+  return (
+    <div className={styles.page}>
+      <div className={styles.header}>
+        <span className={styles.logo}>PAYAPP</span>
+        <span className={styles.headerSub}>비대면 결제서비스 페이앱</span>
+      </div>
+
+      <div className={styles.productSection}>
+        <div className={styles.productName}>{pkg.fullName}</div>
+        <div className={styles.priceRow}>
+          <span className={styles.priceLabel}>결제금액 &gt;</span>
+          <span className={styles.price}>{pkg.price.toLocaleString()}</span>
+          <span className={styles.priceUnit}>원</span>
+        </div>
+      </div>
+
+      <div className={styles.divider} />
+
+      <div className={styles.infoRow}>
+        <span className={styles.infoKey}>상점명</span>
+        <span className={styles.infoVal}>한평생올케어</span>
+      </div>
+
+      <div className={styles.divider} />
+
+      <div className={styles.goodsSection}>
+        <div className={styles.goodsLabel}>상품 정보</div>
+        <div className={styles.goodsRow}>
+          <div className={styles.goodsImg}>
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <rect width="32" height="32" rx="4" fill="#e5e7eb"/>
+              <path d="M8 24l6-8 4 5 3-4 5 7H8z" fill="#9ca3af"/>
+              <circle cx="21" cy="12" r="3" fill="#9ca3af"/>
+            </svg>
+          </div>
+          <span className={styles.goodsDesc}>{pkg.desc}</span>
+        </div>
+      </div>
+
+      <div className={styles.divider} />
+
+      <div className={styles.phoneSection}>
+        <div className={styles.phoneLabel}>연락처</div>
+        <input className={styles.phoneInput} type="tel" placeholder="01012345678"
+          value={phone} maxLength={11}
+          onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))} />
+      </div>
+
+      <div className={styles.divider} />
+
+      <div className={styles.agreeSection}>
+        <label className={styles.agreeAll}>
+          <input type="checkbox" checked={agreeAll} onChange={(e) => handleAgreeAll(e.target.checked)} />
+          <span>✓ 전체동의</span>
+        </label>
+        <div className={styles.agreeItem}>
+          <label>
+            <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} />
+            <span>✓ 페이앱 이용약관 동의</span>
+          </label>
+          <a href="https://www.payapp.kr/policy/terms" target="_blank" rel="noopener noreferrer" className={styles.viewLink}>보기</a>
+        </div>
+        <div className={styles.agreeItem}>
+          <label>
+            <input type="checkbox" checked={agreePrivacy} onChange={(e) => setAgreePrivacy(e.target.checked)} />
+            <span>✓ 개인정보 처리방침 동의</span>
+          </label>
+          <a href="https://www.payapp.kr/policy/privacy" target="_blank" rel="noopener noreferrer" className={styles.viewLink}>보기</a>
+        </div>
+      </div>
+
+      <div className={styles.btnRowFixed}>
+        <button className={styles.btnPay} onClick={goToCard}>
+          바로결제
+        </button>
+      </div>
+    </div>
   );
 }
 
