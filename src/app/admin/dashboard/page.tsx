@@ -40,7 +40,7 @@ export default function AdminDashboardPage() {
   
   // 페이지네이션
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const itemsPerPage = 10;
   
   // 구독 상태 변경 모달
   const [showModal, setShowModal] = useState(false);
@@ -51,6 +51,9 @@ export default function AdminDashboardPage() {
   const [activeTab, setActiveTab] = useState<'users' | 'payments'>('users');
   const [payments, setPayments] = useState<any[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [paymentsPage, setPaymentsPage] = useState(1);
+  const [paymentsTotal, setPaymentsTotal] = useState(0);
+  const paymentsPageSize = 10;
 
   // 단과반 결제 요청 모달
   const [showCustomPayModal, setShowCustomPayModal] = useState(false);
@@ -288,16 +291,18 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const fetchPayments = async () => {
+  const fetchPayments = async (page = 1) => {
     setPaymentsLoading(true);
     try {
       const token = localStorage.getItem('admin_token');
-      const res = await fetch('/api/admin/payments', {
+      const res = await fetch(`/api/admin/payments?page=${page}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
         setPayments(data.payments || []);
+        setPaymentsTotal(data.total || 0);
+        setPaymentsPage(page);
       }
     } catch (err) {
       console.error('결제 내역 로드 실패:', err);
@@ -368,51 +373,86 @@ export default function AdminDashboardPage() {
             className={`${styles.tabBtn} ${activeTab === 'users' ? styles.tabBtnActive : ''}`}
           >회원 관리</button>
           <button
-            onClick={() => { setActiveTab('payments'); fetchPayments(); }}
+            onClick={() => { setActiveTab('payments'); fetchPayments(1); }}
             className={`${styles.tabBtn} ${activeTab === 'payments' ? styles.tabBtnActive : ''}`}
           >결제 내역</button>
         </div>
 
         {/* 결제 내역 탭 */}
         {activeTab === 'payments' && (
-          <div className={styles.tableContainer}>
-            {paymentsLoading ? (
-              <div className={styles.loading}>로딩 중...</div>
-            ) : payments.length === 0 ? (
-              <div className={styles.noData}>결제 내역이 없습니다.</div>
-            ) : (
-              <table className={styles.table}>
-                <thead>
-                  <tr>
-                    <th>결제일시</th>
-                    <th>이름</th>
-                    <th>전화번호</th>
-                    <th>상품명</th>
-                    <th>금액</th>
-                    <th>상태</th>
-                    <th>주문번호</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {payments.map((p: any) => (
-                    <tr key={p.id}>
-                      <td>{formatDate(p.approved_at || p.created_at)}</td>
-                      <td>{p.users?.name || '-'}</td>
-                      <td>{p.users?.phone || p.customer_phone || '-'}</td>
-                      <td>{p.good_name || '-'}</td>
-                      <td>{p.amount?.toLocaleString()}원</td>
-                      <td>
-                        <span style={{ padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', background: p.status === 'completed' ? '#dcfce7' : '#fee2e2', color: p.status === 'completed' ? '#16a34a' : '#dc2626' }}>
-                          {p.status === 'completed' ? '완료' : p.status}
-                        </span>
-                      </td>
-                      <td style={{ fontSize: '12px', color: '#6b7280' }}>{p.order_id}</td>
+          <>
+            <div className={styles.tableContainer}>
+              {paymentsLoading ? (
+                <div className={styles.loading}>로딩 중...</div>
+              ) : payments.length === 0 ? (
+                <div className={styles.noData}>결제 내역이 없습니다.</div>
+              ) : (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>결제일시</th>
+                      <th>이름</th>
+                      <th>전화번호</th>
+                      <th>상품명</th>
+                      <th>금액</th>
+                      <th>상태</th>
+                      <th>주문번호</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {payments.map((p: any) => (
+                      <tr key={p.id}>
+                        <td>{formatDate(p.approved_at || p.created_at)}</td>
+                        <td>{p.users?.name || '-'}</td>
+                        <td>{p.users?.phone || p.customer_phone || '-'}</td>
+                        <td>{p.good_name || '-'}</td>
+                        <td>{p.amount?.toLocaleString()}원</td>
+                        <td>
+                          <span className={`${styles.statusBadge} ${p.status === 'completed' ? styles.statusActive : styles.statusCancelled}`}>
+                            {p.status === 'completed' ? '완료' : p.status}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '12px', color: 'var(--toss-text-tertiary)' }}>{p.order_id}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* 결제 페이지네이션 */}
+            {paymentsTotal > paymentsPageSize && (
+              <div className={styles.pagination}>
+                <button
+                  onClick={() => fetchPayments(paymentsPage - 1)}
+                  disabled={paymentsPage === 1 || paymentsLoading}
+                  className={styles.pageBtn}
+                >이전</button>
+                {Array.from({ length: Math.ceil(paymentsTotal / paymentsPageSize) }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === Math.ceil(paymentsTotal / paymentsPageSize) || Math.abs(p - paymentsPage) <= 2)
+                  .reduce<(number | '...')[]>((acc, p, i, arr) => {
+                    if (i > 0 && typeof arr[i-1] === 'number' && (p as number) - (arr[i-1] as number) > 1) acc.push('...');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === '...'
+                      ? <span key={`dots-${i}`} style={{ padding: '0 4px', color: 'var(--toss-text-tertiary)' }}>···</span>
+                      : <button
+                          key={p}
+                          onClick={() => fetchPayments(p as number)}
+                          disabled={paymentsLoading}
+                          className={`${styles.pageBtn} ${paymentsPage === p ? styles.active : ''}`}
+                        >{p}</button>
+                  )}
+                <button
+                  onClick={() => fetchPayments(paymentsPage + 1)}
+                  disabled={paymentsPage === Math.ceil(paymentsTotal / paymentsPageSize) || paymentsLoading}
+                  className={styles.pageBtn}
+                >다음</button>
+              </div>
             )}
-          </div>
+          </>
         )}
 
         {/* 필터 + 회원목록 (users 탭) */}

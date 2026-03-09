@@ -11,15 +11,21 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: '권한이 없습니다.' }, { status: 401 });
   }
 
-  const { data, error } = await supabaseAdmin
+  const { searchParams } = new URL(request.url);
+  const page = parseInt(searchParams.get('page') || '1', 10);
+  const pageSize = 10;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  const { data, error, count } = await supabaseAdmin
     .from('payments')
-    .select('*, users(name, email, phone)')
+    .select('*, users(name, email, phone)', { count: 'exact' })
     .order('approved_at', { ascending: false })
-    .limit(200);
+    .range(from, to);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ payments: data || [] });
+  return NextResponse.json({ payments: data || [], total: count || 0, page, pageSize });
 }
