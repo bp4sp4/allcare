@@ -57,6 +57,8 @@ export default function AdminDashboardPage() {
   const [customPayUser, setCustomPayUser] = useState<UserData | null>(null);
   const [customPayForm, setCustomPayForm] = useState({ subject: '', subjectCount: '1', amount: '', memo: '' });
   const [customPayLoading, setCustomPayLoading] = useState(false);
+  const [customPayRequests, setCustomPayRequests] = useState<any[]>([]);
+  const [customPayModalTab, setCustomPayModalTab] = useState<'history' | 'new'>('history');
 
   useEffect(() => {
     checkAuth();
@@ -183,10 +185,38 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const openCustomPayModal = (user: UserData) => {
+  const openCustomPayModal = async (user: UserData) => {
     setCustomPayUser(user);
     setCustomPayForm({ subject: '', subjectCount: '1', amount: '', memo: '' });
+    setCustomPayRequests([]);
+    setCustomPayModalTab('history');
     setShowCustomPayModal(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`/api/admin/custom-payment?userId=${user.user_id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setCustomPayRequests(d.data || []);
+      }
+    } catch {}
+  };
+
+  const handleCancelCustomPayRequest = async (id: string) => {
+    if (!confirm('이 결제 요청을 취소하시겠습니까?')) return;
+    try {
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch('/api/admin/custom-payment', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ id }),
+      });
+      if (!res.ok) throw new Error();
+      setCustomPayRequests((prev) => prev.map((r) => r.id === id ? { ...r, status: 'cancelled' } : r));
+    } catch {
+      alert('취소에 실패했습니다.');
+    }
   };
 
   const handleCustomPaySubmit = async () => {
@@ -216,8 +246,10 @@ export default function AdminDashboardPage() {
         }),
       });
       if (!res.ok) throw new Error('결제 요청 생성에 실패했습니다.');
+      const created = await res.json();
       alert(`${customPayUser.name || customPayUser.email}에게 단과반 결제 요청이 전송되었습니다.`);
-      setShowCustomPayModal(false);
+      setCustomPayForm({ subject: '', subjectCount: '1', amount: '', memo: '' });
+      if (created.data) setCustomPayRequests((prev) => [created.data, ...prev]);
     } catch (err) {
       alert(err instanceof Error ? err.message : '오류가 발생했습니다.');
     } finally {
@@ -330,14 +362,14 @@ export default function AdminDashboardPage() {
         )}
 
         {/* 탭 */}
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        <div className={styles.tabs}>
           <button
             onClick={() => setActiveTab('users')}
-            style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '14px', background: activeTab === 'users' ? '#2563eb' : '#e5e7eb', color: activeTab === 'users' ? 'white' : '#374151' }}
+            className={`${styles.tabBtn} ${activeTab === 'users' ? styles.tabBtnActive : ''}`}
           >회원 관리</button>
           <button
             onClick={() => { setActiveTab('payments'); fetchPayments(); }}
-            style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '14px', background: activeTab === 'payments' ? '#2563eb' : '#e5e7eb', color: activeTab === 'payments' ? 'white' : '#374151' }}
+            className={`${styles.tabBtn} ${activeTab === 'payments' ? styles.tabBtnActive : ''}`}
           >결제 내역</button>
         </div>
 
@@ -510,7 +542,7 @@ export default function AdminDashboardPage() {
                       <button
                         onClick={() => openCustomPayModal(user)}
                         className={styles.actionBtn}
-                        style={{ backgroundColor: '#7c3aed', color: 'white', fontSize: '0.75rem', padding: '0.35rem 0.6rem' }}
+                        style={{ fontSize: '0.75rem', padding: '0.35rem 0.6rem' }}
                       >
                         결제요청
                       </button>
@@ -567,71 +599,121 @@ export default function AdminDashboardPage() {
       {/* 단과반 결제 요청 모달 */}
       {showCustomPayModal && customPayUser && (
         <div className={styles.modal} onClick={() => setShowCustomPayModal(false)}>
-          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '420px' }}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()} style={{ maxWidth: '460px', maxHeight: '88vh', overflowY: 'auto' }}>
             <h3 className={styles.modalTitle}>단과반 결제 요청</h3>
-            <p className={styles.userEmail}><strong>{customPayUser.name || customPayUser.email}</strong></p>
+            <p className={styles.userEmail}>{customPayUser.name || customPayUser.email}</p>
 
-            <div style={{ marginBottom: '0.75rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.3rem' }}>
-                과목명 <span style={{ color: 'red' }}>*</span>
-              </label>
-              <input
-                type="text"
-                value={customPayForm.subject}
-                onChange={(e) => setCustomPayForm({ ...customPayForm, subject: e.target.value })}
-                placeholder="예: 요양보호사 이론 3과목"
-                style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid #d1d5db', borderRadius: '6px', fontSize: '0.9rem', boxSizing: 'border-box' }}
-              />
-            </div>
-
-            <div style={{ marginBottom: '0.75rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.3rem' }}>과목 수</label>
-              <input
-                type="number"
-                min="1"
-                value={customPayForm.subjectCount}
-                onChange={(e) => setCustomPayForm({ ...customPayForm, subjectCount: e.target.value })}
-                style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid #d1d5db', borderRadius: '6px', fontSize: '0.9rem', boxSizing: 'border-box' }}
-              />
-            </div>
-
-            <div style={{ marginBottom: '0.75rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.3rem' }}>
-                결제 금액 (원) <span style={{ color: 'red' }}>*</span>
-              </label>
-              <input
-                type="text"
-                value={customPayForm.amount}
-                onChange={(e) => setCustomPayForm({ ...customPayForm, amount: e.target.value })}
-                placeholder="예: 300000"
-                style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid #d1d5db', borderRadius: '6px', fontSize: '0.9rem', boxSizing: 'border-box' }}
-              />
-            </div>
-
-            <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', marginBottom: '0.3rem' }}>메모 (선택)</label>
-              <textarea
-                value={customPayForm.memo}
-                onChange={(e) => setCustomPayForm({ ...customPayForm, memo: e.target.value })}
-                placeholder="관리자 메모"
-                rows={2}
-                style={{ width: '100%', padding: '0.6rem 0.75rem', border: '1.5px solid #d1d5db', borderRadius: '6px', fontSize: '0.9rem', boxSizing: 'border-box', resize: 'vertical' }}
-              />
-            </div>
-
-            <div className={styles.modalActions}>
+            {/* 팝업 내 탭 */}
+            <div className={styles.modalTabs}>
               <button
-                onClick={handleCustomPaySubmit}
-                disabled={customPayLoading}
-                className={styles.confirmBtn}
-                style={{ backgroundColor: '#7c3aed' }}
+                className={`${styles.modalTab} ${customPayModalTab === 'new' ? styles.modalTabActive : ''}`}
+                onClick={() => setCustomPayModalTab('new')}
               >
-                {customPayLoading ? '전송 중...' : '결제 요청 전송'}
+                새 요청
               </button>
-              <button onClick={() => setShowCustomPayModal(false)} className={styles.cancelBtn}>
-                취소
+              <button
+                className={`${styles.modalTab} ${customPayModalTab === 'history' ? styles.modalTabActive : ''}`}
+                onClick={() => setCustomPayModalTab('history')}
+              >
+                요청 내역 {customPayRequests.length > 0 && `(${customPayRequests.length})`}
               </button>
             </div>
+
+            {/* 요청 내역 탭 */}
+            {customPayModalTab === 'history' && (
+              <div>
+                {customPayRequests.length === 0 ? (
+                  <p style={{ textAlign: 'center', padding: '32px 0', color: 'var(--toss-text-tertiary)', fontSize: '14px' }}>
+                    아직 결제 요청이 없어요
+                  </p>
+                ) : (
+                  customPayRequests.map((req) => (
+                    <div key={req.id} className={styles.reqItem}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <p className={styles.reqSubject} style={{ opacity: req.status === 'cancelled' ? 0.45 : 1 }}>{req.subject}</p>
+                        <p className={styles.reqMeta}>
+                          {req.amount?.toLocaleString()}원 · {new Date(req.created_at).toLocaleDateString('ko-KR')}
+                        </p>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+                        <span className={`${styles.badge} ${req.status === 'pending' ? styles.badgePending : req.status === 'paid' ? styles.badgePaid : styles.badgeCancelled}`}>
+                          {req.status === 'pending' ? '대기중' : req.status === 'paid' ? '결제완료' : '취소됨'}
+                        </span>
+                        {req.status === 'pending' && (
+                          <button className={styles.reqCancelBtn} onClick={() => handleCancelCustomPayRequest(req.id)}>
+                            취소
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+                <div className={styles.modalActions}>
+                  <button onClick={() => setShowCustomPayModal(false)} className={styles.cancelBtn} style={{ flex: 1 }}>
+                    닫기
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* 새 요청 탭 */}
+            {customPayModalTab === 'new' && (
+              <div>
+                <div style={{ marginBottom: '14px' }}>
+                  <label className={styles.formLabel}>과목명 <span style={{ color: 'var(--toss-red)' }}>*</span></label>
+                  <input
+                    type="text"
+                    value={customPayForm.subject}
+                    onChange={(e) => setCustomPayForm({ ...customPayForm, subject: e.target.value })}
+                    placeholder="예: 요양보호사 이론 3과목"
+                    className={styles.formInput}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '14px' }}>
+                  <label className={styles.formLabel}>과목 수</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={customPayForm.subjectCount}
+                    onChange={(e) => setCustomPayForm({ ...customPayForm, subjectCount: e.target.value })}
+                    className={styles.formInput}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '14px' }}>
+                  <label className={styles.formLabel}>결제 금액 (원) <span style={{ color: 'var(--toss-red)' }}>*</span></label>
+                  <input
+                    type="text"
+                    value={customPayForm.amount}
+                    onChange={(e) => setCustomPayForm({ ...customPayForm, amount: e.target.value })}
+                    placeholder="예: 300000"
+                    className={styles.formInput}
+                  />
+                </div>
+
+                <div style={{ marginBottom: '6px' }}>
+                  <label className={styles.formLabel}>메모 (선택)</label>
+                  <textarea
+                    value={customPayForm.memo}
+                    onChange={(e) => setCustomPayForm({ ...customPayForm, memo: e.target.value })}
+                    placeholder="관리자 메모"
+                    rows={2}
+                    className={styles.formInput}
+                    style={{ resize: 'vertical' }}
+                  />
+                </div>
+
+                <div className={styles.modalActions}>
+                  <button onClick={handleCustomPaySubmit} disabled={customPayLoading} className={styles.confirmBtn}>
+                    {customPayLoading ? '전송 중...' : '결제 요청 전송'}
+                  </button>
+                  <button onClick={() => setShowCustomPayModal(false)} className={styles.cancelBtn}>
+                    닫기
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -662,7 +744,7 @@ export default function AdminDashboardPage() {
               {newStatus === 'cancelled' && '• 즉시 구독이 종료되며 서비스 이용이 불가능합니다.'}
             </div>
             <div className={styles.modalActions}>
-              <button onClick={handleSubscriptionAction} className={styles.confirmBtn}>
+              <button onClick={handleSubscriptionAction} className={styles.confirmBtn} style={{ background: '#E6A817' }}>
                 변경
               </button>
               <button onClick={closeModal} className={styles.cancelBtn}>

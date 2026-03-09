@@ -61,13 +61,17 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: '관리자 권한이 필요합니다.' }, { status: 401 });
   }
 
-  const { data, error } = await supabaseAdmin
+  const { searchParams } = new URL(request.url);
+  const userId = searchParams.get('userId');
+
+  let query = supabaseAdmin
     .from('custom_payment_requests')
-    .select(`
-      *,
-      users(email, name, phone)
-    `)
+    .select(`*, users(email, name, phone)`)
     .order('created_at', { ascending: false });
+
+  if (userId) query = query.eq('user_id', userId);
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: '조회에 실패했습니다.' }, { status: 500 });
