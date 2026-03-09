@@ -71,7 +71,7 @@
 }
 
 .menuOpen {
-  max-height: 350px;
+  max-height: 500px;
   opacity: 1;
 }
 
@@ -109,4 +109,9 @@
   color: #3D3D3D;
   text-align: left;
   width: 100%;
+}
+
+.menuBtnCustom {
+  color: #7c3aed;
+  font-weight: 600;
 }

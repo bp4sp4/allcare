@@ -10,6 +10,7 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userProfile, setUserProfile] = useState<{ name: string; phone: string } | null>(null);
+  const [customRequests, setCustomRequests] = useState<{ id: string; subject: string; amount: number }[]>([]);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -31,10 +32,39 @@ export default function Header() {
         .then((r) => r.json())
         .then((d) => setUserProfile({ name: d.name || '', phone: d.phone || '' }))
         .catch(() => {});
+
+      fetch('/api/custom-payment/pending', { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.json())
+        .then((d) => setCustomRequests(d.requests || []))
+        .catch(() => {});
     } else {
       setUserProfile(null);
+      setCustomRequests([]);
     }
   }, [pathname]);
+
+  const handleCustomPayment = async (requestId: string) => {
+    setIsMenuOpen(false);
+    const token = localStorage.getItem('token');
+    if (!token) { alert('로그인이 필요합니다.'); return; }
+
+    const res = await fetch('/api/payments/request-custom', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ requestId }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.payurl) {
+      alert(data.error || '결제 요청에 실패했습니다.');
+      return;
+    }
+
+    const w = 480, h = 700;
+    const left = Math.max(0, (window.screen.width - w) / 2);
+    const top = Math.max(0, (window.screen.height - h) / 2);
+    window.open(data.payurl, 'payapp', `width=${w},height=${h},top=${top},left=${left},scrollbars=yes`);
+  };
 
   const handlePackagePayment = async (type: 'high' | 'college') => {
     setIsMenuOpen(false);
@@ -102,6 +132,14 @@ export default function Header() {
             </div>
           </>
         )}
+
+        {customRequests.map((req) => (
+          <div key={req.id} className={styles.menuItem}>
+            <button className={`${styles.menuBtn} ${styles.menuBtnCustom}`} onClick={() => handleCustomPayment(req.id)}>
+              단과반 결제 · {req.subject} ({req.amount.toLocaleString()}원)
+            </button>
+          </div>
+        ))}
 
         <div className={styles.menuItem}>
           <button className={styles.menuBtn} onClick={() => handlePackagePayment('high')}>고등학교 졸업자 패키지 117만원</button>
