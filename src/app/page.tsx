@@ -11,18 +11,6 @@ import styles from "./page.module.css";
 import BottomSheetHandle from "@/components/BottomSheetHandle";
 import Portal from "@/components/Portal";
 
-// PayApp SDK 타입 정의
-declare global {
-  interface Window {
-    PayApp: {
-      setDefault: (key: string, value: string) => typeof window.PayApp;
-      setParam: (key: string, value: string) => typeof window.PayApp;
-      call: (params?: Record<string, string>) => void;
-      payrequest: () => void;
-      rebill: () => void;
-    };
-  }
-}
 
 // 플랜 데이터
 interface Plan {

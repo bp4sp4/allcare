@@ -5,18 +5,6 @@ import Script from 'next/script';
 import styles from './payment.module.css';
 
 // PayApp SDK 타입 정의
-declare global {
-  interface Window {
-    PayApp: {
-      setDefault: (key: string, value: string) => typeof window.PayApp;
-      setParam: (key: string, value: string) => typeof window.PayApp;
-      call: (params?: Record<string, string>) => void;
-      payrequest: () => void;
-      rebill: () => void;
-    };
-  }
-}
-
 export default function PaymentPage() {
   const [isPayAppLoaded, setIsPayAppLoaded] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
