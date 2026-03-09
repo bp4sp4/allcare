@@ -47,6 +47,11 @@ export default function AdminDashboardPage() {
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
   const [newStatus, setNewStatus] = useState<'active' | 'cancel_scheduled' | 'cancelled'>('active');
 
+  // 탭
+  const [activeTab, setActiveTab] = useState<'users' | 'payments'>('users');
+  const [payments, setPayments] = useState<any[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+
   // 단과반 결제 요청 모달
   const [showCustomPayModal, setShowCustomPayModal] = useState(false);
   const [customPayUser, setCustomPayUser] = useState<UserData | null>(null);
@@ -251,6 +256,24 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const fetchPayments = async () => {
+    setPaymentsLoading(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch('/api/admin/payments', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPayments(data.payments || []);
+      }
+    } catch (err) {
+      console.error('결제 내역 로드 실패:', err);
+    } finally {
+      setPaymentsLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('ko-KR');
@@ -306,8 +329,62 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* 필터 */}
-        <div className={styles.filters}>
+        {/* 탭 */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+          <button
+            onClick={() => setActiveTab('users')}
+            style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '14px', background: activeTab === 'users' ? '#2563eb' : '#e5e7eb', color: activeTab === 'users' ? 'white' : '#374151' }}
+          >회원 관리</button>
+          <button
+            onClick={() => { setActiveTab('payments'); fetchPayments(); }}
+            style={{ padding: '8px 20px', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600', fontSize: '14px', background: activeTab === 'payments' ? '#2563eb' : '#e5e7eb', color: activeTab === 'payments' ? 'white' : '#374151' }}
+          >결제 내역</button>
+        </div>
+
+        {/* 결제 내역 탭 */}
+        {activeTab === 'payments' && (
+          <div className={styles.tableContainer}>
+            {paymentsLoading ? (
+              <div className={styles.loading}>로딩 중...</div>
+            ) : payments.length === 0 ? (
+              <div className={styles.noData}>결제 내역이 없습니다.</div>
+            ) : (
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th>결제일시</th>
+                    <th>이름</th>
+                    <th>전화번호</th>
+                    <th>상품명</th>
+                    <th>금액</th>
+                    <th>상태</th>
+                    <th>주문번호</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {payments.map((p: any) => (
+                    <tr key={p.id}>
+                      <td>{formatDate(p.approved_at || p.created_at)}</td>
+                      <td>{p.users?.name || '-'}</td>
+                      <td>{p.users?.phone || p.customer_phone || '-'}</td>
+                      <td>{p.good_name || '-'}</td>
+                      <td>{p.amount?.toLocaleString()}원</td>
+                      <td>
+                        <span style={{ padding: '2px 8px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', background: p.status === 'completed' ? '#dcfce7' : '#fee2e2', color: p.status === 'completed' ? '#16a34a' : '#dc2626' }}>
+                          {p.status === 'completed' ? '완료' : p.status}
+                        </span>
+                      </td>
+                      <td style={{ fontSize: '12px', color: '#6b7280' }}>{p.order_id}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
+        {/* 필터 + 회원목록 (users 탭) */}
+        {activeTab === 'users' && (<><div className={styles.filters}>
           <div className={styles.filtersGrid}>
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>검색</label>
@@ -484,7 +561,7 @@ export default function AdminDashboardPage() {
               </div>
             )}
           </div>
-        )}
+        )}</>)}
       </main>
 
       {/* 단과반 결제 요청 모달 */}

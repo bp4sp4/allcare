@@ -28,13 +28,11 @@ export async function POST(request: NextRequest) {
       recvphone,
       smsuse: 'n',
       feedbackurl: `${baseUrl}/api/payments/webhook`,
-      returnurl: `${baseUrl}/`,
+      returnurl: `${baseUrl}/payment/success`,
       var1: JSON.stringify({ orderId, userId: userId || '', packageType }),
       checkretry: 'y',
-      skip_cstpage: 'y',
       amount_taxable: '0',
       amount_taxfree: price,
-      // TODO: 테스트 후 실제 금액으로 변경 (고졸 1170000, 대졸 720000)
       amount_vat: '0',
     });
 
