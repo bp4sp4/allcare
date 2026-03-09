@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const goodname = packageType === 'high' ? '고등학교 졸업자 패키지' : '대학교 졸업자 패키지';
-    const price = packageType === 'high' ? '50000' : '30000';
+    const price = packageType === 'high' ? '1170000' : '720000';
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://allcare.korhrd.co.kr';
     const orderId = `PKG-${Date.now()}`;
 
@@ -30,6 +30,7 @@ export async function POST(request: NextRequest) {
       feedbackurl: `${baseUrl}/api/payments/webhook`,
       returnurl: `${baseUrl}/payment/success`,
       var1: JSON.stringify({ orderId, userId: userId || '', packageType }),
+      openpaytype: 'card,phone,kakaopay,naverpay,smilepay,rbank,applepay,payco,wechat,myaccount,tosspay',
       checkretry: 'y',
       amount_taxable: '0',
       amount_taxfree: price,
