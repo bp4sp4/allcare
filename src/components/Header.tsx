@@ -141,12 +141,16 @@ export default function Header() {
           </div>
         ))}
 
-        <div className={styles.menuItem}>
-          <button className={styles.menuBtn} onClick={() => handlePackagePayment('high')}>고등학교 졸업자 패키지 117만원</button>
-        </div>
-        <div className={styles.menuItem}>
-          <button className={styles.menuBtn} onClick={() => handlePackagePayment('college')}>대학교 졸업자 패키지 72만원</button>
-        </div>
+        {isLoggedIn && (
+          <>
+            <div className={styles.menuItem}>
+              <button className={styles.menuBtn} onClick={() => handlePackagePayment('high')}>고등학교 졸업자 패키지 117만원</button>
+            </div>
+            <div className={styles.menuItem}>
+              <button className={styles.menuBtn} onClick={() => handlePackagePayment('college')}>대학교 졸업자 패키지 72만원</button>
+            </div>
+          </>
+        )}
 
         <div className={styles.menuItem}>
           <a href="https://korhrd.co.kr/" target="_blank" rel="noopener noreferrer" onClick={() => setIsMenuOpen(false)}>한평생직업훈련 바로가기</a>
