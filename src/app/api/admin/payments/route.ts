@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
 import { supabaseAdmin } from '@/lib/supabase';
 
-function verifyAdmin(request: NextRequest) {
-  const token = request.headers.get('authorization')?.replace('Bearer ', '');
-  return token === process.env.ADMIN_SECRET_KEY;
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this';
+
+function verifyAdmin(authHeader: string | null): boolean {
+  if (!authHeader?.startsWith('Bearer ')) return false;
+  try {
+    const decoded = jwt.verify(authHeader.substring(7), JWT_SECRET) as any;
+    return decoded.isAdmin === true;
+  } catch {
+    return false;
+  }
 }
 
 export async function GET(request: NextRequest) {
-  if (!verifyAdmin(request)) {
+  if (!verifyAdmin(request.headers.get('authorization'))) {
     return NextResponse.json({ error: '권한이 없습니다.' }, { status: 401 });
   }
 

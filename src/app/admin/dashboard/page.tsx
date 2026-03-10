@@ -393,28 +393,35 @@ export default function AdminDashboardPage() {
                       <th>결제일시</th>
                       <th>이름</th>
                       <th>전화번호</th>
+                      <th>결제 유형</th>
                       <th>상품명</th>
                       <th>금액</th>
                       <th>상태</th>
-                      <th>주문번호</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {payments.map((p: any) => (
-                      <tr key={p.id}>
-                        <td>{formatDate(p.approved_at || p.created_at)}</td>
-                        <td>{p.users?.name || '-'}</td>
-                        <td>{p.users?.phone || p.customer_phone || '-'}</td>
-                        <td>{p.good_name || '-'}</td>
-                        <td>{p.amount?.toLocaleString()}원</td>
-                        <td>
-                          <span className={`${styles.statusBadge} ${p.status === 'completed' ? styles.statusActive : styles.statusCancelled}`}>
-                            {p.status === 'completed' ? '완료' : p.status}
-                          </span>
-                        </td>
-                        <td style={{ fontSize: '12px', color: 'var(--toss-text-tertiary)' }}>{p.order_id}</td>
-                      </tr>
-                    ))}
+                    {payments.map((p: any) => {
+                      const orderId: string = p.order_id || '';
+                      const payType = orderId.startsWith('PKG-') ? '패키지' : orderId.startsWith('CUSTOM-') ? '단과반' : '정기구독';
+                      const payTypeBg = payType === '패키지' ? { background: '#EBF3FE', color: '#3182F6' } : payType === '단과반' ? { background: '#FFF8E1', color: '#E6A817' } : { background: '#E8F9F1', color: '#00A859' };
+                      return (
+                        <tr key={p.id}>
+                          <td>{formatDate(p.approved_at || p.created_at)}</td>
+                          <td style={{ fontWeight: 500, color: 'var(--toss-text-primary)' }}>{p.users?.name || '-'}</td>
+                          <td>{p.users?.phone || p.customer_phone || '-'}</td>
+                          <td>
+                            <span className={styles.statusBadge} style={payTypeBg}>{payType}</span>
+                          </td>
+                          <td>{p.good_name || '-'}</td>
+                          <td style={{ fontWeight: 600 }}>{p.amount?.toLocaleString()}원</td>
+                          <td>
+                            <span className={`${styles.statusBadge} ${p.status === 'completed' ? styles.statusActive : styles.statusCancelled}`}>
+                              {p.status === 'completed' ? '완료' : p.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
