@@ -433,6 +433,7 @@ export default function AdminDashboardPage() {
                       <th>전화번호</th>
                       <th>결제 유형</th>
                       <th>상품명</th>
+                      <th>결제번호</th>
                       <th>금액</th>
                       <th>상태</th>
                     </tr>
@@ -451,6 +452,7 @@ export default function AdminDashboardPage() {
                             <span className={styles.statusBadge} style={payTypeBg}>{payType}</span>
                           </td>
                           <td>{p.good_name || '-'}</td>
+                          <td style={{ color: 'var(--toss-text-tertiary)', fontSize: '13px' }}>{p.trade_id || '-'}</td>
                           <td style={{ fontWeight: 600 }}>{p.amount?.toLocaleString()}원</td>
                           <td>
                             <span className={`${styles.statusBadge} ${p.status === 'completed' ? styles.statusActive : styles.statusCancelled}`}>
