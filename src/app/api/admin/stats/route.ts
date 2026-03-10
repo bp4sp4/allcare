@@ -59,16 +59,17 @@ export async function GET(request: NextRequest) {
       .eq('status', 'active')
       .not('cancelled_at', 'is', null);
 
-    // 구독 매출 (payments 테이블에서 정기구독 완료건 합계)
+    // 구독 매출 (PKG-, CUSTOM- 제외한 완료건 합계)
     const { data: subPayments } = await supabaseAdmin
       .from('payments')
       .select('amount')
       .eq('status', 'completed')
-      .not('order_id', 'like', 'PKG-%');
+      .not('order_id', 'like', 'PKG-%')
+      .not('order_id', 'like', 'CUSTOM-%');
 
     const subscriptionRevenue = subPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
 
-    // 패키지 매출 (order_id가 PKG-로 시작하는 완료건 합계)
+    // 패키지 매출 (PKG-로 시작하는 완료건 합계)
     const { data: pkgPayments } = await supabaseAdmin
       .from('payments')
       .select('amount')
@@ -77,13 +78,23 @@ export async function GET(request: NextRequest) {
 
     const packageRevenue = pkgPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
 
+    // 단과반 매출 (CUSTOM-으로 시작하는 완료건 합계)
+    const { data: customPayments } = await supabaseAdmin
+      .from('payments')
+      .select('amount')
+      .eq('status', 'completed')
+      .like('order_id', 'CUSTOM-%');
+
+    const customRevenue = customPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+
     return NextResponse.json({
       totalUsers: totalUsers || 0,
       activeSubscriptions: activeSubscriptions || 0,
       cancelledSubscriptions: cancelledSubscriptions || 0,
-      totalRevenue: subscriptionRevenue + packageRevenue,
+      totalRevenue: subscriptionRevenue + packageRevenue + customRevenue,
       subscriptionRevenue,
       packageRevenue,
+      customRevenue,
     });
   } catch (error) {
     console.error('Admin stats API error:', error);

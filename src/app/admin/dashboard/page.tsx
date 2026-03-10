@@ -26,6 +26,7 @@ interface Stats {
   totalRevenue: number;
   subscriptionRevenue: number;
   packageRevenue: number;
+  customRevenue: number;
 }
 
 export default function AdminDashboardPage() {
@@ -391,6 +392,10 @@ export default function AdminDashboardPage() {
             <div className={styles.statCard}>
               <p className={styles.statLabel}>패키지 매출</p>
               <h2 className={styles.statValue}>{formatCurrency(stats.packageRevenue || 0)}</h2>
+            </div>
+            <div className={styles.statCard}>
+              <p className={styles.statLabel}>단과반 매출</p>
+              <h2 className={styles.statValue}>{formatCurrency(stats.customRevenue || 0)}</h2>
             </div>
           </div>
         )}
