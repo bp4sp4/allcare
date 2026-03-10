@@ -63,21 +63,27 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url);
   const userId = searchParams.get('userId');
+  const page = parseInt(searchParams.get('page') || '0', 10);
+  const pageSize = parseInt(searchParams.get('pageSize') || '0', 10);
 
   let query = supabaseAdmin
     .from('custom_payment_requests')
-    .select(`*, users(email, name, phone)`)
+    .select(`*, users(email, name, phone)`, pageSize > 0 ? { count: 'exact' } : undefined)
     .order('created_at', { ascending: false });
 
   if (userId) query = query.eq('user_id', userId);
+  if (pageSize > 0) {
+    const from = (page - 1) * pageSize;
+    query = query.range(from, from + pageSize - 1);
+  }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query;
 
   if (error) {
     return NextResponse.json({ error: '조회에 실패했습니다.' }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, data });
+  return NextResponse.json({ success: true, data, total: count ?? undefined });
 }
 
 // 단과반 결제 요청 취소

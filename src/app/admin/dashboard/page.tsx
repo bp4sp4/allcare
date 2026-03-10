@@ -48,12 +48,19 @@ export default function AdminDashboardPage() {
   const [newStatus, setNewStatus] = useState<'active' | 'cancel_scheduled' | 'cancelled'>('active');
 
   // 탭
-  const [activeTab, setActiveTab] = useState<'users' | 'payments'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'payments' | 'custom'>('users');
   const [payments, setPayments] = useState<any[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(false);
   const [paymentsPage, setPaymentsPage] = useState(1);
   const [paymentsTotal, setPaymentsTotal] = useState(0);
   const paymentsPageSize = 10;
+
+  // 단과반 요청 전체 목록 탭
+  const [allCustomRequests, setAllCustomRequests] = useState<any[]>([]);
+  const [customLoading, setCustomLoading] = useState(false);
+  const [customPage, setCustomPage] = useState(1);
+  const [customTotal, setCustomTotal] = useState(0);
+  const customPageSize = 10;
 
   // 단과반 결제 요청 모달
   const [showCustomPayModal, setShowCustomPayModal] = useState(false);
@@ -311,6 +318,26 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const fetchAllCustomRequests = async (page = 1) => {
+    setCustomLoading(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      const res = await fetch(`/api/admin/custom-payment?page=${page}&pageSize=${customPageSize}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAllCustomRequests(data.data || []);
+        setCustomTotal(data.total || 0);
+        setCustomPage(page);
+      }
+    } catch (err) {
+      console.error('단과반 요청 로드 실패:', err);
+    } finally {
+      setCustomLoading(false);
+    }
+  };
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('ko-KR');
@@ -376,6 +403,10 @@ export default function AdminDashboardPage() {
             onClick={() => { setActiveTab('payments'); fetchPayments(1); }}
             className={`${styles.tabBtn} ${activeTab === 'payments' ? styles.tabBtnActive : ''}`}
           >결제 내역</button>
+          <button
+            onClick={() => { setActiveTab('custom'); fetchAllCustomRequests(1); }}
+            className={`${styles.tabBtn} ${activeTab === 'custom' ? styles.tabBtnActive : ''}`}
+          >단과반 요청</button>
         </div>
 
         {/* 결제 내역 탭 */}
@@ -402,8 +433,8 @@ export default function AdminDashboardPage() {
                   <tbody>
                     {payments.map((p: any) => {
                       const orderId: string = p.order_id || '';
-                      const payType = orderId.startsWith('PKG-') ? '패키지' : orderId.startsWith('CUSTOM-') ? '단과반' : '정기구독';
-                      const payTypeBg = payType === '패키지' ? { background: '#EBF3FE', color: '#3182F6' } : payType === '단과반' ? { background: '#FFF8E1', color: '#E6A817' } : { background: '#E8F9F1', color: '#00A859' };
+                      const payType = orderId.startsWith('PKG-') ? '패키지' : '정기구독';
+                      const payTypeBg = payType === '패키지' ? { background: '#EBF3FE', color: '#3182F6' } : { background: '#E8F9F1', color: '#00A859' };
                       return (
                         <tr key={p.id}>
                           <td>{formatDate(p.approved_at || p.created_at)}</td>
@@ -457,6 +488,71 @@ export default function AdminDashboardPage() {
                   disabled={paymentsPage === Math.ceil(paymentsTotal / paymentsPageSize) || paymentsLoading}
                   className={styles.pageBtn}
                 >다음</button>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* 단과반 요청 탭 */}
+        {activeTab === 'custom' && (
+          <>
+            <div className={styles.tableContainer}>
+              {customLoading ? (
+                <div className={styles.loading}>로딩 중...</div>
+              ) : allCustomRequests.length === 0 ? (
+                <div className={styles.noData}>단과반 요청이 없습니다.</div>
+              ) : (
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>요청일</th>
+                      <th>이름</th>
+                      <th>전화번호</th>
+                      <th>과목명</th>
+                      <th>금액</th>
+                      <th>상태</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {allCustomRequests.map((r: any) => (
+                      <tr key={r.id}>
+                        <td>{formatDate(r.created_at)}</td>
+                        <td style={{ fontWeight: 500, color: 'var(--toss-text-primary)' }}>{r.users?.name || '-'}</td>
+                        <td>{r.users?.phone || '-'}</td>
+                        <td>{r.subject}</td>
+                        <td style={{ fontWeight: 600 }}>{r.amount?.toLocaleString()}원</td>
+                        <td>
+                          <span className={styles.statusBadge} style={
+                            r.status === 'pending' ? { background: '#EBF3FE', color: '#3182F6' }
+                            : r.status === 'paid' ? { background: '#E8F9F1', color: '#00A859' }
+                            : { background: '#F2F4F6', color: '#8B95A1' }
+                          }>
+                            {r.status === 'pending' ? '대기중' : r.status === 'paid' ? '결제완료' : '취소됨'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {customTotal > customPageSize && (
+              <div className={styles.pagination}>
+                <button onClick={() => fetchAllCustomRequests(customPage - 1)} disabled={customPage === 1 || customLoading} className={styles.pageBtn}>이전</button>
+                {Array.from({ length: Math.ceil(customTotal / customPageSize) }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === Math.ceil(customTotal / customPageSize) || Math.abs(p - customPage) <= 2)
+                  .reduce<(number | '...')[]>((acc, p, i, arr) => {
+                    if (i > 0 && typeof arr[i-1] === 'number' && (p as number) - (arr[i-1] as number) > 1) acc.push('...');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === '...'
+                      ? <span key={`dots-${i}`} style={{ padding: '0 4px', color: 'var(--toss-text-tertiary)' }}>···</span>
+                      : <button key={p} onClick={() => fetchAllCustomRequests(p as number)} disabled={customLoading} className={`${styles.pageBtn} ${customPage === p ? styles.active : ''}`}>{p}</button>
+                  )}
+                <button onClick={() => fetchAllCustomRequests(customPage + 1)} disabled={customPage === Math.ceil(customTotal / customPageSize) || customLoading} className={styles.pageBtn}>다음</button>
               </div>
             )}
           </>
