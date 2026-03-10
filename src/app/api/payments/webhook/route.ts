@@ -124,7 +124,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      if (userId && orderData.type !== 'custom') {
+      if (userId && orderData.type !== 'custom' && orderData.type !== 'package') {
         // 모드 확인
         const isChangeMode = orderData.mode === 'change-payment';
         const isUpgradeMode = orderData.mode === 'upgrade';
@@ -311,20 +311,22 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 결제 내역 저장
-      await supabaseAdmin
-        .from('payments')
-        .insert({
-          user_id: userId,
-          order_id: orderData.orderId || `ORDER-${Date.now()}`,
-          trade_id: mul_no,
-          amount: parseInt(price),
-          good_name: goodname,
-          customer_phone: recvphone,
-          status: 'completed',
-          payment_method: 'payapp',
-          approved_at: pay_date ? new Date(pay_date).toISOString() : new Date().toISOString()
-        });
+      // 결제 내역 저장 (패키지 결제는 bill/route.ts에서 이미 저장하므로 스킵)
+      if (orderData.type !== 'package') {
+        await supabaseAdmin
+          .from('payments')
+          .insert({
+            user_id: userId,
+            order_id: orderData.orderId || `ORDER-${Date.now()}`,
+            trade_id: mul_no,
+            amount: parseInt(price),
+            good_name: goodname,
+            customer_phone: recvphone,
+            status: 'completed',
+            payment_method: 'payapp',
+            approved_at: pay_date ? new Date(pay_date).toISOString() : new Date().toISOString()
+          });
+      }
 
     } else {
       // 결제 실패 내역 저장

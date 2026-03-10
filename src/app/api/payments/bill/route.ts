@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       amount_taxable: '0',
       amount_taxfree: price,
       amount_vat: '0',
-      var1: JSON.stringify({ orderId, userId: userId || '', packageType, name: buyerName, phone: buyerPhone }),
+      var1: JSON.stringify({ orderId, userId: userId || '', packageType, type: 'package', name: buyerName, phone: buyerPhone }),
       feedbackurl: `${baseUrl}/api/payments/webhook`,
     });
 
