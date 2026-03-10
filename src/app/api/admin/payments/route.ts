@@ -28,6 +28,8 @@ export async function GET(request: NextRequest) {
   const { data, error, count } = await supabaseAdmin
     .from('payments')
     .select('*, users(name, email, phone)', { count: 'exact' })
+    .not('order_id', 'like', 'CUSTOM-%')
+    .in('status', ['completed', 'cancelled'])
     .order('approved_at', { ascending: false })
     .range(from, to);
 
