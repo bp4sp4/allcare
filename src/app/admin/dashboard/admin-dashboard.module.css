@@ -102,6 +102,13 @@
   letter-spacing: -0.5px;
 }
 
+.statSub {
+  font-size: 12px;
+  color: var(--toss-text-tertiary);
+  margin: 6px 0 0 0;
+  font-weight: 400;
+}
+
 .filters {
   background: var(--toss-card);
   border-radius: 14px;

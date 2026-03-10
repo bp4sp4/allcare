@@ -59,20 +59,31 @@ export async function GET(request: NextRequest) {
       .eq('status', 'active')
       .not('cancelled_at', 'is', null);
 
-    // 총 매출 (활성 구독 금액 합계)
-    const { data: subscriptions } = await supabaseAdmin
-      .from('subscriptions')
+    // 구독 매출 (payments 테이블에서 정기구독 완료건 합계)
+    const { data: subPayments } = await supabaseAdmin
+      .from('payments')
       .select('amount')
-      .eq('status', 'active')
-      .is('cancelled_at', null);
+      .eq('status', 'completed')
+      .not('order_id', 'like', 'PKG-%');
 
-    const totalRevenue = subscriptions?.reduce((sum, sub) => sum + (sub.amount || 0), 0) || 0;
+    const subscriptionRevenue = subPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+
+    // 패키지 매출 (order_id가 PKG-로 시작하는 완료건 합계)
+    const { data: pkgPayments } = await supabaseAdmin
+      .from('payments')
+      .select('amount')
+      .eq('status', 'completed')
+      .like('order_id', 'PKG-%');
+
+    const packageRevenue = pkgPayments?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
 
     return NextResponse.json({
       totalUsers: totalUsers || 0,
       activeSubscriptions: activeSubscriptions || 0,
       cancelledSubscriptions: cancelledSubscriptions || 0,
-      totalRevenue
+      totalRevenue: subscriptionRevenue + packageRevenue,
+      subscriptionRevenue,
+      packageRevenue,
     });
   } catch (error) {
     console.error('Admin stats API error:', error);

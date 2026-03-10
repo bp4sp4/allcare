@@ -24,6 +24,8 @@ interface Stats {
   activeSubscriptions: number;
   cancelledSubscriptions: number;
   totalRevenue: number;
+  subscriptionRevenue: number;
+  packageRevenue: number;
 }
 
 export default function AdminDashboardPage() {
@@ -383,12 +385,12 @@ export default function AdminDashboardPage() {
               <h2 className={styles.statValue}>{stats.activeSubscriptions}</h2>
             </div>
             <div className={styles.statCard}>
-              <p className={styles.statLabel}>취소된 구독</p>
-              <h2 className={styles.statValue}>{stats.cancelledSubscriptions}</h2>
+              <p className={styles.statLabel}>구독 매출</p>
+              <h2 className={styles.statValue}>{formatCurrency(stats.subscriptionRevenue || 0)}</h2>
             </div>
             <div className={styles.statCard}>
-              <p className={styles.statLabel}>총 매출</p>
-              <h2 className={styles.statValue}>{formatCurrency(stats.totalRevenue)}</h2>
+              <p className={styles.statLabel}>패키지 매출</p>
+              <h2 className={styles.statValue}>{formatCurrency(stats.packageRevenue || 0)}</h2>
             </div>
           </div>
         )}
