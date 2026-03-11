@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
       smsuse: 'n',
       feedbackurl: `${baseUrl}/api/payments/webhook`,
       returnurl: `${baseUrl}/payment/success`,
-      var1: JSON.stringify({ orderId, userId: userId || '', packageType }),
+      var1: JSON.stringify({ orderId, userId: userId || '', packageType, type: 'package' }),
       openpaytype: 'card,phone,kakaopay,naverpay,smilepay,rbank,applepay,payco,wechat,myaccount,tosspay',
       checkretry: 'y',
       amount_taxable: '0',
