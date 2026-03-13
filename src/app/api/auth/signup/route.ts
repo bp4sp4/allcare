@@ -78,11 +78,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // users 테이블에 프로필 생성 (트리거로 자동 생성되지만 phone 정보 업데이트)
+    // users 테이블에 프로필 생성 (트리거가 없을 경우 대비해 upsert 사용)
     const { error: profileError } = await supabaseAdmin
       .from('users')
-      .update({ phone, name })
-      .eq('id', authData.user.id);
+      .upsert({
+        id: authData.user.id,
+        email,
+        name,
+        phone,
+        provider: 'email',
+        created_at: new Date().toISOString()
+      }, { onConflict: 'id' });
 
     if (profileError) {
       console.error('Profile update error:', profileError);

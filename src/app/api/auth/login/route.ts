@@ -20,29 +20,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 먼저 users 테이블에서 이메일로 사용자 확인
-    const { data: userCheck, error: userCheckError } = await supabaseAdmin
-      .from('users')
-      .select('id, provider')
-      .eq('email', email)
-      .maybeSingle();
-
-    // 계정이 아예 없는 경우
-    if (!userCheck) {
-      return NextResponse.json(
-        { error: '일치하는 회원정보가 없어요.', errorType: 'NOT_FOUND' },
-        { status: 404 }
-      );
-    }
-
-    // Supabase Auth로 로그인 시도
+    // Supabase Auth로 로그인 시도 (먼저 인증 확인)
     const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({
       email,
       password
     });
 
-    // 비밀번호가 틀린 경우
+    // 계정이 없거나 비밀번호가 틀린 경우
     if (authError) {
+      // Auth에도 없으면 진짜 없는 계정
+      const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const authUserExists = authUsers?.users?.some(u => u.email === email);
+      if (!authUserExists) {
+        return NextResponse.json(
+          { error: '일치하는 회원정보가 없어요.', errorType: 'NOT_FOUND' },
+          { status: 404 }
+        );
+      }
       return NextResponse.json(
         { error: '이메일 또는 비밀번호가 일치하지 않습니다.', errorType: 'INVALID_CREDENTIALS' },
         { status: 401 }
@@ -50,18 +44,37 @@ export async function POST(request: NextRequest) {
     }
 
     // users 테이블에서 프로필 정보 조회
-    const { data: profile, error: profileError } = await supabaseAdmin
+    let { data: profile, error: profileError } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('id', authData.user.id)
       .single();
 
-    if (profileError) {
-      console.error('프로필 조회 오류:', profileError);
-      return NextResponse.json(
-        { error: '사용자 정보를 가져올 수 없습니다.' },
-        { status: 500 }
-      );
+    // users 테이블에 행이 없으면 자동 복구 (트리거 누락 대비)
+    if (profileError || !profile) {
+      await supabaseAdmin.from('users').upsert({
+        id: authData.user.id,
+        email: authData.user.email,
+        name: authData.user.user_metadata?.name || '',
+        phone: authData.user.user_metadata?.phone || '',
+        provider: 'email',
+        created_at: authData.user.created_at
+      }, { onConflict: 'id' });
+
+      const { data: recoveredProfile, error: recoveryError } = await supabaseAdmin
+        .from('users')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (recoveryError || !recoveredProfile) {
+        console.error('프로필 복구 실패:', recoveryError);
+        return NextResponse.json(
+          { error: '사용자 정보를 가져올 수 없습니다.' },
+          { status: 500 }
+        );
+      }
+      profile = recoveredProfile;
     }
 
     // 소셜 로그인으로 가입된 계정인지 확인
