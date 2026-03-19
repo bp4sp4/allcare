@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { cancelPayment, requestPaymentCancellation } from '@/lib/payapp';
+import { createClient } from '@supabase/supabase-js';
+
+// 학점은행제 어드민 DB (결제 동기화)
+const hakjeomAdmin = createClient(
+  process.env.HAKJEOM_SUPABASE_URL!,
+  process.env.HAKJEOM_SUPABASE_SERVICE_ROLE_KEY!
+);
 
 // 페이앱 웹훅 처리 (결제 결과 수신)
 export async function POST(request: NextRequest) {
@@ -267,6 +274,14 @@ export async function POST(request: NextRequest) {
           if (subscriptionError) {
             console.error('Subscription creation error:', subscriptionError);
           }
+
+          // 학점은행제 어드민 구독 동기화
+          hakjeomAdmin.from('allcare_subscriptions').upsert(
+            { ...subscriptionData },
+            { onConflict: 'user_id' }
+          ).then(({ error }) => {
+            if (error) console.error('[hakjeom sync] subscriptions upsert error:', error);
+          });
         }
 
         // users 테이블에 이름/전화번호 업데이트
@@ -313,19 +328,43 @@ export async function POST(request: NextRequest) {
 
       // 결제 내역 저장 (패키지 결제는 bill/route.ts에서 이미 저장하므로 스킵)
       if (orderData.type !== 'package') {
-        await supabaseAdmin
-          .from('payments')
-          .insert({
-            user_id: userId,
-            order_id: orderData.orderId || `ORDER-${Date.now()}`,
-            trade_id: mul_no,
-            amount: parseInt(price),
-            good_name: goodname,
-            customer_phone: recvphone,
-            status: 'completed',
-            payment_method: 'payapp',
-            approved_at: pay_date ? new Date(pay_date).toISOString() : new Date().toISOString()
+        const paymentData = {
+          user_id: userId,
+          order_id: orderData.orderId || `ORDER-${Date.now()}`,
+          trade_id: mul_no,
+          amount: parseInt(price),
+          good_name: goodname,
+          customer_phone: recvphone,
+          status: 'completed',
+          payment_method: 'payapp',
+          approved_at: pay_date ? new Date(pay_date).toISOString() : new Date().toISOString()
+        };
+
+        await supabaseAdmin.from('payments').insert(paymentData);
+
+        // 학점은행제 어드민 동기화
+        hakjeomAdmin.from('allcare_payments').insert(paymentData).then(({ error }) => {
+          if (error) console.error('[hakjeom sync] payments insert error:', error);
+        });
+
+        // 학점은행제 어드민 - 유저 동기화 (없으면 upsert)
+        if (userId) {
+          supabaseAdmin.from('users').select('id, email, name, phone, provider, practice_matching_access, created_at').eq('id', userId).single().then(({ data: u }) => {
+            if (u) {
+              hakjeomAdmin.from('allcare_users').upsert({
+                id: u.id,
+                email: u.email,
+                name: u.name,
+                phone: u.phone,
+                provider: u.provider,
+                practice_matching_access: u.practice_matching_access ?? false,
+                created_at: u.created_at,
+              }, { onConflict: 'id' }).then(({ error }) => {
+                if (error) console.error('[hakjeom sync] users upsert error:', error);
+              });
+            }
           });
+        }
       }
 
     } else {
