@@ -54,6 +54,10 @@
   color: var(--Gray-700, #333);
 }
 
+.stickyPadding {
+  padding-bottom: 110px;
+}
+
 .copyright {
   color: var(--Gray-700, #333);
   font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;

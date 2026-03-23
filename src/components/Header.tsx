@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -8,10 +8,24 @@ import styles from './Header.module.css';
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const [userProfile, setUserProfile] = useState<{ name: string; phone: string } | null>(null);
   const [customRequests, setCustomRequests] = useState<{ id: string; subject: string; amount: number }[]>([]);
   const pathname = usePathname();
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setIsMenuOpen(false);
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   useEffect(() => {
     const checkAuth = () => setIsLoggedIn(!!localStorage.getItem('token'));
@@ -101,9 +115,9 @@ export default function Header() {
   if (pathname?.startsWith('/admin')) return null;
 
   return (
-    <header className={styles.header}>
+    <header className={styles.header} ref={headerRef}>
       <Link href="/" className={styles.logo}>
-        <Image src="/logo.png" alt="한평생올케어" width={117} height={17} priority />
+        <Image src="/logo.png" alt="메인로고" width={117} height={17} priority />
       </Link>
 
       <button className={styles.hamburger} onClick={() => setIsMenuOpen(!isMenuOpen)} aria-label="메뉴">
@@ -141,14 +155,30 @@ export default function Header() {
           </div>
         ))}
 
-        {isLoggedIn && (
+        {pathname === '/' ? (
           <>
             <div className={styles.menuItem}>
-              <button className={styles.menuBtn} onClick={() => handlePackagePayment('high')}>고등학교 졸업자 패키지</button>
+              <Link href="/allcare" onClick={() => setIsMenuOpen(false)}>한평생올케어 구독하기</Link>
             </div>
+          </>
+        ) : (
+          <>
             <div className={styles.menuItem}>
-              <button className={styles.menuBtn} onClick={() => handlePackagePayment('college')}>대학교 졸업자 패키지</button>
+              <button className={styles.menuBtn} onClick={() => {
+                setIsMenuOpen(false);
+                window.dispatchEvent(new Event('openSubscribeModal'));
+              }}>한평생올케어 구독하기</button>
             </div>
+            {isLoggedIn && (
+              <>
+                <div className={styles.menuItem}>
+                  <button className={styles.menuBtn} onClick={() => handlePackagePayment('high')}>고등학교 졸업자 패키지</button>
+                </div>
+                <div className={styles.menuItem}>
+                  <button className={styles.menuBtn} onClick={() => handlePackagePayment('college')}>대학교 졸업자 패키지</button>
+                </div>
+              </>
+            )}
           </>
         )}
 

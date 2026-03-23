@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     const goodname = packageType === 'high' ? '고등학교 졸업자 패키지' : '대학교 졸업자 패키지';
-    const price = packageType === 'high' ? '1170000' : '720000';
+    const price = packageType === 'high' ? '100' : '100'; // 테스트용 임시 가격 (원래: high=1170000, college=720000)
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.hanallcare.com';
     const orderId = `PKG-${Date.now()}`;
 

@@ -3,7 +3,6 @@ import { usePathname } from 'next/navigation';
 import styles from './Footer.module.css';
 
 const HIDE_FOOTER_PATHS = [
-  '/',
   '/auth/login',
   '/auth/email-login',
   '/auth/find-email',
@@ -22,8 +21,10 @@ export default function Footer({ force = false }: { force?: boolean } = {}) {
     if (pathname.startsWith('/admin')) return null;
   }
 
+  const hasStickyBtn = pathname === '/' || pathname === '/allcare';
+
   return (
-    <footer className={styles.footer}>
+    <footer className={`${styles.footer} ${hasStickyBtn ? styles.stickyPadding : ''}`}>
       <div className={styles.companyName}>한평생 올케어</div>
 
       <div className={styles.infoText}>
