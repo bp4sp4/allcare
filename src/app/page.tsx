@@ -5,8 +5,8 @@ import Image from 'next/image';
 import styles from './page.module.css';
 
 const PACKAGES = [
-  { id: 'high' as const, name: '고등학교 졸업자 패키지', price: 100 },
-  { id: 'college' as const, name: '대학교 졸업자 패키지', price: 100 },
+  { id: 'high' as const, name: '고등학교 졸업자 패키지', price: 1000 },
+  { id: 'college' as const, name: '대학교 졸업자 패키지', price: 1000 },
 ];
 
 const CHECK_SVG = (
