@@ -1070,6 +1070,7 @@ export default function Home() {
                       `${baseUrl}/payment/success`,
                     );
                     window.PayApp.setParam("var1", JSON.stringify(orderData));
+                    window.PayApp.setParam("openpaytype", "card,kakaopay,naverpay,tosspay,smilepay,applepay,payco");
 
                     // 정기결제 호출
                     window.PayApp.rebill();

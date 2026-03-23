@@ -15,8 +15,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '결제 시스템 설정 오류입니다.' }, { status: 500 });
     }
 
-    const goodname = packageType === 'high' ? '고등학교 졸업자 패키지' : '대학교 졸업자 패키지';
-    const price = packageType === 'high' ? '1000' : '1000'; // 테스트용 임시 가격 (원래: high=1170000, college=720000)
+    const goodname = packageType === 'high' ? '사회복지사 고등학교 졸업자 패키지' : '사회복지사 대학교 졸업자 패키지';
+    const price = packageType === 'high' ? '1170000' : '720000';
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.hanallcare.com';
     const orderId = `PKG-${Date.now()}`;
 
