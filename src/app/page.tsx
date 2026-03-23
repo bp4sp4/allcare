@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import styles from './page.module.css';
+import { supabase } from '@/lib/supabase';
 
 const PACKAGES = [
   { id: 'high' as const, name: '사회복지사 고등학교 졸업자 패키지', price: 1170000 },
@@ -50,18 +51,53 @@ export default function MainPage() {
 
     // 미결제 단과반 요청 확인
     const token = localStorage.getItem('token');
+    let userId = '';
     if (token) {
-      fetch('/api/custom-payment/pending', {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.hasPending && data.requests?.length > 0) {
-            setCustomPayment(data.requests[0]);
-          }
-        })
-        .catch(() => {});
+      try { userId = JSON.parse(atob(token.split('.')[1])).userId || ''; } catch {}
     }
+
+    if (!userId) return;
+
+    // 초기 로드
+    fetch('/api/custom-payment/pending', {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.hasPending && data.requests?.length > 0) setCustomPayment(data.requests[0]);
+      })
+      .catch(() => {});
+
+    // Supabase Realtime - 단과반 요청 실시간 감지
+    const channel = supabase
+      .channel(`custom-payment-${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'custom_payment_requests',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT' && (payload.new as any).status === 'pending') {
+            setCustomPayment(payload.new as { id: string; subject: string; subject_count: number; amount: number });
+          } else if (payload.eventType === 'UPDATE') {
+            if ((payload.new as any).status === 'pending') {
+              setCustomPayment(payload.new as { id: string; subject: string; subject_count: number; amount: number });
+            } else {
+              setCustomPayment(null);
+            }
+          } else if (payload.eventType === 'DELETE') {
+            setCustomPayment(null);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   // 헤더 햄버거 메뉴에서 패키지 선택 시 시트 열기
