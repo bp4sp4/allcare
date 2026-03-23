@@ -325,45 +325,43 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // 결제 내역 저장 (패키지 결제는 bill/route.ts에서 이미 저장하므로 스킵)
-      if (orderData.type !== 'package') {
-        const paymentData = {
-          user_id: userId,
-          order_id: orderData.orderId || `ORDER-${Date.now()}`,
-          trade_id: mul_no,
-          amount: parseInt(price),
-          good_name: goodname,
-          customer_phone: recvphone,
-          status: 'completed',
-          payment_method: 'payapp',
-          approved_at: pay_date ? new Date(pay_date).toISOString() : new Date().toISOString()
-        };
+      // 결제 내역 저장 (구독/패키지/단과반 모든 타입)
+      const paymentData = {
+        user_id: userId,
+        order_id: orderData.orderId || `ORDER-${Date.now()}`,
+        trade_id: mul_no,
+        amount: parseInt(price),
+        good_name: goodname,
+        customer_phone: recvphone,
+        status: 'completed',
+        payment_method: 'payapp',
+        approved_at: pay_date ? new Date(pay_date).toISOString() : new Date().toISOString()
+      };
 
-        await supabaseAdmin.from('payments').insert(paymentData);
+      await supabaseAdmin.from('payments').insert(paymentData);
 
-        // 학점은행제 어드민 동기화
-        hakjeomAdmin?.from('allcare_payments').insert(paymentData).then(({ error }) => {
-          if (error) console.error('[hakjeom sync] payments insert error:', error);
+      // 학점은행제 어드민 동기화
+      hakjeomAdmin?.from('allcare_payments').insert(paymentData).then(({ error }) => {
+        if (error) console.error('[hakjeom sync] payments insert error:', error);
+      });
+
+      // 학점은행제 어드민 - 유저 동기화 (없으면 upsert)
+      if (userId) {
+        supabaseAdmin.from('users').select('id, email, name, phone, provider, practice_matching_access, created_at').eq('id', userId).single().then(({ data: u }) => {
+          if (u) {
+            hakjeomAdmin?.from('allcare_users').upsert({
+              id: u.id,
+              email: u.email,
+              name: u.name,
+              phone: u.phone,
+              provider: u.provider,
+              practice_matching_access: u.practice_matching_access ?? false,
+              created_at: u.created_at,
+            }, { onConflict: 'id' }).then(({ error }) => {
+              if (error) console.error('[hakjeom sync] users upsert error:', error);
+            });
+          }
         });
-
-        // 학점은행제 어드민 - 유저 동기화 (없으면 upsert)
-        if (userId) {
-          supabaseAdmin.from('users').select('id, email, name, phone, provider, practice_matching_access, created_at').eq('id', userId).single().then(({ data: u }) => {
-            if (u) {
-              hakjeomAdmin?.from('allcare_users').upsert({
-                id: u.id,
-                email: u.email,
-                name: u.name,
-                phone: u.phone,
-                provider: u.provider,
-                practice_matching_access: u.practice_matching_access ?? false,
-                created_at: u.created_at,
-              }, { onConflict: 'id' }).then(({ error }) => {
-                if (error) console.error('[hakjeom sync] users upsert error:', error);
-              });
-            }
-          });
-        }
       }
 
     } else {

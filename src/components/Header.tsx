@@ -155,32 +155,12 @@ export default function Header() {
           </div>
         ))}
 
-        {pathname === '/' ? (
-          <>
-            <div className={styles.menuItem}>
-              <Link href="/allcare" onClick={() => setIsMenuOpen(false)}>한평생올케어 구독하기</Link>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className={styles.menuItem}>
-              <button className={styles.menuBtn} onClick={() => {
-                setIsMenuOpen(false);
-                window.dispatchEvent(new Event('openSubscribeModal'));
-              }}>한평생올케어 구독하기</button>
-            </div>
-            {isLoggedIn && (
-              <>
-                <div className={styles.menuItem}>
-                  <button className={styles.menuBtn} onClick={() => handlePackagePayment('high')}>고등학교 졸업자 패키지</button>
-                </div>
-                <div className={styles.menuItem}>
-                  <button className={styles.menuBtn} onClick={() => handlePackagePayment('college')}>대학교 졸업자 패키지</button>
-                </div>
-              </>
-            )}
-          </>
-        )}
+        <div className={styles.menuItem}>
+          <Link href="/" onClick={() => setIsMenuOpen(false)}>사회복지사</Link>
+        </div>
+        <div className={styles.menuItem}>
+          <Link href="/allcare" onClick={() => setIsMenuOpen(false)}>한평생올케어 구독하기</Link>
+        </div>
 
         <div className={styles.menuItem}>
           <a href="https://korhrd.co.kr/" target="_blank" rel="noopener noreferrer" onClick={() => setIsMenuOpen(false)}>한평생직업훈련 바로가기</a>

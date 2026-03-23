@@ -167,11 +167,30 @@
 }
 
 .menuSectionLabel {
-  padding: 10px 20px 4px;
+  padding: 12px 20px 8px;
   font-size: 12px;
-  font-weight: 600;
-  color: #0051ff;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
+  font-weight: 700;
+  color: #888;
+  letter-spacing: 0.04em;
+  background: #fafafa;
   border-bottom: 1px solid #f0f0f0;
+}
+
+.menuItemSub {
+  padding: 14px 20px 14px 32px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background-color 0.2s;
+}
+
+.menuItemSub:hover {
+  background-color: #f5f7ff;
+}
+
+.menuItemSub a {
+  display: block;
+  color: #3D3D3D;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 400;
+  width: 100%;
 }

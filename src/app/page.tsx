@@ -28,6 +28,17 @@ export default function MainPage() {
 
   const selectedPkgData = PACKAGES.find((p) => p.id === selectedPkg)!;
 
+  // 헤더에서 ?pkg=high/college 쿼리로 진입 시 시트 자동 열기
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const pkg = params.get('pkg');
+    if (pkg === 'high' || pkg === 'college') {
+      setSelectedPkg(pkg);
+      setShowSheet(true);
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
+
   // 헤더 햄버거 메뉴에서 패키지 선택 시 시트 열기
   useEffect(() => {
     const handler = (e: Event) => {
