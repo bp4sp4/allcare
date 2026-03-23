@@ -43,7 +43,7 @@ export default function CustomPaymentPage() {
         const isPopup = window.opener && window.opener !== window;
         if (isPopup) {
           try {
-            window.opener.location.href = '/?pkg=high';
+            window.opener.location.href = '/payment/success';
             window.close();
           } catch {
             setPaidId(successRequestId);
