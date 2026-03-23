@@ -19,6 +19,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "한평생 올케어",
   description: "한평생 올케어 - 한평생 올케어로 실습 설계부터 관리까지 한 번에!",
+  robots: {
+    index: false,
+    follow: false,
+    googleBot: {
+      index: false,
+      follow: false,
+    },
+  },
   openGraph: {
     title: '한평생 올케어',
     description: '한평생 올케어 - 한평생 올케어로 실습 설계부터 관리까지 한 번에!',

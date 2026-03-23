@@ -3,11 +3,10 @@ import { supabaseAdmin } from '@/lib/supabase';
 import { cancelPayment, requestPaymentCancellation } from '@/lib/payapp';
 import { createClient } from '@supabase/supabase-js';
 
-// 학점은행제 어드민 DB (결제 동기화)
-const hakjeomAdmin = createClient(
-  process.env.HAKJEOM_SUPABASE_URL!,
-  process.env.HAKJEOM_SUPABASE_SERVICE_ROLE_KEY!
-);
+// 학점은행제 어드민 DB (결제 동기화) - env 없으면 null
+const hakjeomAdmin = process.env.HAKJEOM_SUPABASE_URL && process.env.HAKJEOM_SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(process.env.HAKJEOM_SUPABASE_URL, process.env.HAKJEOM_SUPABASE_SERVICE_ROLE_KEY)
+  : null;
 
 // 페이앱 웹훅 처리 (결제 결과 수신)
 export async function POST(request: NextRequest) {
@@ -276,7 +275,7 @@ export async function POST(request: NextRequest) {
           }
 
           // 학점은행제 어드민 구독 동기화
-          hakjeomAdmin.from('allcare_subscriptions').upsert(
+          hakjeomAdmin?.from('allcare_subscriptions').upsert(
             { ...subscriptionData },
             { onConflict: 'user_id' }
           ).then(({ error }) => {
@@ -343,7 +342,7 @@ export async function POST(request: NextRequest) {
         await supabaseAdmin.from('payments').insert(paymentData);
 
         // 학점은행제 어드민 동기화
-        hakjeomAdmin.from('allcare_payments').insert(paymentData).then(({ error }) => {
+        hakjeomAdmin?.from('allcare_payments').insert(paymentData).then(({ error }) => {
           if (error) console.error('[hakjeom sync] payments insert error:', error);
         });
 
@@ -351,7 +350,7 @@ export async function POST(request: NextRequest) {
         if (userId) {
           supabaseAdmin.from('users').select('id, email, name, phone, provider, practice_matching_access, created_at').eq('id', userId).single().then(({ data: u }) => {
             if (u) {
-              hakjeomAdmin.from('allcare_users').upsert({
+              hakjeomAdmin?.from('allcare_users').upsert({
                 id: u.id,
                 email: u.email,
                 name: u.name,

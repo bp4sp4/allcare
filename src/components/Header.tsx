@@ -144,10 +144,10 @@ export default function Header() {
         {isLoggedIn && (
           <>
             <div className={styles.menuItem}>
-              <button className={styles.menuBtn} onClick={() => handlePackagePayment('high')}>고등학교 졸업자 패키지 117만원</button>
+              <button className={styles.menuBtn} onClick={() => handlePackagePayment('high')}>고등학교 졸업자 패키지</button>
             </div>
             <div className={styles.menuItem}>
-              <button className={styles.menuBtn} onClick={() => handlePackagePayment('college')}>대학교 졸업자 패키지 72만원</button>
+              <button className={styles.menuBtn} onClick={() => handlePackagePayment('college')}>대학교 졸업자 패키지</button>
             </div>
           </>
         )}
