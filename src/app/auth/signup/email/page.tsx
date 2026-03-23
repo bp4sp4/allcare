@@ -286,7 +286,7 @@ export default function EmailSignupPage() {
       <div className={styles.card}>
       <div className={styles.container} style={{ marginTop: '90px' }}>
         <div className={styles.logoWrap}>
-          <img src="/logo.png" alt="한평생올케어 로고" className={styles.logo} />
+          <img src="/logo.png" alt="올케어 로고" className={styles.logo} />
         </div>
         <div className={styles.divider}>
           <span>이메일 회원가입</span>

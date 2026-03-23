@@ -168,7 +168,7 @@ export default function FindEmailPage() {
       <div className={styles.container}>
       <div className={styles.emailLoginWrap}>
         <div className={styles.logo}>
-          <img src="/logo.png" alt="한평생올케어" />
+          <img src="/logo.png" alt="올케어" />
         </div>
 
       <div className={styles.divider}>

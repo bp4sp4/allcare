@@ -241,7 +241,7 @@ function PackagePaymentContent() {
 
       <div className={styles.infoRow}>
         <span className={styles.infoKey}>상점명</span>
-        <span className={styles.infoVal}>한평생올케어</span>
+        <span className={styles.infoVal}>올케어</span>
       </div>
 
       <div className={styles.divider} />

@@ -165,7 +165,7 @@ export default function MyPage() {
         if ((window as any).PayApp) {
           const userId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || "";
           const shopName =
-            process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || "한평생올케어";
+            process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || "올케어";
           try {
             window.PayApp.setDefault("userid", userId);
             window.PayApp.setDefault("shopname", shopName);
@@ -320,7 +320,7 @@ export default function MyPage() {
         }
 
         const baseUrl = window.location.origin;
-        const shopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || "한평생올케어";
+        const shopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || "올케어";
         const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || "";
 
         window.PayApp.setDefault("userid", payappUserId);
@@ -932,7 +932,7 @@ export default function MyPage() {
               subscription.cancelled_at ? (
                 <>
                   <div className={styles.subscriptionStatus}>
-                    <span className={styles.statusBadge}>한평생 올케어</span>
+                    <span className={styles.statusBadge}>올케어</span>
                     <span className={styles.statusBadgeActive}>
                       구독 종료 예정
                     </span>
@@ -1002,7 +1002,7 @@ export default function MyPage() {
               ) : (
                 <>
                   <div className={styles.subscriptionStatus}>
-                    <span className={styles.statusBadge}>한평생 올케어</span>
+                    <span className={styles.statusBadge}>올케어</span>
                     <span className={styles.statusBadgeActive}>구독중</span>
                   </div>
                   <div className={styles.subscriptionDetailsBox}>
@@ -1550,7 +1550,7 @@ export default function MyPage() {
                 onDragEnd={handleDragEnd}
               />
             </div>
-            <div className={styles.sheetTitle}>한평생 올케어 월간 이용권</div>
+            <div className={styles.sheetTitle}>올케어 월간 이용권</div>
             <div
               style={{
                 width: "100%",
@@ -1805,7 +1805,7 @@ export default function MyPage() {
 
                   const baseUrl = window.location.origin;
                   const shopName =
-                    process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || "한평생올케어";
+                    process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || "올케어";
                   const payappUserId =
                     process.env.NEXT_PUBLIC_PAYAPP_USER_ID || "";
 
@@ -1828,7 +1828,7 @@ export default function MyPage() {
                   const orderId = `SUBS-${userId}-${Date.now()}`;
 
                   // PayApp 파라미터 설정
-                  window.PayApp.setParam("goodname", "한평생 올케어 월 구독")
+                  window.PayApp.setParam("goodname", "올케어 월 구독")
                     .setParam("price", "20000")
                     .setParam("recvphone", phone.replace(/-/g, ""))
                     .setParam("recvname", name)
@@ -1907,7 +1907,7 @@ export default function MyPage() {
                 ? isPayAppLoading
                   ? "결제 시스템 로딩중..."
                   : "결제 시스템 로딩 실패"
-                : "한평생 올케어 구독하기"}
+                : "올케어 구독하기"}
             </button>
           </div>
         </>

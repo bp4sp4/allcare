@@ -159,7 +159,7 @@ export default function Header() {
           <Link href="/" onClick={() => setIsMenuOpen(false)}>사회복지사</Link>
         </div>
         <div className={styles.menuItem}>
-          <Link href="/allcare" onClick={() => setIsMenuOpen(false)}>한평생올케어 구독하기</Link>
+          <Link href="/allcare" onClick={() => setIsMenuOpen(false)}>올케어 구독하기</Link>
         </div>
 
         <div className={styles.menuItem}>

@@ -12,7 +12,7 @@ export default function RefundPage() {
 
       <div className={styles.privacyContent}>
         <p>
-          한평생올케어(이하 "회사")는 이용자가 결제한 유료 서비스에 대하여 디지털 콘텐츠의 특성을 고려한 아래와 같은 환불 규정을 적용합니다.
+          한평생교육(이하 "회사")는 이용자가 결제한 유료 서비스에 대하여 디지털 콘텐츠의 특성을 고려한 아래와 같은 환불 규정을 적용합니다.
         </p>
         <br />
 

@@ -25,7 +25,7 @@ export default function Footer({ force = false }: { force?: boolean } = {}) {
 
   return (
     <footer className={`${styles.footer} ${hasStickyBtn ? styles.stickyPadding : ''}`}>
-      <div className={styles.companyName}>한평생 올케어</div>
+      <div className={styles.companyName}>올케어</div>
 
       <div className={styles.infoText}>
         이메일: korhrdpartners@gmail.com

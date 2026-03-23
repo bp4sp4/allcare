@@ -114,7 +114,7 @@ export default function EmailLoginForm({ onSuccess }: EmailLoginFormProps) {
     <div className={styles.emailLoginWrap}>
         
       <div className={styles.logoWrap}>
-        <img src="/logo.png" alt="한평생올케어 로고" className={styles.logo} />
+        <img src="/logo.png" alt="올케어 로고" className={styles.logo} />
         
       </div>
       <div className={styles.divider}>

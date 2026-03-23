@@ -44,7 +44,7 @@ export default function SignupPage() {
       )}
       <div className={styles.card}>
       <div className={styles.container}>
-        <div className={styles.logo}><img src="/logo.png" alt="한평생올케어 로고" /></div>
+        <div className={styles.logo}><img src="/logo.png" alt="올케어 로고" /></div>
         <div className={styles.divider}>
           <span>회원가입</span>
         </div>

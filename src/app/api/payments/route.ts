@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     // PayApp 결제 URL 생성
     const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || 'korhrdcorp';
-    const payappShopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어';
+    const payappShopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '올케어';
     const payappLinkKey = process.env.PAYAPP_LINK_KEY;
     let baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
                   (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');

@@ -41,7 +41,7 @@ export default function PaymentSuccessPage() {
         <h1 className={styles.title}>결제 완료</h1>
         
         <p className={styles.description}>
-          한평생 올케어 서비스를<br />
+          올케어 서비스를<br />
           지금부터 이용하실 수 있습니다.
         </p>
 

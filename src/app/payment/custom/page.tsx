@@ -85,7 +85,7 @@ export default function CustomPaymentPage() {
 
     const baseUrl = window.location.origin;
     const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
-    const shopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어';
+    const shopName = process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '올케어';
     const orderId = `CUSTOM-${Date.now()}`;
 
     if (!payappUserId) {
@@ -159,7 +159,7 @@ export default function CustomPaymentPage() {
         onLoad={() => {
           if (window.PayApp) {
             window.PayApp.setDefault('userid', process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '');
-            window.PayApp.setDefault('shopname', process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '한평생올케어');
+            window.PayApp.setDefault('shopname', process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || '올케어');
             setIsPayAppLoaded(true);
           }
         }}

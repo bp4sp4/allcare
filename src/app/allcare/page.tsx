@@ -59,7 +59,7 @@ export default function Home() {
       content: `
         <div style="margin-bottom: 30px;">
           <b>상품명</b><br/>
-          한평생 올케어 구독 서비스 프리미엄<br/><br/>
+          올케어 구독 서비스 프리미엄<br/><br/>
           <b>상품 유형</b><br/>
           디지털 콘텐츠 및 교육·매칭 지원이 결합된 구독형 서비스<br/><br/>
           <b>구독 요금</b><br/>
@@ -78,7 +78,7 @@ export default function Home() {
         <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
         <div style="margin-bottom: 30px;">
           <b>상품명</b><br/>
-          한평생 올케어 구독 서비스 스탠다드<br/><br/>
+          올케어 구독 서비스 스탠다드<br/><br/>
           <b>상품 유형</b><br/>
           디지털 콘텐츠 및 교육·매칭 지원이 결합된 구독형 서비스<br/><br/>
           <b>구독 요금</b><br/>
@@ -96,7 +96,7 @@ export default function Home() {
         <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
         <div>
           <b>상품명</b><br/>
-          한평생 올케어 구독 서비스 베이직<br/><br/>
+          올케어 구독 서비스 베이직<br/><br/>
           <b>상품 유형</b><br/>
           디지털 콘텐츠 및 교육·매칭 지원이 결합된 구독형 서비스<br/><br/>
           <b>구독 요금</b><br/>
@@ -115,13 +115,13 @@ export default function Home() {
     {
       title: "결제/변경/해지/환불 안내",
       content: `
-  <strong>[한평생교육] '한평생 올케어' 구독 결합 패키지 이용 및 환불 약관</strong><br/><br/>
+  <strong>[한평생교육] '올케어' 구독 결합 패키지 이용 및 환불 약관</strong><br/><br/>
 
   <strong>제1조 (목적)</strong><br/>
-  본 약관은 한평생교육이 제공하는 정기 구독형 서비스인 '한평생 올케어'의 이용 및 수강 과정 결합 구매에 따른 특별 할인 혜택, 중도 해지, 환불 등에 관한 제반 사항을 규정함을 목적으로 합니다.<br/><br/>
+  본 약관은 한평생교육이 제공하는 정기 구독형 서비스인 '올케어'의 이용 및 수강 과정 결합 구매에 따른 특별 할인 혜택, 중도 해지, 환불 등에 관한 제반 사항을 규정함을 목적으로 합니다.<br/><br/>
 
   <strong>제2조 (구독 결합 패키지 특별 장학 할인 및 의무 유지 기간)</strong><br/>
-  ① 회원은 '한평생 올케어' 구독 서비스를 해당 과정 종료 시까지 유지하는 조건으로, 단과 정상가(과목당 60,000원)에서 과목당 22,000원의 '구독 결합 특별 고정 장학 할인'을 일괄 적용받아 과목당 38,000원에 결제합니다.<br/>
+  ① 회원은 '올케어' 구독 서비스를 해당 과정 종료 시까지 유지하는 조건으로, 단과 정상가(과목당 60,000원)에서 과목당 22,000원의 '구독 결합 특별 고정 장학 할인'을 일괄 적용받아 과목당 38,000원에 결제합니다.<br/>
   ② 본 할인은 16과목 패키지 등 다과목 신청 시 구독 서비스 유지를 전제로 제공되는 조건부 혜택이므로, 구독 서비스 중도 해지 시 제4조에 명시된 고정 할인반환금이 청구됩니다.<br/><br/>
 
   <strong>제3조 (계약의 해지 및 환불 규정)</strong><br/>
@@ -148,7 +148,7 @@ export default function Home() {
     {
       title: "판매자 정보",
       content:
-        "상호명: 한평생 올케어<br/>운영사: ㈜한평생그룹<br/>대표자: 양병웅<br/>사업자등록번호: 392-88-03618<br/>주소: 서울특별시 도봉구 도봉로150다길 61, 601호<br/>고객센터 이메일: korhrdpartners@gmail.com",
+        "상호명: 올케어<br/>운영사: ㈜한평생그룹<br/>대표자: 양병웅<br/>사업자등록번호: 392-88-03618<br/>주소: 서울특별시 도봉구 도봉로150다길 61, 601호<br/>고객센터 이메일: korhrdpartners@gmail.com",
     },
   ];
   const [showSheet, setShowSheet] = useState(false);
@@ -239,7 +239,7 @@ export default function Home() {
             window.PayApp.setDefault("userid", userId);
             window.PayApp.setDefault(
               "shopname",
-              process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || "한평생올케어",
+              process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME || "올케어",
             );
           } catch (e) {
             console.warn("PayApp setDefault failed", e);
@@ -386,13 +386,13 @@ export default function Home() {
       {/* PayApp SDK is loaded via loadPayAppSDK util */}
       <main className={styles.main_wrapper}>
         {/* allcareMain.png 이미지로 대체 */}
-        <img src="/allcareMain.png" alt="한평생 올케어" style={{ width: '100%', height: 'auto', display: 'block' }} />
+        <img src="/allcareMain.png" alt="올케어" style={{ width: '100%', height: 'auto', display: 'block' }} />
 
         {/* 기존 히어로 섹션 주석처리
         <div className={styles.mobileWrapper}>
           <p className={styles.heroSubtitle}>시작부터 끝까지 안전하게</p>
           <div className={styles.heroBadge}>
-            <span className={styles.heroTitle}>한평생 올케어</span>
+            <span className={styles.heroTitle}>올케어</span>
           </div>
         </div>
         <div className={styles.descriptionSection}>
@@ -758,7 +758,7 @@ export default function Home() {
                 className={styles.subscribeButton}
                 onClick={() => handleSheetOpen("standard")}
               >
-                한평생올케어 구독하기
+                올케어 구독하기
               </button>
             </div>
           </div>
@@ -779,7 +779,7 @@ export default function Home() {
                   onDragEnd={handleDragEnd}
                 />
               </div>
-              <div className={styles.sheetTitle}>한평생 올케어 월간 이용권</div>
+              <div className={styles.sheetTitle}>올케어 월간 이용권</div>
               <div
                 style={{
                   width: "100%",
@@ -998,7 +998,7 @@ export default function Home() {
                     const baseUrl = window.location.origin;
                     const shopName =
                       process.env.NEXT_PUBLIC_PAYAPP_SHOP_NAME ||
-                      "한평생올케어";
+                      "올케어";
                     const payappUserId =
                       process.env.NEXT_PUBLIC_PAYAPP_USER_ID || "";
 
@@ -1088,7 +1088,7 @@ export default function Home() {
                   ? isPayAppLoading
                     ? "결제 시스템 로딩중..."
                     : "결제 시스템 로딩 실패"
-                  : "한평생올케어 시작하기"}
+                  : "올케어 시작하기"}
               </button>
             </div>
           </>
@@ -1114,7 +1114,7 @@ export default function Home() {
               </div>
               <div className={styles.modalBody}>
                 <div>
-                  본인은 한평생올케어 멤버십 서비스 이용에 동의함에 따라,
+                  본인은 올케어 멤버십 서비스 이용에 동의함에 따라,
                   한평생교육이 멤버십 서비스 제공 및 운영을 목적으로 아래와 같이
                   개인정보를 제3자에게 제공하는 것에 동의합니다.
                 </div>

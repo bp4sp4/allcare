@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "한평생 올케어",
-  description: "한평생 올케어 - 한평생 올케어로 실습 설계부터 관리까지 한 번에!",
+  title: "올케어",
+  description: "올케어 - 올케어로 실습 설계부터 관리까지 한 번에!",
   robots: {
     index: false,
     follow: false,
@@ -28,20 +28,20 @@ export const metadata: Metadata = {
     },
   },
   openGraph: {
-    title: '한평생 올케어',
-    description: '한평생 올케어 - 한평생 올케어로 실습 설계부터 관리까지 한 번에!',
+    title: '올케어',
+    description: '올케어 - 올케어로 실습 설계부터 관리까지 한 번에!',
     type: 'website',
     images: [
       {
         url: '/og-image.png',
-        alt: '한평생 올케어',
+        alt: '올케어',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: '한평생 올케어',
-    description: '한평생 올케어 - 한평생 올케어로 실습 설계부터 관리까지 한 번에!',
+    title: '올케어',
+    description: '올케어 - 올케어로 실습 설계부터 관리까지 한 번에!',
     images: ['/og-image.png'],
   },
 };

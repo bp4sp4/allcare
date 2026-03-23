@@ -113,9 +113,9 @@ export default function MainPage() {
 
   return (
     <main className={styles.mainWrapper}>
-      <Image src="/social_01.png" alt="한평생 올케어 소개 1" width={500} height={800} className={styles.fullImage} priority />
-      <Image src="/social_02.png" alt="한평생 올케어 소개 2" width={500} height={800} className={styles.fullImage} />
-      <Image src="/social_03.png" alt="한평생 올케어 소개 3" width={500} height={800} className={styles.fullImage} />
+      <Image src="/social_01.png" alt="올케어 소개 1" width={500} height={800} className={styles.fullImage} priority />
+      <Image src="/social_02.png" alt="올케어 소개 2" width={500} height={800} className={styles.fullImage} />
+      <Image src="/social_03.png" alt="올케어 소개 3" width={500} height={800} className={styles.fullImage} />
 
       {/* 오버레이 */}
       {showSheet && <div className={styles.overlay} onClick={() => setShowSheet(false)} />}
@@ -233,7 +233,7 @@ export default function MainPage() {
             <button className={styles.modalCloseBtn} onClick={() => setShowThirdParty(false)}>&times;</button>
             <div className={styles.modalTitle}>멤버십 제3자 개인정보 제공 안내</div>
             <div className={styles.modalBody}>
-              본인은 한평생올케어 멤버십 서비스 이용에 동의함에 따라, 한평생교육이 멤버십 서비스 제공 및 운영을 목적으로 아래와 같이 개인정보를 제3자에게 제공하는 것에 동의합니다.<br /><br />
+              본인은 올케어 멤버십 서비스 이용에 동의함에 따라, 한평생교육이 멤버십 서비스 제공 및 운영을 목적으로 아래와 같이 개인정보를 제3자에게 제공하는 것에 동의합니다.<br /><br />
               <strong>1. 제공받는 자</strong><br />
               한평생그룹 계열사, 한평생실습 멤버십 운영 및 실습 연계 기관<br /><br />
               <strong>2. 제공 목적</strong><br />
