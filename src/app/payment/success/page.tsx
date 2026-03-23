@@ -1,14 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import styles from './success.module.css';
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
+  const [isCustom, setIsCustom] = useState(false);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('type') === 'custom') setIsCustom(true);
     // 팝업인지 확인
     const isPopup = window.opener && window.opener !== window;
 
@@ -41,8 +44,12 @@ export default function PaymentSuccessPage() {
         <h1 className={styles.title}>결제 완료</h1>
         
         <p className={styles.description}>
-          올케어 서비스를<br />
-          지금부터 이용하실 수 있습니다.
+          {isCustom ? (
+            <>단과반 결제가 완료되었습니다.</>
+
+          ) : (
+            <>올케어 서비스를<br />지금부터 이용하실 수 있습니다.</>
+          )}
         </p>
 
         <img 
