@@ -317,12 +317,20 @@ export async function POST(request: NextRequest) {
       if (orderData.type === 'custom' && orderData.requestId) {
         const { error: customUpdateError } = await supabaseAdmin
           .from('custom_payment_requests')
-          .update({ status: 'paid' })
+          .update({ status: 'paid', paid_at: new Date().toISOString() })
           .eq('id', orderData.requestId);
 
         if (customUpdateError) {
           console.error('Custom payment request update error:', customUpdateError);
         }
+
+        // 학점은행제 어드민 동기화
+        hakjeomAdmin?.from('allcare_custom_payment_requests')
+          .update({ status: 'paid', paid_at: new Date().toISOString() })
+          .eq('id', orderData.requestId)
+          .then(({ error }) => {
+            if (error) console.error('[hakjeom sync] custom_payment_requests paid error:', error);
+          });
       }
 
       // 결제 내역 저장 (구독/패키지/단과반 모든 타입)

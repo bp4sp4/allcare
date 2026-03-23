@@ -25,17 +25,42 @@ export default function MainPage() {
   const [showTerms, setShowTerms] = useState(false);
   const [showSubTerms, setShowSubTerms] = useState(false);
   const [showThirdParty, setShowThirdParty] = useState(false);
+  const [customPayment, setCustomPayment] = useState<{ id: string; subject: string; subject_count: number; amount: number } | null>(null);
+  const [sheetMode, setSheetMode] = useState<'custom' | 'packages'>('packages');
 
   const selectedPkgData = PACKAGES.find((p) => p.id === selectedPkg)!;
 
   // 헤더에서 ?pkg=high/college 쿼리로 진입 시 시트 자동 열기
   useEffect(() => {
+    // 단과반 결제 후 팝업에서 리턴된 경우 → 부모 창 리다이렉트 후 팝업 닫기
+    const isPopup = window.opener && window.opener !== window;
+    if (isPopup) {
+      try { window.opener.location.href = window.location.href; window.close(); } catch {}
+      return;
+    }
+
     const params = new URLSearchParams(window.location.search);
     const pkg = params.get('pkg');
     if (pkg === 'high' || pkg === 'college') {
       setSelectedPkg(pkg);
+      setSheetMode('packages');
       setShowSheet(true);
       window.history.replaceState({}, '', '/');
+    }
+
+    // 미결제 단과반 요청 확인
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch('/api/custom-payment/pending', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.hasPending && data.requests?.length > 0) {
+            setCustomPayment(data.requests[0]);
+          }
+        })
+        .catch(() => {});
     }
   }, []);
 
@@ -44,6 +69,7 @@ export default function MainPage() {
     const handler = (e: Event) => {
       const type = (e as CustomEvent<{ type: 'high' | 'college' }>).detail?.type;
       if (type) setSelectedPkg(type);
+      setSheetMode('packages');
       setShowSheet(true);
     };
     window.addEventListener('openPaymentSheet', handler);
@@ -111,6 +137,29 @@ export default function MainPage() {
     window.open(data.payurl, 'payapp', `width=${w},height=${h},top=${top},left=${left},scrollbars=yes`);
   };
 
+  const handleCustomPayment = async () => {
+    if (!customPayment) return;
+    const token = localStorage.getItem('token');
+    if (!token) { alert('로그인이 필요합니다.'); return; }
+
+    const res = await fetch('/api/payments/request-custom', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ requestId: customPayment.id, returnUrl: `${window.location.origin}/payment/custom?paid=${customPayment.id}` }),
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.payurl) {
+      alert(data.error || '결제 요청에 실패했습니다.');
+      return;
+    }
+
+    const w = 480, h = 700;
+    const left = Math.max(0, (window.screen.width - w) / 2);
+    const top = Math.max(0, (window.screen.height - h) / 2);
+    window.open(data.payurl, 'payapp', `width=${w},height=${h},top=${top},left=${left},scrollbars=yes`);
+  };
+
   return (
     <main className={styles.mainWrapper}>
       <Image src="/social_01.png" alt="올케어 소개 1" width={500} height={800} className={styles.fullImage} priority />
@@ -124,66 +173,124 @@ export default function MainPage() {
       {showSheet && (
         <div className={styles.sheet}>
           <div className={styles.sheetHandle} />
-          <div className={styles.sheetTitle}>수강료 결제하기</div>
+          <div className={styles.sheetTitle}>
+            {sheetMode === 'custom' ? '단과반 결제' : '수강료 결제하기'}
+          </div>
 
-          {/* 패키지 카드 선택 */}
-          <div className={styles.pkgLabel}>선택된 요금제</div>
-          <div className={styles.pkgCards}>
-            {PACKAGES.map((pkg) => (
+          {sheetMode === 'custom' && customPayment ? (
+            <>
+              <div className={styles.pkgLabel}>결제 항목</div>
+              <div className={styles.pkgCards}>
+                <div className={`${styles.pkgCard} ${styles.pkgCardSelected}`}>
+                  <span className={styles.pkgCardName}>단과반 - {customPayment.subject}</span>
+                  <span className={styles.pkgCardPrice}>₩{customPayment.amount.toLocaleString()}</span>
+                </div>
+              </div>
+              <div className={styles.sheetSub}>
+                <span className={styles.sheetPrice}> {customPayment.amount.toLocaleString()}원</span> 결제
+              </div>
+              <hr className={styles.divider} />
+
+              {/* 모두 동의 */}
+              <div className={styles.agreeRow}>
+                <span className={styles.agreeAll}>모두 동의합니다.</span>
+                <span className={`${styles.checkbox} ${agreeAll ? styles.checkboxChecked : ''}`} onClick={handleAgreeAll}>
+                  {agreeAll && CHECK_SVG}
+                </span>
+              </div>
+
+              {/* 개별 동의 */}
+              {[
+                <span className={styles.agreeSub}>이용권 결제 동의 <span className={styles.agreeRequired}>(필수)</span></span>,
+                <span>
+                  <span className={styles.agreeUnderline} onClick={() => setShowTerms(true)}>이용약관</span>
+                  <span className={styles.agreeAnd}> 및 </span>
+                  <span className={styles.agreeUnderline} onClick={() => setShowSubTerms(true)}>결제 및 구독 유의사항</span>
+                  <span className={styles.agreeRequired}> (필수)</span>
+                </span>,
+                <span>
+                  <span className={styles.agreeUnderline} onClick={() => setShowThirdParty(true)}>멤버십 제3자 개인정보 제공</span>
+                  <span className={styles.agreeRequired}> (필수)</span>
+                </span>,
+              ].map((txt, idx) => (
+                <div className={styles.agreeRow} key={idx}>
+                  {txt}
+                  <span className={`${styles.checkbox} ${agreements[idx] ? styles.checkboxChecked : ''}`} onClick={() => handleAgreement(idx)}>
+                    {agreements[idx] && CHECK_SVG}
+                  </span>
+                </div>
+              ))}
+
               <button
-                key={pkg.id}
-                className={`${styles.pkgCard} ${selectedPkg === pkg.id ? styles.pkgCardSelected : ''}`}
-                onClick={() => setSelectedPkg(pkg.id)}
+                className={`${styles.payBtn} ${!agreeAll ? styles.payBtnDisabled : ''}`}
+                onClick={handleCustomPayment}
+                disabled={!agreeAll}
               >
-                <span className={styles.pkgCardName}>{pkg.name}</span>
-                <span className={styles.pkgCardPrice}>₩{pkg.price.toLocaleString()}</span>
+                {customPayment.amount.toLocaleString()}원 결제하기
               </button>
-            ))}
-          </div>
+            </>
+          ) : (
+            <>
+              {/* 패키지 카드 선택 */}
+              <div className={styles.pkgLabel}>선택된 요금제</div>
+              <div className={styles.pkgCards}>
+                {PACKAGES.map((pkg) => (
+                  <button
+                    key={pkg.id}
+                    className={`${styles.pkgCard} ${selectedPkg === pkg.id ? styles.pkgCardSelected : ''}`}
+                    onClick={() => setSelectedPkg(pkg.id)}
+                  >
+                    <span className={styles.pkgCardName}>{pkg.name}</span>
+                    <span className={styles.pkgCardPrice}>₩{pkg.price.toLocaleString()}</span>
+                  </button>
+                ))}
+              </div>
 
-          <div className={styles.sheetSub}>
-            <span className={styles.sheetPrice}> {selectedPkgData.price.toLocaleString()}원</span> 결제
-          </div>
+              <div className={styles.sheetSub}>
+                <span className={styles.sheetPrice}> {selectedPkgData.price.toLocaleString()}원</span> 결제
+              </div>
 
-          <hr className={styles.divider} />
+              <hr className={styles.divider} />
 
-          {/* 모두 동의 */}
-          <div className={styles.agreeRow}>
-            <span className={styles.agreeAll}>모두 동의합니다.</span>
-            <span className={`${styles.checkbox} ${agreeAll ? styles.checkboxChecked : ''}`} onClick={handleAgreeAll}>
-              {agreeAll && CHECK_SVG}
-            </span>
-          </div>
+              {/* 모두 동의 */}
+              <div className={styles.agreeRow}>
+                <span className={styles.agreeAll}>모두 동의합니다.</span>
+                <span className={`${styles.checkbox} ${agreeAll ? styles.checkboxChecked : ''}`} onClick={handleAgreeAll}>
+                  {agreeAll && CHECK_SVG}
+                </span>
+              </div>
 
-          {/* 개별 동의 */}
-          {[
-            <span className={styles.agreeSub}>이용권 결제 동의 <span className={styles.agreeRequired}>(필수)</span></span>,
-            <span>
-              <span className={styles.agreeUnderline} onClick={() => setShowTerms(true)}>이용약관</span>
-              <span className={styles.agreeAnd}> 및 </span>
-              <span className={styles.agreeUnderline} onClick={() => setShowSubTerms(true)}>결제 및 구독 유의사항</span>
-              <span className={styles.agreeRequired}> (필수)</span>
-            </span>,
-            <span>
-              <span className={styles.agreeUnderline} onClick={() => setShowThirdParty(true)}>멤버십 제3자 개인정보 제공</span>
-              <span className={styles.agreeRequired}> (필수)</span>
-            </span>,
-          ].map((txt, idx) => (
-            <div className={styles.agreeRow} key={idx}>
-              {txt}
-              <span className={`${styles.checkbox} ${agreements[idx] ? styles.checkboxChecked : ''}`} onClick={() => handleAgreement(idx)}>
-                {agreements[idx] && CHECK_SVG}
-              </span>
-            </div>
-          ))}
+              {/* 개별 동의 */}
+              {[
+                <span className={styles.agreeSub}>이용권 결제 동의 <span className={styles.agreeRequired}>(필수)</span></span>,
+                <span>
+                  <span className={styles.agreeUnderline} onClick={() => setShowTerms(true)}>이용약관</span>
+                  <span className={styles.agreeAnd}> 및 </span>
+                  <span className={styles.agreeUnderline} onClick={() => setShowSubTerms(true)}>결제 및 구독 유의사항</span>
+                  <span className={styles.agreeRequired}> (필수)</span>
+                </span>,
+                <span>
+                  <span className={styles.agreeUnderline} onClick={() => setShowThirdParty(true)}>멤버십 제3자 개인정보 제공</span>
+                  <span className={styles.agreeRequired}> (필수)</span>
+                </span>,
+              ].map((txt, idx) => (
+                <div className={styles.agreeRow} key={idx}>
+                  {txt}
+                  <span className={`${styles.checkbox} ${agreements[idx] ? styles.checkboxChecked : ''}`} onClick={() => handleAgreement(idx)}>
+                    {agreements[idx] && CHECK_SVG}
+                  </span>
+                </div>
+              ))}
 
-          <button
-            className={`${styles.payBtn} ${!agreeAll ? styles.payBtnDisabled : ''}`}
-            onClick={handlePayment}
-            disabled={!agreeAll}
-          >
-            수강료 결제하기
-          </button>
+              <button
+                className={`${styles.payBtn} ${!agreeAll ? styles.payBtnDisabled : ''}`}
+                onClick={handlePayment}
+                disabled={!agreeAll}
+              >
+                수강료 결제하기
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -253,7 +360,7 @@ export default function MainPage() {
       {!showSheet && (
         <div className={styles.stickyButton}>
           <div className={styles.stickyButtonInner}>
-            <button className={styles.subscribeButton} onClick={() => setShowSheet(true)}>
+            <button className={styles.subscribeButton} onClick={() => { setSheetMode(customPayment ? 'custom' : 'packages'); setShowSheet(true); }}>
               수강료 결제하기
             </button>
           </div>

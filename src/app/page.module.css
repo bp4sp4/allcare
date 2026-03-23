@@ -230,7 +230,7 @@
   padding: 24px 16px 16px;
   z-index: 104;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -262,6 +262,8 @@
   background: #fafbfc;
   border-radius: 8px;
   padding: 12px 10px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 /* ── sticky 버튼 ── */

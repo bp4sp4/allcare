@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '유효하지 않은 토큰입니다.' }, { status: 401 });
     }
 
-    const { requestId } = await request.json();
+    const { requestId, returnUrl } = await request.json();
     if (!requestId) return NextResponse.json({ error: '결제 요청 ID가 필요합니다.' }, { status: 400 });
 
     // 해당 결제 요청 조회
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       recvphone,
       smsuse: 'n',
       feedbackurl: `${baseUrl}/api/payments/webhook`,
-      returnurl: `${baseUrl}/payment/success`,
+      returnurl: returnUrl || `${baseUrl}/payment/success`,
       var1: JSON.stringify({ orderId, userId: decoded.userId, requestId, type: 'custom' }),
       checkretry: 'y',
       openpaytype: 'card,phone,kakaopay,naverpay,smilepay,rbank,applepay,payco,wechat,myaccount,tosspay',

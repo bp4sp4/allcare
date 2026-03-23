@@ -40,8 +40,19 @@ export default function CustomPaymentPage() {
         },
         body: JSON.stringify({ requestId: successRequestId, orderId: urlParams.get('orderId') }),
       }).then(() => {
-        setPaidId(successRequestId);
-        window.history.replaceState({}, '', '/payment/custom');
+        const isPopup = window.opener && window.opener !== window;
+        if (isPopup) {
+          try {
+            window.opener.location.href = '/?pkg=high';
+            window.close();
+          } catch {
+            setPaidId(successRequestId);
+            window.history.replaceState({}, '', '/payment/custom');
+          }
+        } else {
+          setPaidId(successRequestId);
+          window.history.replaceState({}, '', '/payment/custom');
+        }
       });
     }
 
