@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  verification: {
+    google: "Cf5DmqGGr0lvotmJL9R53D5FnEgJpFEb4aTzPoAqN6Y",
+  },
   title: "올케어",
   description: "올케어 - 올케어로 실습 설계부터 관리까지 한 번에!",
   robots: {
