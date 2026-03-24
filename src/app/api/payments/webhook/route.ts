@@ -335,7 +335,7 @@ export async function POST(request: NextRequest) {
 
       // 결제 내역 저장 (구독/패키지/단과반 모든 타입)
       const paymentData = {
-        user_id: userId,
+        user_id: userId || null,
         order_id: orderData.orderId || `ORDER-${Date.now()}`,
         trade_id: mul_no,
         amount: parseInt(price),

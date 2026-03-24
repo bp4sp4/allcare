@@ -18,6 +18,9 @@ export default function PaymentPage() {
     recvphone: '',
     buyeremail: '',
   });
+  const [showMissingFields, setShowMissingFields] = useState(false);
+  const [needName, setNeedName] = useState(false);
+  const [needPhone, setNeedPhone] = useState(false);
 
   useEffect(() => {
     // 결제 수단 변경 모드인지 확인
@@ -119,12 +122,10 @@ export default function PaymentPage() {
     }
 
     // 필수 필드 검증
-    if (!paymentData.buyername || !paymentData.recvphone) {
-      alert('이름과 연락처를 입력해주세요.');
-      return;
-    }
-    if (!paymentData.recvphone.match(/^01[0-9]{8,9}$/)) {
-      alert('올바른 휴대폰 번호를 입력해주세요. (예: 01012345678)');
+    if (!paymentData.buyername || !paymentData.recvphone || !paymentData.recvphone.match(/^01[0-9]{8,9}$/)) {
+      setNeedName(!paymentData.buyername);
+      setNeedPhone(!paymentData.recvphone || !paymentData.recvphone.match(/^01[0-9]{8,9}$/));
+      setShowMissingFields(true);
       return;
     }
 
@@ -391,96 +392,72 @@ export default function PaymentPage() {
           </div>
         </div>
 
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-            이름 <span style={{ color: 'red' }}>*</span>
-            <input
-              type="text"
-              value={paymentData.buyername}
-              onChange={(e) => setPaymentData({ ...paymentData, buyername: e.target.value })}
-              placeholder="홍길동"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                marginTop: '0.25rem',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '1rem',
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#0070f3'}
-              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-            />
-          </label>
-        </div>
-
-        <div style={{ marginBottom: '1rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-            연락처 <span style={{ color: 'red' }}>*</span>
-            <input
-              type="tel"
-              value={paymentData.recvphone}
-              onChange={(e) => setPaymentData({ ...paymentData, recvphone: e.target.value })}
-              placeholder="01012345678"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                marginTop: '0.25rem',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '1rem',
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#0070f3'}
-              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-            />
-          </label>
-        </div>
-
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
-            이메일
-            <input
-              type="email"
-              value={paymentData.buyeremail}
-              onChange={(e) => setPaymentData({ ...paymentData, buyeremail: e.target.value })}
-              placeholder="example@email.com"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                marginTop: '0.25rem',
-                border: '2px solid #e5e7eb',
-                borderRadius: '8px',
-                fontSize: '1rem',
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#0070f3'}
-              onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
-            />
-          </label>
-        </div>
+        {showMissingFields && (
+          <div style={{ marginBottom: '1rem' }}>
+            <div style={{ marginBottom: '0.75rem', padding: '0.6rem 0.75rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '0.85rem', color: '#dc2626' }}>
+              결제를 위해 아래 정보를 입력해주세요.
+            </div>
+            {needName && (
+              <div style={{ marginBottom: '0.75rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>
+                  이름 <span style={{ color: 'red' }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  value={paymentData.buyername}
+                  onChange={(e) => setPaymentData({ ...paymentData, buyername: e.target.value })}
+                  placeholder="홍길동"
+                  autoFocus
+                  style={{ width: '100%', padding: '0.75rem', border: '2px solid #f87171', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }}
+                  onFocus={(e) => e.target.style.borderColor = '#0070f3'}
+                  onBlur={(e) => e.target.style.borderColor = '#f87171'}
+                />
+              </div>
+            )}
+            {needPhone && (
+              <div style={{ marginBottom: '0.75rem' }}>
+                <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: '500', fontSize: '0.9rem' }}>
+                  연락처 <span style={{ color: 'red' }}>*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={paymentData.recvphone}
+                  onChange={(e) => setPaymentData({ ...paymentData, recvphone: e.target.value.replace(/\D/g, '') })}
+                  placeholder="01012345678"
+                  maxLength={11}
+                  style={{ width: '100%', padding: '0.75rem', border: '2px solid #f87171', borderRadius: '8px', fontSize: '1rem', boxSizing: 'border-box' }}
+                  onFocus={(e) => e.target.style.borderColor = '#0070f3'}
+                  onBlur={(e) => e.target.style.borderColor = '#f87171'}
+                />
+              </div>
+            )}
+          </div>
+        )}
 
         <button
           onClick={handlePayment}
-          disabled={!isPayAppLoaded || !paymentData.buyername || !paymentData.recvphone}
+          disabled={!isPayAppLoaded}
           style={{
             width: '100%',
             padding: '1.125rem',
-            backgroundColor: isPayAppLoaded && paymentData.buyername && paymentData.recvphone ? '#0070f3' : '#d1d5db',
+            backgroundColor: isPayAppLoaded ? '#0070f3' : '#d1d5db',
             color: 'white',
             border: 'none',
             borderRadius: '12px',
             fontSize: '1.125rem',
-            cursor: isPayAppLoaded && paymentData.buyername && paymentData.recvphone ? 'pointer' : 'not-allowed',
+            cursor: isPayAppLoaded ? 'pointer' : 'not-allowed',
             fontWeight: 'bold',
             transition: 'all 0.2s',
-            boxShadow: isPayAppLoaded && paymentData.buyername && paymentData.recvphone ? '0 4px 12px rgba(0, 112, 243, 0.3)' : 'none'
+            boxShadow: isPayAppLoaded ? '0 4px 12px rgba(0, 112, 243, 0.3)' : 'none'
           }}
           onMouseEnter={(e) => {
-            if (isPayAppLoaded && paymentData.buyername && paymentData.recvphone) {
+            if (isPayAppLoaded) {
               e.currentTarget.style.backgroundColor = '#0060d9';
               e.currentTarget.style.transform = 'translateY(-2px)';
             }
           }}
           onMouseLeave={(e) => {
-            if (isPayAppLoaded && paymentData.buyername && paymentData.recvphone) {
+            if (isPayAppLoaded) {
               e.currentTarget.style.backgroundColor = '#0070f3';
               e.currentTarget.style.transform = 'translateY(0)';
             }
