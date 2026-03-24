@@ -157,11 +157,9 @@ export default function MainPage() {
   const handlePayment = async () => {
     if (!agreeAll) return;
 
-    if (!buyerName.trim() || !buyerPhone) {
-      setShowMissingFields(true);
-      return;
-    }
-    if (!buyerPhone.match(/^01[0-9]{8,9}$/)) {
+    if (!buyerName.trim() || !buyerPhone || !buyerPhone.match(/^01[0-9]{8,9}$/)) {
+      setNeedName(!buyerName.trim());
+      setNeedPhone(!buyerPhone || !buyerPhone.match(/^01[0-9]{8,9}$/));
       setShowMissingFields(true);
       return;
     }
@@ -311,7 +309,7 @@ export default function MainPage() {
                   <div style={{ marginBottom: '0.75rem', padding: '0.6rem 0.75rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '0.85rem', color: '#dc2626' }}>
                     결제를 위해 아래 정보를 입력해주세요.
                   </div>
-                  {!buyerName.trim() && (
+                  {needName && (
                     <div style={{ marginBottom: '0.75rem' }}>
                       <div style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', color: '#374151' }}>
                         이름 <span style={{ color: 'red' }}>*</span>
@@ -336,7 +334,7 @@ export default function MainPage() {
                       />
                     </div>
                   )}
-                  {(!buyerPhone || !buyerPhone.match(/^01[0-9]{8,9}$/)) && (
+                  {needPhone && (
                     <div style={{ marginBottom: '0.75rem' }}>
                       <div style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', color: '#374151' }}>
                         연락처 <span style={{ color: 'red' }}>*</span>
