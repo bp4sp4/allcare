@@ -32,9 +32,11 @@ export async function POST(request: NextRequest) {
       userId,
     } = body;
 
-    if (!packageType || !cardNo || !expMonth || !expYear || !cardPw || !buyerAuthNo || !buyerPhone || !buyerName) {
+    if (!packageType || !cardNo || !expMonth || !expYear || !cardPw || !buyerAuthNo || !buyerPhone) {
       return NextResponse.json({ error: '필수 정보를 모두 입력해주세요.' }, { status: 400 });
     }
+
+    const effectiveBuyerName = buyerName || '구매자';
 
     const payappUserId = process.env.NEXT_PUBLIC_PAYAPP_USER_ID || '';
     const linkKey = process.env.PAYAPP_LINK_KEY || '';
@@ -57,7 +59,7 @@ export async function POST(request: NextRequest) {
       cardPw,
       buyerAuthNo,
       buyerPhone,
-      buyerName,
+      buyerName: effectiveBuyerName,
     });
 
     if (registResult.RETURNCODE !== '0000') {
@@ -87,7 +89,7 @@ export async function POST(request: NextRequest) {
       amount_taxable: '0',
       amount_taxfree: price,
       amount_vat: '0',
-      var1: JSON.stringify({ orderId, userId: userId || '', packageType, type: 'package', name: buyerName, phone: buyerPhone }),
+      var1: JSON.stringify({ orderId, userId: userId || '', packageType, type: 'package', name: effectiveBuyerName, phone: buyerPhone }),
       feedbackurl: `${baseUrl}/api/payments/webhook`,
     });
 
