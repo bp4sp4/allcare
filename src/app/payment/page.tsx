@@ -17,7 +17,6 @@ export default function PaymentPage() {
     buyername: '',
     recvphone: '',
     buyeremail: '',
-    var1: '',
   });
 
   useEffect(() => {
@@ -29,9 +28,26 @@ export default function PaymentPage() {
       setIsChangeMode(true);
     }
 
+    // 로그인 사용자 프로필 자동 채우기
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch('/api/user/profile', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(data => {
+          setPaymentData(prev => ({
+            ...prev,
+            buyername: data.name || '',
+            recvphone: data.phone || '',
+            buyeremail: data.email || '',
+          }));
+        })
+        .catch(() => {});
+    }
+
     // 결제 수단 변경 모드가 아닐 때만 기존 구독 여부 확인
     if (!isChange) {
-      const token = localStorage.getItem('token');
       if (token) {
         fetch('/api/subscription/status', {
           headers: { Authorization: `Bearer ${token}` }
@@ -79,17 +95,6 @@ export default function PaymentPage() {
       return;
     }
 
-    // 필수 필드 검증
-    if (!paymentData.buyername || !paymentData.recvphone) {
-      alert('이름과 연락처를 입력해주세요.');
-      return;
-    }
-
-    if (!paymentData.recvphone.match(/^01[0-9]{8,9}$/)) {
-      alert('올바른 휴대폰 번호를 입력해주세요. (예: 01012345678)');
-      return;
-    }
-
     // localStorage에서 토큰 가져와서 user_id 추출
     const token = localStorage.getItem('token');
     let userId = '';
@@ -113,6 +118,16 @@ export default function PaymentPage() {
       return;
     }
 
+    // 필수 필드 검증
+    if (!paymentData.buyername || !paymentData.recvphone) {
+      alert('이름과 연락처를 입력해주세요.');
+      return;
+    }
+    if (!paymentData.recvphone.match(/^01[0-9]{8,9}$/)) {
+      alert('올바른 휴대폰 번호를 입력해주세요. (예: 01012345678)');
+      return;
+    }
+
     try {
       // PayApp 초기화
       window.PayApp.setDefault('userid', payappUserId);
@@ -133,16 +148,14 @@ export default function PaymentPage() {
       const orderData = {
         orderId: `ORDER-${Date.now()}`,
         userId: userId,
-        phone: paymentData.recvphone,
-        name: paymentData.buyername,
         mode: isChangeMode ? 'change-payment' : 'new'
       };
       
       // 정기결제 정보 설정
       window.PayApp.setParam('goodname', paymentData.goodname);
       window.PayApp.setParam('goodprice', paymentData.goodprice);
-      window.PayApp.setParam('recvphone', paymentData.recvphone);
       window.PayApp.setParam('buyername', paymentData.buyername);
+      window.PayApp.setParam('recvphone', paymentData.recvphone);
       if (paymentData.buyeremail) {
         window.PayApp.setParam('buyeremail', paymentData.buyeremail);
       }
@@ -386,15 +399,13 @@ export default function PaymentPage() {
               value={paymentData.buyername}
               onChange={(e) => setPaymentData({ ...paymentData, buyername: e.target.value })}
               placeholder="홍길동"
-              required
-              style={{ 
-                width: '100%', 
-                padding: '0.75rem', 
+              style={{
+                width: '100%',
+                padding: '0.75rem',
                 marginTop: '0.25rem',
                 border: '2px solid #e5e7eb',
                 borderRadius: '8px',
                 fontSize: '1rem',
-                transition: 'border-color 0.2s'
               }}
               onFocus={(e) => e.target.style.borderColor = '#0070f3'}
               onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
@@ -410,14 +421,13 @@ export default function PaymentPage() {
               value={paymentData.recvphone}
               onChange={(e) => setPaymentData({ ...paymentData, recvphone: e.target.value })}
               placeholder="01012345678"
-              required
-              style={{ 
-                width: '100%', 
-                padding: '0.75rem', 
+              style={{
+                width: '100%',
+                padding: '0.75rem',
                 marginTop: '0.25rem',
                 border: '2px solid #e5e7eb',
                 borderRadius: '8px',
-                fontSize: '1rem'
+                fontSize: '1rem',
               }}
               onFocus={(e) => e.target.style.borderColor = '#0070f3'}
               onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
@@ -425,7 +435,7 @@ export default function PaymentPage() {
           </label>
         </div>
 
-        <div style={{ marginBottom: '1rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
           <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500' }}>
             이메일
             <input
@@ -433,13 +443,13 @@ export default function PaymentPage() {
               value={paymentData.buyeremail}
               onChange={(e) => setPaymentData({ ...paymentData, buyeremail: e.target.value })}
               placeholder="example@email.com"
-              style={{ 
-                width: '100%', 
-                padding: '0.75rem', 
+              style={{
+                width: '100%',
+                padding: '0.75rem',
                 marginTop: '0.25rem',
                 border: '2px solid #e5e7eb',
                 borderRadius: '8px',
-                fontSize: '1rem'
+                fontSize: '1rem',
               }}
               onFocus={(e) => e.target.style.borderColor = '#0070f3'}
               onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
@@ -482,12 +492,6 @@ export default function PaymentPage() {
         {!isPayAppLoaded && (
           <p style={{ marginTop: '1rem', color: '#9ca3af', textAlign: 'center', fontSize: '0.875rem' }}>
             결제 시스템을 준비하고 있습니다...
-          </p>
-        )}
-        
-        {isPayAppLoaded && (!paymentData.buyername || !paymentData.recvphone) && (
-          <p style={{ marginTop: '0.75rem', color: '#ef4444', textAlign: 'center', fontSize: '0.875rem' }}>
-            이름과 연락처를 입력해주세요
           </p>
         )}
         

@@ -28,6 +28,9 @@ export default function MainPage() {
   const [showThirdParty, setShowThirdParty] = useState(false);
   const [customPayment, setCustomPayment] = useState<{ id: string; subject: string; subject_count: number; amount: number } | null>(null);
   const [sheetMode, setSheetMode] = useState<'custom' | 'packages'>('packages');
+  const [buyerPhone, setBuyerPhone] = useState('');
+  const [buyerName, setBuyerName] = useState('');
+  const [showMissingFields, setShowMissingFields] = useState(false);
 
   const selectedPkgData = PACKAGES.find((p) => p.id === selectedPkg)!;
 
@@ -57,6 +60,15 @@ export default function MainPage() {
     }
 
     if (!userId) return;
+
+    // 프로필에서 이름/전화번호 미리 불러오기
+    fetch('/api/user/profile', { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.phone) setBuyerPhone(d.phone);
+        if (d.name) setBuyerName(d.name);
+      })
+      .catch(() => {});
 
     // 초기 로드
     fetch('/api/custom-payment/pending', {
@@ -115,9 +127,10 @@ export default function MainPage() {
   useEffect(() => {
     if (showSheet) {
       document.body.style.overflow = 'hidden';
-      // 시트 열릴 때 동의 초기화
+      // 시트 열릴 때 초기화
       setAgreeAll(false);
       setAgreements([false, false, false]);
+      setShowMissingFields(false);
     } else {
       document.body.style.overflow = '';
     }
@@ -140,25 +153,25 @@ export default function MainPage() {
   const handlePayment = async () => {
     if (!agreeAll) return;
 
+    if (!buyerName.trim() || !buyerPhone) {
+      setShowMissingFields(true);
+      return;
+    }
+    if (!buyerPhone.match(/^01[0-9]{8,9}$/)) {
+      setShowMissingFields(true);
+      return;
+    }
+
     const token = localStorage.getItem('token');
     let userId = '';
-    let recvphone = '';
-    let buyerName = '';
-
     if (token) {
       try { userId = JSON.parse(atob(token.split('.')[1])).userId || ''; } catch {}
-      try {
-        const r = await fetch('/api/user/profile', { headers: { Authorization: `Bearer ${token}` } });
-        const d = await r.json();
-        recvphone = d.phone || '';
-        buyerName = d.name || '';
-      } catch {}
     }
 
     const res = await fetch('/api/payments/request', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ packageType: selectedPkg, recvphone, buyerName, userId }),
+      body: JSON.stringify({ packageType: selectedPkg, recvphone: buyerPhone, buyerName: buyerName.trim(), userId }),
     });
 
     const data = await res.json();
@@ -287,6 +300,65 @@ export default function MainPage() {
               </div>
 
               <hr className={styles.divider} />
+
+              {/* 누락 정보 입력 - 결제 버튼 눌렀을 때만 표시 */}
+              {showMissingFields && (
+                <>
+                  <div style={{ marginBottom: '0.75rem', padding: '0.6rem 0.75rem', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', fontSize: '0.85rem', color: '#dc2626' }}>
+                    결제를 위해 아래 정보를 입력해주세요.
+                  </div>
+                  {!buyerName.trim() && (
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', color: '#374151' }}>
+                        이름 <span style={{ color: 'red' }}>*</span>
+                      </div>
+                      <input
+                        type="text"
+                        value={buyerName}
+                        onChange={(e) => setBuyerName(e.target.value)}
+                        placeholder="홍길동"
+                        autoFocus
+                        style={{
+                          width: '100%',
+                          padding: '0.65rem 0.75rem',
+                          border: '1.5px solid #f87171',
+                          borderRadius: '8px',
+                          fontSize: '1rem',
+                          boxSizing: 'border-box',
+                          outline: 'none',
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#0051FF'}
+                        onBlur={(e) => e.target.style.borderColor = '#f87171'}
+                      />
+                    </div>
+                  )}
+                  {(!buyerPhone || !buyerPhone.match(/^01[0-9]{8,9}$/)) && (
+                    <div style={{ marginBottom: '0.75rem' }}>
+                      <div style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.4rem', color: '#374151' }}>
+                        연락처 <span style={{ color: 'red' }}>*</span>
+                      </div>
+                      <input
+                        type="tel"
+                        value={buyerPhone}
+                        onChange={(e) => setBuyerPhone(e.target.value.replace(/\D/g, ''))}
+                        placeholder="01012345678"
+                        maxLength={11}
+                        style={{
+                          width: '100%',
+                          padding: '0.65rem 0.75rem',
+                          border: '1.5px solid #f87171',
+                          borderRadius: '8px',
+                          fontSize: '1rem',
+                          boxSizing: 'border-box',
+                          outline: 'none',
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#0051FF'}
+                        onBlur={(e) => e.target.style.borderColor = '#f87171'}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
 
               {/* 모두 동의 */}
               <div className={styles.agreeRow}>
