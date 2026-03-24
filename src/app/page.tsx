@@ -31,6 +31,8 @@ export default function MainPage() {
   const [buyerPhone, setBuyerPhone] = useState('');
   const [buyerName, setBuyerName] = useState('');
   const [showMissingFields, setShowMissingFields] = useState(false);
+  const [needName, setNeedName] = useState(false);
+  const [needPhone, setNeedPhone] = useState(false);
 
   const selectedPkgData = PACKAGES.find((p) => p.id === selectedPkg)!;
 
@@ -131,6 +133,8 @@ export default function MainPage() {
       setAgreeAll(false);
       setAgreements([false, false, false]);
       setShowMissingFields(false);
+      setNeedName(false);
+      setNeedPhone(false);
     } else {
       document.body.style.overflow = '';
     }
