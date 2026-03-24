@@ -914,7 +914,7 @@ export default function MyPage() {
                   </span>
                   <button
                     className={styles.startBtn}
-                    onClick={() => handleSubscriptionAction("start")}
+                    onClick={handlePlanChangeSheetOpen}
                   >
                     구독 시작
                   </button>
@@ -2318,6 +2318,26 @@ export default function MyPage() {
               disabled={!planChangeAgreeAll}
             >
               요금제 변경하기
+            </button>
+            <button
+              style={{
+                width: "100%",
+                padding: "14px",
+                marginTop: "8px",
+                borderRadius: "12px",
+                border: "1px solid #e5e7eb",
+                background: "#fff",
+                color: "#ef4444",
+                fontSize: "15px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                handlePlanChangeSheetClose();
+                handleSubscriptionAction("cancel");
+              }}
+            >
+              구독 취소
             </button>
           </div>
         </>

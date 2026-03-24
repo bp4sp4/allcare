@@ -99,6 +99,28 @@ export async function POST(req: NextRequest) {
     const currentRank = getPlanRank(subscription.plan);
     const newRank = newPlanInfo.rank;
 
+    // 현재 플랜이 없으면 바로 할당 (결제 없이)
+    if (!subscription.plan) {
+      const { error: updateError } = await supabaseAdmin
+        .from('subscriptions')
+        .update({ plan: newPlanInfo.name, amount: newPlanInfo.price })
+        .eq('id', subscription.id);
+
+      if (updateError) {
+        return NextResponse.json(
+          { error: '플랜 설정 중 오류가 발생했습니다.' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        success: true,
+        type: 'assign',
+        message: `${newPlanInfo.name} 플랜이 설정되었습니다.`,
+        needsPayment: false,
+      });
+    }
+
     // 현재 플랜과 동일하면 예약 취소
     if (subscription.plan === newPlanInfo.name) {
       const { error: updateError } = await supabaseAdmin

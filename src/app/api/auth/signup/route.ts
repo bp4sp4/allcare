@@ -87,6 +87,7 @@ export async function POST(request: NextRequest) {
         name,
         phone,
         provider: 'email',
+        practice_matching_access: false,
         created_at: new Date().toISOString()
       }, { onConflict: 'id' });
 

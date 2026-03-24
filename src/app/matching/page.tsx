@@ -106,10 +106,11 @@ function MatchingPageInner() {
           return;
         }
 
-        // 기타 에러 발생 시 일단 접근 허용 (서버 오류 등)
+        // 기타 에러 발생 시 접근 차단
         if (!response.ok) {
           console.error("[매칭 시스템] 구독 상태 확인 실패:", response.status);
-          setIsChecking(false);
+          setAlertMessage("서비스 확인 중 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.");
+          setAlertOpen(true);
           return;
         }
 
@@ -146,9 +147,9 @@ function MatchingPageInner() {
         setIsChecking(false);
       } catch (error) {
         console.error("[매칭 시스템] Access check error:", error);
-        // 네트워크 에러 등은 일단 접근 허용
         if (mounted) {
-          setIsChecking(false);
+          setAlertMessage("네트워크 오류가 발생했습니다.\n잠시 후 다시 시도해주세요.");
+          setAlertOpen(true);
         }
       }
     };
@@ -407,6 +408,7 @@ function MatchingPageInner() {
             else if (alertMessage.includes("만료")) router.push("/auth/login");
             else if (alertMessage.includes("구독자만")) router.push("/");
             else if (alertMessage.includes("열람권")) router.push("/");
+            else if (alertMessage.includes("오류")) router.push("/");
           }}
         />
       );
@@ -431,6 +433,7 @@ function MatchingPageInner() {
             else if (alertMessage.includes("만료")) router.push("/auth/login");
             else if (alertMessage.includes("구독자만")) router.push("/");
             else if (alertMessage.includes("열람권")) router.push("/");
+            else if (alertMessage.includes("오류")) router.push("/");
           }}
         />
       )}

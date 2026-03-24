@@ -58,6 +58,7 @@ export async function POST(request: NextRequest) {
         name: authData.user.user_metadata?.name || '',
         phone: authData.user.user_metadata?.phone || '',
         provider: 'email',
+        practice_matching_access: false,
         created_at: authData.user.created_at
       }, { onConflict: 'id' });
 
