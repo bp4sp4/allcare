@@ -38,7 +38,7 @@ export default function EmailSignupPage() {
 
   const validateEmail = (email: string) => {
     if (!email) return '';
-    if (!email.includes('@')) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return '올바른 이메일 주소를 입력해 주세요.';
     }
     return '';

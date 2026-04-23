@@ -92,7 +92,7 @@ export default function PaymentPage() {
     }
   }, []);
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
     if (!isPayAppLoaded || !window.PayApp) {
       alert('결제 시스템을 로딩 중입니다. 잠시 후 다시 시도해주세요.');
       return;
@@ -127,6 +127,26 @@ export default function PaymentPage() {
       setNeedPhone(!paymentData.recvphone || !paymentData.recvphone.match(/^01[0-9]{8,9}$/));
       setShowMissingFields(true);
       return;
+    }
+
+    // 결제수단 변경 모드: 기존 rebill 먼저 해지 (이중결제 방지)
+    if (isChangeMode && token) {
+      try {
+        const cancelRes = await fetch('/api/payment/cancel-current-rebill', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const cancelData = await cancelRes.json();
+        if (!cancelRes.ok || !cancelData.success) {
+          alert('기존 결제수단 해지에 실패했습니다. 관리자에게 문의해주세요.');
+          console.error('cancel-current-rebill failed:', cancelData);
+          return;
+        }
+      } catch (e) {
+        alert('결제수단 변경 중 오류가 발생했습니다.');
+        console.error(e);
+        return;
+      }
     }
 
     try {

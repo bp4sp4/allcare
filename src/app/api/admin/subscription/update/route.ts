@@ -41,13 +41,73 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { userId, status } = await request.json();
+    const { userId, status, plan } = await request.json();
 
-    if (!userId || !status) {
+    if (!userId || (!status && !plan)) {
       return NextResponse.json(
         { error: '필수 정보가 누락되었습니다.' },
         { status: 400 }
       );
+    }
+
+    const PLAN_MAP: Record<string, { name: string; amount: number }> = {
+      basic: { name: '베이직', amount: 9900 },
+      standard: { name: '스탠다드', amount: 19900 },
+      premium: { name: '프리미엄', amount: 29900 },
+    };
+
+    // 플랜 변경 처리
+    if (plan) {
+      if (!PLAN_MAP[plan]) {
+        return NextResponse.json({ error: '유효하지 않은 플랜입니다.' }, { status: 400 });
+      }
+
+      const { data: subscription } = await supabaseAdmin
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', userId)
+        .in('status', ['active', 'cancel_scheduled'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      const planInfo = PLAN_MAP[plan];
+
+      if (!subscription) {
+        // 활성 구독 없으면 새로 생성
+        const now = new Date().toISOString();
+        const nextBilling = new Date();
+        nextBilling.setMonth(nextBilling.getMonth() + 1);
+        const { error: insertError } = await supabaseAdmin
+          .from('subscriptions')
+          .insert({
+            user_id: userId,
+            plan: planInfo.name,
+            status: 'active',
+            amount: planInfo.amount,
+            billing_cycle: 'monthly',
+            start_date: now,
+            next_billing_date: nextBilling.toISOString(),
+            cancelled_at: null,
+            end_date: null,
+            created_at: now,
+            updated_at: now,
+          });
+        if (insertError) {
+          return NextResponse.json({ error: '구독 생성에 실패했습니다.', detail: insertError.message }, { status: 500 });
+        }
+        return NextResponse.json({ success: true, message: '플랜이 설정되었습니다.' });
+      }
+
+      const { error: updateError } = await supabaseAdmin
+        .from('subscriptions')
+        .update({ plan: planInfo.name, amount: planInfo.amount, updated_at: new Date().toISOString() })
+        .eq('id', subscription.id);
+
+      if (updateError) {
+        return NextResponse.json({ error: '플랜 변경에 실패했습니다.', detail: updateError.message }, { status: 500 });
+      }
+      return NextResponse.json({ success: true, message: '플랜이 변경되었습니다.' });
     }
 
     if (status !== 'active' && status !== 'cancel_scheduled' && status !== 'cancelled') {
