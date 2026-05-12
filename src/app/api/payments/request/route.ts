@@ -15,8 +15,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '결제 시스템 설정 오류입니다.' }, { status: 500 });
     }
 
-    const goodname = packageType === 'high' ? '사회복지사 고등학교 졸업자 패키지' : '사회복지사 대학교 졸업자 패키지';
-    const price = packageType === 'high' ? '1170000' : '720000';
+    const PACKAGE_INFO: Record<string, { goodname: string; price: string }> = {
+      high:          { goodname: '사회복지사 고등학교 졸업자 패키지',        price: '1170000' },
+      college:       { goodname: '사회복지사 대학교 졸업자 패키지',          price: '720000'  },
+      allcare_high:  { goodname: '사회복지사 고등학교 졸업자 올케어 패키지', price: '1300000' },
+      allcare_college:{ goodname: '사회복지사 대학교 졸업자 올케어 패키지',  price: '800000'  },
+    };
+    const info = PACKAGE_INFO[packageType];
+    if (!info) return NextResponse.json({ error: '잘못된 패키지 타입입니다.' }, { status: 400 });
+    const { goodname, price } = info;
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.hanallcare.com';
     const orderId = `PKG-${Date.now()}`;
 

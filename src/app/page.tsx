@@ -5,9 +5,13 @@ import Image from 'next/image';
 import styles from './page.module.css';
 import { supabase } from '@/lib/supabase';
 
-const PACKAGES = [
-  { id: 'high' as const, name: '사회복지사 고등학교 졸업자 패키지', price: 1170000 },
-  { id: 'college' as const, name: '사회복지사 대학교 졸업자 패키지', price: 720000 },
+const PACKAGES_NORMAL = [
+  { id: 'high' as const,    name: '사회복지사 고등학교 졸업자 패키지', price: 1170000 },
+  { id: 'college' as const, name: '사회복지사 대학교 졸업자 패키지',   price: 720000  },
+];
+const PACKAGES_ALLCARE = [
+  { id: 'allcare_high' as const,    name: '사회복지사 고등학교 졸업자 올케어 패키지', price: 1300000 },
+  { id: 'allcare_college' as const, name: '사회복지사 대학교 졸업자 올케어 패키지',   price: 800000  },
 ];
 
 const CHECK_SVG = (
@@ -19,8 +23,10 @@ const CHECK_SVG = (
 );
 
 export default function MainPage() {
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [packageCategory, setPackageCategory] = useState<'normal' | 'allcare'>('normal');
   const [showSheet, setShowSheet] = useState(false);
-  const [selectedPkg, setSelectedPkg] = useState<'high' | 'college'>('high');
+  const [selectedPkg, setSelectedPkg] = useState<'high' | 'college' | 'allcare_high' | 'allcare_college'>('high');
   const [agreeAll, setAgreeAll] = useState(false);
   const [agreements, setAgreements] = useState([false, false, false]);
   const [showTerms, setShowTerms] = useState(false);
@@ -34,7 +40,8 @@ export default function MainPage() {
   const [needName, setNeedName] = useState(false);
   const [needPhone, setNeedPhone] = useState(false);
 
-  const selectedPkgData = PACKAGES.find((p) => p.id === selectedPkg)!;
+  const PACKAGES = packageCategory === 'allcare' ? PACKAGES_ALLCARE : PACKAGES_NORMAL;
+  const selectedPkgData = PACKAGES.find((p) => p.id === selectedPkg) ?? PACKAGES[0];;
 
   // 헤더에서 ?pkg=high/college 쿼리로 진입 시 시트 자동 열기
   useEffect(() => {
@@ -48,6 +55,8 @@ export default function MainPage() {
     const params = new URLSearchParams(window.location.search);
     const pkg = params.get('pkg');
     if (pkg === 'high' || pkg === 'college') {
+      setSelectedPkg(pkg);
+      setPackageCategory('normal');
       setSelectedPkg(pkg);
       setSheetMode('packages');
       setShowSheet(true);
@@ -118,7 +127,7 @@ export default function MainPage() {
   useEffect(() => {
     const handler = (e: Event) => {
       const type = (e as CustomEvent<{ type: 'high' | 'college' }>).detail?.type;
-      if (type) setSelectedPkg(type);
+      if (type) { setPackageCategory('normal'); setSelectedPkg(type); }
       setSheetMode('packages');
       setShowSheet(true);
     };
@@ -127,7 +136,7 @@ export default function MainPage() {
   }, []);
 
   useEffect(() => {
-    if (showSheet) {
+    if (showSheet || showCategoryModal) {
       document.body.style.overflow = 'hidden';
       // 시트 열릴 때 초기화
       setAgreeAll(false);
@@ -139,7 +148,7 @@ export default function MainPage() {
       document.body.style.overflow = '';
     }
     return () => { document.body.style.overflow = ''; };
-  }, [showSheet]);
+  }, [showSheet, showCategoryModal]);
 
   const handleAgreeAll = () => {
     const next = !agreeAll;
@@ -216,6 +225,51 @@ export default function MainPage() {
       <Image src="/social_01.png" alt="올케어 소개 1" width={500} height={800} className={styles.fullImage} priority />
       <Image src="/social_02.png" alt="올케어 소개 2" width={500} height={800} className={styles.fullImage} />
       <Image src="/social_03.png" alt="올케어 소개 3" width={500} height={800} className={styles.fullImage} />
+
+      {/* 카테고리 선택 모달 */}
+      {showCategoryModal && (
+        <>
+          <div className={styles.overlay} onClick={() => setShowCategoryModal(false)} />
+          <div className={styles.sheet} style={{ paddingBottom: 40 }}>
+            <div className={styles.sheetHandle} />
+            <div className={styles.sheetTitle}>패키지를 선택해주세요</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
+              <button
+                onClick={() => {
+                  setPackageCategory('normal');
+                  setSelectedPkg('high');
+                  setShowCategoryModal(false);
+                  setSheetMode('packages');
+                  setShowSheet(true);
+                }}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                  padding: '18px 20px', border: '1.5px solid #e0e0e0', borderRadius: 14,
+                  background: '#fff', cursor: 'pointer', textAlign: 'left',
+                }}
+              >
+                <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#111' }}>일반 패키지</span>
+              </button>
+              <button
+                onClick={() => {
+                  setPackageCategory('allcare');
+                  setSelectedPkg('allcare_high');
+                  setShowCategoryModal(false);
+                  setSheetMode('packages');
+                  setShowSheet(true);
+                }}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                  padding: '18px 20px', border: '1.5px solid #0051FF', borderRadius: 14,
+                  background: '#f0f4ff', cursor: 'pointer', textAlign: 'left',
+                }}
+              >
+                <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#0051FF' }}>올케어 패키지</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* 오버레이 */}
       {showSheet && <div className={styles.overlay} onClick={() => setShowSheet(false)} />}
@@ -466,11 +520,14 @@ export default function MainPage() {
         </>
       )}
 
-      {/* sticky 버튼 - 시트 열리면 숨김 */}
-      {!showSheet && (
+      {/* sticky 버튼 - 시트/모달 열리면 숨김 */}
+      {!showSheet && !showCategoryModal && (
         <div className={styles.stickyButton}>
           <div className={styles.stickyButtonInner}>
-            <button className={styles.subscribeButton} onClick={() => { setSheetMode(customPayment ? 'custom' : 'packages'); setShowSheet(true); }}>
+            <button className={styles.subscribeButton} onClick={() => {
+              if (customPayment) { setSheetMode('custom'); setShowSheet(true); }
+              else { setShowCategoryModal(true); }
+            }}>
               수강료 결제하기
             </button>
           </div>
